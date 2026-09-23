@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disconnect to Reconnect | Step Outside</title>
+    <style>
+        :root {
+            --primary: #2d5a27;
+            --primary-light: #41853d;
+            --secondary: #e8f5e9;
+            --dark: #1b3318;
+            --light: #f9fbf9;
+            --accent: #d4a373;
+            --text: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--light);
+        }
+
+        nav {
+            background-color: white;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-light);
+        }
+
+        header {
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 0 1rem;
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        header p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background-color: var(--accent);
+            margin: 10px auto 0 auto;
+            border-radius: 2px;
+        }
+
+        #now-2026 {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            padding: 4rem 2rem;
+            margin-top: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .grid-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .content-img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        #enjoy-nature {
+            background-color: var(--secondary);
+            max-width: 100%;
+        }
+
+        .activity-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .card-content h3 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .benefits-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .benefit-item {
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            border-top: 4px solid var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .benefit-item h3 {
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        footer {
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-two-col {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            header h1 { font-size: 2.5rem; }
+            header p { font-size: 1.2rem; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="#" class="logo">🌿 Step Outside</a>
+        <ul class="nav-links">
+            <li><a href="#now-2026">The Challenge</a></li>
+            <li><a href="#enjoy-nature">Get Outside</a></li>
+            <li><a href="#benefits">Why It Matters</a></li>
+        </ul>
+    </nav>
+
+    <header>
+        <h1>Disconnect to Reconnect</h1>
+        <p>The best wireless connection is the one you find in the great outdoors. Step away from the screen and experience the real world.</p>
+        <a href="#enjoy-nature" class="btn">Explore Activities</a>
+    </header>
+
+    <section>
+        <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+            <h2 class="section-title">Welcome to Reality</h2>
+            <p style="font-size: 1.2rem; color: #555;">Life isn't meant to be lived through a piece of glass. Our website is built for everyone—kids, parents, and friends—as a gentle reminder that the world outside is waiting. We create inspirations and guides to help you shut down your devices, gather your loved ones, and experience the refreshing, grounding beauty of nature together.</p>
+        </div>
+    </section>
+
+    <section id="now-2026">
+        <h2 class="section-title">Right Now in 2026</h2>
+        <div class="grid-two-col">
+            <div>
+                <p>We live in a hyper-connected world. Right now, in 2026, the average person spends hours looking down at a screen, trapped in a cycle of endless scrolling and virtual notifications. While technology connects us digitally, it quietly pulls families and friends apart in physical reality.</p>
+                <br>
+                <p>Kids are missing out on the simple joys of climbing trees, and adults are forgetting the peaceful stillness of a morning walk. It is time to break the habit of staying indoors all day long and remember what it feels like to breathe fresh air.</p>
+            </div>
+            <div>
+                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80" alt="Person looking at a screen indoors" class="content-img">
+            </div>
+        </div>
+    </section>
+
+    <section id="enjoy-nature">
+        <div class="activity-container">
+            <h2 class="section-title">Enjoying Nature Together</h2>
+            <p style="text-align: center; max-width: 700px; margin: -2rem auto 3rem auto; color: #555;">You don't need to plan an expensive vacation to experience nature. Outdoor adventures are waiting right outside your doorstep, perfect for any generation.</p>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <img src="https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=400&q=80" alt="Hiking trail" class="card-img">
+                    <div class="card-content">
+                        <h3>Family Trails & Walks</h3>
+                        <p>Find a local park or hiking trail. Walking together allows for real, uninterrupted conversations without notification buzzes getting in the way.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=400&q=80" alt="Picnic in a park" class="card-img">
+                    <div class="card-content">
+                        <h3>Backyard & Park Picnics</h3>
+                        <p>Pack a meal, grab a blanket, and head to the nearest patch of green grass. Turn lunchtime into an outdoor event for the whole family.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=400&q=80" alt="Stargazing or Camping" class="card-img">
+                    <div class="card-content">
+                        <h3>Stargazing & Camping</h3>
+                        <p>Watch the sunset and stay up to look at the stars. Trading the blue light of your screen for the natural light of the night sky changes your perspective.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="benefits">
+        <h2 class="section-title">How It Benefits Us</h2>
+        <div class="benefits-list">
+            <div class="benefit-item">
+                <h3>Mental Clarity</h3>
+                <p>Spending time around trees and natural sunlight reduces stress, clears away brain fog, and helps calm overstimulated minds.</p>
+            </div>
+            <div class="benefit-item">
+                <h3>Stronger Bonds</h3>
+                <p>Shared outdoor activities create lasting memories. Without screen distractions, we can truly listen and connect with friends and family.</p>
+            </div>
+            <div class="benefit-item">
+                <h3>Physical Health</h3>
+                <p>From simple walks to steep hikes, moving your body outdoors improves your sleep quality, posture, energy levels, and overall physical fitness.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Step Outside. Built to inspire healthier, screen-free lifestyles.</p>
+    </footer>
+
+</body>
+</html>

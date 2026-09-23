@@ -1,0 +1,3061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🧋 Boba Dream 3D — Cozy Boba Tea Simulator</title>
+  
+  <!-- Google Fonts for Cozy Cafe Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Three.js and OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Canvas Confetti for celebratory refill fanfare -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #c68a4c;
+      --primary-dark: #8c5826;
+      --bg-cream: #faf5ee;
+      --card-bg: rgba(255, 255, 255, 0.75);
+      --card-border: rgba(255, 255, 255, 0.85);
+      --shadow-soft: 0 12px 36px -8px rgba(140, 88, 38, 0.15), 0 4px 16px -2px rgba(0, 0, 0, 0.05);
+      --text-main: #3d2b1f;
+      --text-sub: #7d6b5e;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 50% 30%, #fff9f2 0%, #f3e9dc 60%, #e8dac9 100%);
+      color: var(--text-main);
+    }
+
+    #webgl-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      cursor: grab;
+    }
+
+    #webgl-container:active {
+      cursor: grabbing;
+    }
+
+    /* UI Overlay Layer */
+    .ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.25rem;
+    }
+
+    .interactive {
+      pointer-events: auto;
+    }
+
+    /* Header Nav */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .cafe-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 0.6rem 1.2rem;
+      border-radius: 9999px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .cafe-badge .boba-icon {
+      font-size: 1.5rem;
+      animation: gentle-bob 3s ease-in-out infinite;
+    }
+
+    .cafe-title {
+      font-family: 'Gaegu', cursive;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .icon-btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      color: var(--text-main);
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-2px) scale(1.05);
+      background: #ffffff;
+      box-shadow: 0 16px 24px -6px rgba(140, 88, 38, 0.25);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Flavor Info Card (Floating Top Left/Center) */
+    .flavor-card-container {
+      position: absolute;
+      top: 5rem;
+      left: 1.5rem;
+      max-width: 320px;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .flavor-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .flavor-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      background: var(--flavor-accent, var(--primary));
+      border-radius: 4px;
+    }
+
+    .flavor-tag {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--flavor-accent, var(--primary-dark));
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .flavor-name {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+      line-height: 1.2;
+    }
+
+    .flavor-desc {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      line-height: 1.45;
+      margin-bottom: 0.85rem;
+    }
+
+    .flavor-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .badge-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* Stats HUD (Top Right) */
+    .stats-hud {
+      position: absolute;
+      top: 5rem;
+      right: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+
+    .hud-chip {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+      padding: 0.45rem 0.95rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-main);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .hud-chip span.num {
+      color: var(--primary-dark);
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    /* Hint Overlay */
+    .interaction-hint {
+      position: absolute;
+      top: 48%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(45, 30, 20, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      padding: 0.55rem 1.25rem;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      opacity: 0.85;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .interaction-hint.hidden {
+      opacity: 0;
+    }
+
+    /* Bottom Control Center */
+    .controls-wrapper {
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto 1rem auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    /* Cup Liquid Level Mini Indicator */
+    .level-bar-container {
+      width: 220px;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .level-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .level-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.08);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .level-fill {
+      width: 100%;
+      height: 100%;
+      background: var(--flavor-accent, var(--primary));
+      border-radius: 9999px;
+      transition: width 0.1s linear, background-color 0.4s ease;
+    }
+
+    .action-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    /* Secondary Action Buttons (Shake, Refill) */
+    .sub-action-btn {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      padding: 0.75rem 1.1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      box-shadow: var(--shadow-soft);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .sub-action-btn .btn-icon {
+      font-size: 1.35rem;
+    }
+
+    .sub-action-btn:hover {
+      transform: translateY(-3px) scale(1.05);
+      background: #ffffff;
+      box-shadow: 0 16px 24px -4px rgba(140, 88, 38, 0.2);
+    }
+
+    .sub-action-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Master Drink Button (Hero Interaction) */
+    .drink-btn-wrapper {
+      position: relative;
+    }
+
+    .drink-pulse-ring {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 50%;
+      border: 2px dashed var(--flavor-accent, var(--primary));
+      opacity: 0.4;
+      animation: spin-slow 12s linear infinite;
+      pointer-events: none;
+      transition: border-color 0.4s ease;
+    }
+
+    .drink-button {
+      width: 104px;
+      height: 104px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #ffffff, #fdf4e8);
+      border: 4px solid var(--card-border);
+      box-shadow: 0 20px 40px -10px rgba(140, 88, 38, 0.3), 0 0 0 6px var(--flavor-accent, var(--primary)), inset 0 -4px 10px rgba(0,0,0,0.06);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .drink-button .straw-art {
+      font-size: 2.2rem;
+      line-height: 1;
+      margin-bottom: 2px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      transition: transform 0.15s ease;
+    }
+
+    .drink-button .drink-label {
+      font-family: 'Gaegu', cursive;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1;
+    }
+
+    .drink-button:hover {
+      transform: scale(1.06);
+      box-shadow: 0 24px 48px -8px rgba(140, 88, 38, 0.4), 0 0 0 8px var(--flavor-accent, var(--primary));
+    }
+
+    .drink-button:active,
+    .drink-button.sipping {
+      transform: scale(0.92);
+      box-shadow: 0 8px 20px -4px rgba(140, 88, 38, 0.25), 0 0 0 4px var(--flavor-accent, var(--primary));
+    }
+
+    .drink-button.sipping .straw-art {
+      animation: sip-vibrate 0.1s infinite alternate;
+    }
+
+    .drink-button.sipping .drink-label {
+      color: var(--primary-dark);
+    }
+
+    /* Key indicator */
+    .key-hint {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      background: rgba(255, 255, 255, 0.8);
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    /* Floating Straw Slurp Particles */
+    .slurp-float-text {
+      position: absolute;
+      pointer-events: none;
+      font-family: 'Gaegu', cursive;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--flavor-accent, var(--primary-dark));
+      text-shadow: 0 2px 8px rgba(255, 255, 255, 0.8);
+      animation: float-up-fade 1.2s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+      z-index: 50;
+    }
+
+    /* Refill Announcement Modal / Toast */
+    .announcement-banner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 2px solid var(--flavor-accent, var(--primary));
+      padding: 1.8rem 2.2rem;
+      border-radius: 32px;
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .announcement-banner.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      pointer-events: auto;
+    }
+
+    .announcement-badge {
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--primary-dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .announcement-title {
+      font-family: 'Gaegu', cursive;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+      line-height: 1.1;
+    }
+
+    .announcement-desc {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      max-width: 360px;
+      margin: 0 auto 1.2rem auto;
+      line-height: 1.5;
+    }
+
+    .announcement-btn {
+      background: var(--flavor-accent, var(--primary));
+      color: #ffffff;
+      border: none;
+      padding: 0.75rem 1.8rem;
+      border-radius: 9999px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -4px rgba(140, 88, 38, 0.35);
+      transition: transform 0.2s ease;
+    }
+
+    .announcement-btn:hover {
+      transform: translateY(-2px) scale(1.05);
+    }
+
+    /* Bobadex Modal (Collection Log) */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(45, 30, 20, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .bobadex-modal {
+      background: #fffdfa;
+      width: 100%;
+      max-width: 640px;
+      max-height: 85vh;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(140, 88, 38, 0.15);
+      box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(20px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-backdrop.open .bobadex-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .bobadex-header {
+      padding: 1.5rem 1.75rem 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .bobadex-header h2 {
+      font-family: 'Gaegu', cursive;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .close-modal-btn {
+      background: rgba(0, 0, 0, 0.05);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      color: var(--text-main);
+      transition: background 0.2s ease;
+    }
+
+    .close-modal-btn:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .bobadex-body {
+      padding: 1.5rem 1.75rem;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .flavor-entry-card {
+      background: #faf6f0;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.1rem;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .flavor-entry-card.locked {
+      opacity: 0.55;
+      filter: grayscale(0.8);
+      background: #f0ebe4;
+    }
+
+    .flavor-entry-card:not(.locked):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px -4px rgba(140, 88, 38, 0.12);
+    }
+
+    .entry-color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.4rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .entry-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .entry-desc {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      line-height: 1.4;
+    }
+
+    .entry-status {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 0.5rem;
+      color: var(--primary-dark);
+    }
+
+    /* Leaderboard Modal Specifics */
+    .leaderboard-modal {
+      background: #fffdfa;
+      width: 100%;
+      max-width: 680px;
+      max-height: 88vh;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(140, 88, 38, 0.15);
+      box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(20px) scale(0.95);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-backdrop.open .leaderboard-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.75rem 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .modal-header h2 {
+      font-family: 'Gaegu', cursive;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Player Summary Banner */
+    .player-rank-banner {
+      background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+      margin: 1rem 1.75rem 0.5rem 1.75rem;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      border: 1.5px solid #fde68a;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);
+    }
+
+    .player-avatar-badge {
+      font-size: 2.2rem;
+      background: #ffffff;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+      flex-shrink: 0;
+    }
+
+    .player-info {
+      flex: 1;
+    }
+
+    .player-name-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .player-name {
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--text-main);
+    }
+
+    .edit-name-btn {
+      background: rgba(0,0,0,0.06);
+      border: none;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-sub);
+      transition: all 0.2s ease;
+    }
+
+    .edit-name-btn:hover {
+      background: rgba(0,0,0,0.12);
+      color: var(--text-main);
+    }
+
+    .player-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin-top: 0.15rem;
+    }
+
+    .player-rank-stats {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .rank-badge-box, .points-badge-box {
+      background: #ffffff;
+      padding: 0.4rem 0.75rem;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.06);
+      text-align: center;
+      min-width: 65px;
+    }
+
+    .rank-badge-label {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--text-sub);
+    }
+
+    .rank-badge-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1.1;
+    }
+
+    /* Tabs */
+    .leaderboard-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem 0.5rem 1.75rem;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.55rem 0.75rem;
+      border-radius: 9999px;
+      background: #f5ede4;
+      border: 1px solid rgba(0,0,0,0.05);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      background: #ede3d7;
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(198, 138, 76, 0.35);
+    }
+
+    /* Rows */
+    .leaderboard-list {
+      padding: 0.5rem 1.75rem 1.5rem 1.75rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.75rem 1rem;
+      background: #faf6f0;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(0,0,0,0.04);
+      transition: all 0.2s ease;
+    }
+
+    .leaderboard-item.is-user {
+      background: #fef7ec;
+      border: 2px solid var(--primary);
+      box-shadow: 0 6px 16px -2px rgba(198, 138, 76, 0.25);
+      position: relative;
+    }
+
+    .item-rank {
+      font-weight: 800;
+      font-size: 1.15rem;
+      min-width: 32px;
+      text-align: center;
+      color: var(--text-sub);
+    }
+
+    .item-rank.rank-1 { color: #f59e0b; font-size: 1.35rem; }
+    .item-rank.rank-2 { color: #94a3b8; font-size: 1.25rem; }
+    .item-rank.rank-3 { color: #b45309; font-size: 1.25rem; }
+
+    .item-avatar {
+      font-size: 1.5rem;
+      background: #ffffff;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .item-details {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .item-name-row {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .item-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .you-pill {
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+    }
+
+    .item-quote {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-stats {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.15rem;
+    }
+
+    .item-main-val {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--primary-dark);
+    }
+
+    .item-sub-val {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    .highlight-chip {
+      background: linear-gradient(135deg, rgba(254, 243, 199, 0.95), rgba(253, 230, 138, 0.95)) !important;
+      border: 1.5px solid #fde68a !important;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25) !important;
+    }
+
+    /* Keyframe Animations */
+    @keyframes gentle-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes sip-vibrate {
+      0% { transform: scale(1.05) rotate(-2deg); }
+      100% { transform: scale(0.98) rotate(2deg); }
+    }
+
+    @keyframes float-up-fade {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(0.6);
+      }
+      20% {
+        opacity: 1;
+        transform: translate(-50%, -20px) scale(1.1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -80px) scale(1);
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .ui-layer {
+        padding: 0.75rem;
+      }
+      .flavor-card-container {
+        top: 4.5rem;
+        left: 0.75rem;
+        right: 0.75rem;
+        max-width: none;
+      }
+      .flavor-card {
+        padding: 0.85rem 1rem;
+      }
+      .flavor-desc {
+        display: none; /* Keep clean on small mobile */
+      }
+      .stats-hud {
+        top: auto;
+        bottom: 8.5rem;
+        right: 0.75rem;
+      }
+      .action-bar {
+        gap: 0.75rem;
+      }
+      .drink-button {
+        width: 88px;
+        height: 88px;
+      }
+      .drink-button .straw-art {
+        font-size: 1.8rem;
+      }
+      .key-hint {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WebGL 3D Canvas Container -->
+  <div id="webgl-container"></div>
+
+  <!-- UI Overlay Layer -->
+  <div class="ui-layer">
+    <!-- Header -->
+    <header>
+      <div class="cafe-badge interactive">
+        <span class="boba-icon">🧋</span>
+        <span class="cafe-title">Boba Dream 3D</span>
+      </div>
+
+      <div class="header-actions interactive">
+        <button class="icon-btn" id="downloadBtn" title="Download Game HTML File">💾</button>
+        <button class="icon-btn" id="leaderboardBtn" title="View Cafe Leaderboard">🏆</button>
+        <button class="icon-btn" id="bobadexBtn" title="Flavor Catalog (Bobadex)">📖</button>
+        <button class="icon-btn" id="audioToggleBtn" title="Toggle Sound">🔊</button>
+        <button class="icon-btn" id="resetCamBtn" title="Reset Camera View">🎥</button>
+      </div>
+    </header>
+
+    <!-- Flavor Card (Top Left) -->
+    <div class="flavor-card-container interactive">
+      <div class="flavor-card" id="flavorCard">
+        <div class="flavor-tag">
+          <span>✨</span>
+          <span id="flavorCategory">Specialty Brew</span>
+        </div>
+        <div class="flavor-name" id="flavorName">Tiger Brown Sugar Milk Tea</div>
+        <div class="flavor-desc" id="flavorDesc">Rich caramelized tiger stripes swirled with warm brown sugar tapioca and silky cream.</div>
+        <div class="flavor-meta">
+          <div class="badge-pill" id="toppingsBadge">🟤 Brown Sugar Boba</div>
+          <div class="badge-pill" id="sweetnessBadge">🍯 70% Sweet</div>
+          <div class="badge-pill" id="iceBadge">🧊 Regular Ice</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats HUD (Top Right) -->
+    <div class="stats-hud interactive">
+      <div class="hud-chip highlight-chip" id="hudRankChip" title="Your Leaderboard Rank" style="cursor: pointer;">
+        <span>🏆 Rank:</span>
+        <span class="num" id="rankText">#9</span>
+      </div>
+      <div class="hud-chip" title="Total Boba Master Points">
+        <span>⭐ Pts:</span>
+        <span class="num" id="pointsCountText">0</span>
+      </div>
+      <div class="hud-chip" title="Cups completed">
+        <span>🧋 Cups:</span>
+        <span class="num" id="cupsCountText">0</span>
+      </div>
+      <div class="hud-chip" title="Boba pearls swallowed">
+        <span>⚫ Boba:</span>
+        <span class="num" id="bobaCountText">0</span>
+      </div>
+    </div>
+
+    <!-- Interaction Hint (Fades after first sip) -->
+    <div class="interaction-hint" id="interactionHint">
+      <span>👆 Drag to rotate 3D cup • Hold button to sip!</span>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="controls-wrapper interactive">
+      <!-- Mini Liquid Level Bar -->
+      <div class="level-bar-container">
+        <span class="level-label">Cup</span>
+        <div class="level-track">
+          <div class="level-fill" id="levelFillBar"></div>
+        </div>
+        <span class="level-label" id="levelPercentText">100%</span>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <!-- Shake Button -->
+        <button class="sub-action-btn" id="shakeBtn" title="Shake the cup for ice clinks!">
+          <span class="btn-icon">🤹</span>
+          <span>Shake Cup</span>
+        </button>
+
+        <!-- Main Drink Button -->
+        <div class="drink-btn-wrapper">
+          <div class="drink-pulse-ring"></div>
+          <button class="drink-button" id="drinkBtn" title="Hold down to sip boba tea!">
+            <span class="straw-art">🥤</span>
+            <span class="drink-label" id="drinkBtnLabel">DRINK</span>
+          </button>
+          <div class="key-hint">Hold [Space]</div>
+        </div>
+
+        <!-- Next Flavor Refill Button -->
+        <button class="sub-action-btn" id="refillBtn" title="Refill with a new flavor now!">
+          <span class="btn-icon">✨</span>
+          <span>Next Flavor</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Announcement Banner (Popup on cup finish / refill) -->
+  <div class="announcement-banner" id="announcementBanner">
+    <div class="announcement-badge">✨ Freshly Brewed Refill ✨</div>
+    <div class="announcement-title" id="announcedFlavorTitle">Matcha Green Tea Latte</div>
+    <div class="announcement-desc" id="announcedFlavorDesc">Fresh stone-ground Kyoto matcha layered with sweet cream and chewy tapioca pearls.</div>
+    <button class="announcement-btn interactive" id="enjoyNewCupBtn">Drink Fresh Cup 🧋</button>
+  </div>
+
+  <!-- Bobadex Collection Modal -->
+  <div class="modal-backdrop interactive" id="bobadexModal">
+    <div class="bobadex-modal">
+      <div class="bobadex-header">
+        <h2><span>📖</span> Bobadex Flavor Journal</h2>
+        <button class="close-modal-btn" id="closeBobadexBtn">✕</button>
+      </div>
+      <div class="bobadex-body" id="bobadexList">
+        <!-- Dynamically populated flavor entries -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div class="modal-backdrop interactive" id="leaderboardModal">
+    <div class="leaderboard-modal">
+      <div class="modal-header">
+        <h2><span>🏆</span> Cafe Boba Leaderboard</h2>
+        <button class="close-modal-btn" id="closeLeaderboardBtn">✕</button>
+      </div>
+
+      <!-- Player Highlight Banner -->
+      <div class="player-rank-banner">
+        <div class="player-avatar-badge" id="playerAvatarBadge">🧋</div>
+        <div class="player-info">
+          <div class="player-name-row">
+            <span class="player-name" id="playerNameDisplay">You (Boba Explorer)</span>
+            <button class="edit-name-btn" id="editNameBtn" title="Change your username">✏️ Edit</button>
+          </div>
+          <div class="player-title" id="playerTitleDisplay">Boba Novice 🌱</div>
+        </div>
+        <div class="player-rank-stats">
+          <div class="rank-badge-box">
+            <div class="rank-badge-label">RANK</div>
+            <div class="rank-badge-value" id="playerRankDisplay">#9</div>
+          </div>
+          <div class="points-badge-box">
+            <div class="rank-badge-label">POINTS</div>
+            <div class="rank-badge-value" id="playerPointsDisplay">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard Tabs / Filter -->
+      <div class="leaderboard-tabs">
+        <button class="tab-btn active" id="tabScoreBtn" data-tab="score">⭐ Total Points</button>
+        <button class="tab-btn" id="tabCupsBtn" data-tab="cups">🧋 Cups Drunk</button>
+        <button class="tab-btn" id="tabBobaBtn" data-tab="boba">⚫ Boba Eaten</button>
+      </div>
+
+      <!-- Leaderboard Scrollable List -->
+      <div class="leaderboard-list" id="leaderboardRows">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulation & 3D Script -->
+  <script>
+    /* =========================================================================
+       1. FLAVOR CATALOG & GAME STATE
+       ========================================================================= */
+    const FLAVORS = [
+      {
+        id: 'tiger_brown_sugar',
+        name: 'Tiger Brown Sugar Milk Tea',
+        category: 'House Classic',
+        desc: 'Rich caramelized tiger stripes swirled with warm brown sugar tapioca and silky cream.',
+        teaColor: 0x935116,       // Warm amber caramel
+        foamColor: 0xfff7ed,      // Cream foam
+        pearlColor: 0x1f140e,     // Chewy dark tapioca
+        pearlGripRoughness: 0.15,
+        toppingName: '🟤 Brown Sugar Boba',
+        sweetness: '🍯 70% Sweet',
+        ice: '🧊 Regular Ice',
+        accentHex: '#c68a4c'
+      },
+      {
+        id: 'kyoto_matcha',
+        name: 'Kyoto Uji Matcha Latte',
+        category: 'Artisan Tea',
+        desc: 'Fresh stone-ground Kyoto matcha layered with sweet fresh milk and dark pearls.',
+        teaColor: 0x3d6b38,       // Rich jade matcha
+        foamColor: 0xf0fdf4,      // Sweet milk cloud
+        pearlColor: 0x221318,     // Azuki red-bean dark boba
+        pearlGripRoughness: 0.2,
+        toppingName: '🍵 Azuki & Black Pearls',
+        sweetness: '🍯 50% Sweet',
+        ice: '🧊 Less Ice',
+        accentHex: '#4f772d'
+      },
+      {
+        id: 'taro_coconut_cloud',
+        name: 'Taro Coconut Cloud',
+        category: 'Cream Special',
+        desc: 'Velvety purple taro yam blended with fragrant coconut milk and chewy taro mochi pearls.',
+        teaColor: 0x8b6f96,       // Pastel taro lilac
+        foamColor: 0xfff1f2,      // Whipped coconut cream
+        pearlColor: 0x594161,     // Taro mochi pearls
+        pearlGripRoughness: 0.25,
+        toppingName: '💜 Taro Mochi Boba',
+        sweetness: '🍯 80% Sweet',
+        ice: '🧊 Regular Ice',
+        accentHex: '#9d8189'
+      },
+      {
+        id: 'strawberry_hibiscus',
+        name: 'Strawberry Hibiscus Sparkler',
+        category: 'Fruit Refresh',
+        desc: 'Tart brewed ruby hibiscus tea bursting with sweet popping strawberry boba pearls.',
+        teaColor: 0xbf214b,       // Translucent ruby pink
+        foamColor: 0xffccd5,      // Pink froth
+        pearlColor: 0xff1744,     // Ruby popping pearls
+        pearlGripRoughness: 0.05, // Glossy popping boba
+        toppingName: '🍓 Strawberry Popping Boba',
+        sweetness: '🍯 60% Sweet',
+        ice: '🧊 Extra Cold',
+        accentHex: '#e05780'
+      },
+      {
+        id: 'mango_passionfruit',
+        name: 'Mango Passionfruit Sunrise',
+        category: 'Tropical Breeze',
+        desc: 'Vibrant tropical mango nectar blended with tangy passionfruit and golden crystal boba.',
+        teaColor: 0xe07a14,       // Sunshine mango gold
+        foamColor: 0xfef08a,      // Citrus foam
+        pearlColor: 0xf59e0b,     // Golden crystal pearls
+        pearlGripRoughness: 0.1,
+        toppingName: '🥭 Golden Honey Pearls',
+        sweetness: '🍯 50% Sweet',
+        ice: '🧊 Slush Ice',
+        accentHex: '#f4a261'
+      },
+      {
+        id: 'thai_spiced_tea',
+        name: 'Authentic Thai Spiced Milk Tea',
+        category: 'Street Classic',
+        desc: 'Bold roasted Ceylon tea infused with star anise and cardamom, topped with condensed milk.',
+        teaColor: 0xd9531e,       // Vivid sunset spiced orange
+        foamColor: 0xfffbeb,      // Sweet condensed milk drizzle
+        pearlColor: 0x1a120b,     // Classic tapioca
+        pearlGripRoughness: 0.2,
+        toppingName: '🟤 Chewy Black Boba',
+        sweetness: '🍯 100% Sweet',
+        ice: '🧊 Full Ice',
+        accentHex: '#e76f51'
+      },
+      {
+        id: 'galaxy_butterfly_pea',
+        name: 'Galaxy Butterfly Pea Magic',
+        category: 'Mystic Brew',
+        desc: 'Magical color-shifting blue pea flower tea swirled with fresh lemonade and golden pearls.',
+        teaColor: 0x5b21b6,       // Deep royal indigo violet
+        foamColor: 0xc4b5fd,      // Lavender haze
+        pearlColor: 0xfbbf24,     // Shimmering gold boba
+        pearlGripRoughness: 0.1,
+        toppingName: '⭐ Golden Star Boba',
+        sweetness: '🍯 50% Sweet',
+        ice: '🧊 Less Ice',
+        accentHex: '#7c3aed'
+      },
+      {
+        id: 'honeydew_melon_frost',
+        name: 'Honeydew Melon Frost',
+        category: 'Crisp Refresh',
+        desc: 'Sweet fragrant honeydew melon blended with fresh creamy milk and chewy aloe jelly pearls.',
+        teaColor: 0x65a30d,       // Sweet honeydew green
+        foamColor: 0xecfccb,      // Pale melon froth
+        pearlColor: 0x84cc16,     // Translucent green crystal boba
+        pearlGripRoughness: 0.15,
+        toppingName: '🍈 Crystal Aloe Boba',
+        sweetness: '🍯 70% Sweet',
+        ice: '🧊 Regular Ice',
+        accentHex: '#80b918'
+      },
+      {
+        id: 'roasted_peach_oolong',
+        name: 'Roasted Peach Oolong Cream',
+        category: 'Signature Roast',
+        desc: 'Charcoal-roasted mountain oolong tea infused with juicy summer peaches and cheese foam.',
+        teaColor: 0xa16207,       // Amber roasted tea
+        foamColor: 0xfef3c7,      // Salted cheese cream
+        pearlColor: 0x2e1d11,     // Roasted tapioca
+        pearlGripRoughness: 0.2,
+        toppingName: '🍑 Herbal Jelly & Tapioca',
+        sweetness: '🍯 30% Sweet',
+        ice: '🧊 Less Ice',
+        accentHex: '#d97706'
+      },
+      {
+        id: 'sakura_lychee_blossom',
+        name: 'Sakura Lychee Blossom Tea',
+        category: 'Floral Special',
+        desc: 'Delicate springtime cherry blossoms paired with juicy lychee and pastel ruby pearls.',
+        teaColor: 0xec4899,       // Soft blossom pink
+        foamColor: 0xfce7f3,      // Whipped rose cream
+        pearlColor: 0xf43f5e,     // Pink ruby pearls
+        pearlGripRoughness: 0.08,
+        toppingName: '🌸 Lychee Crystal Hearts',
+        sweetness: '🍯 50% Sweet',
+        ice: '🧊 Regular Ice',
+        accentHex: '#f472b6'
+      },
+      {
+        id: 'dark_cocoa_hazelnut',
+        name: 'Dark Cocoa Hazelnut Swirl',
+        category: 'Decadent Indulgence',
+        desc: 'Silky melted Dutch dark cocoa with roasted hazelnut cream and dense chocolate pearls.',
+        teaColor: 0x3e2723,       // Rich chocolate cocoa
+        foamColor: 0xd7ccc8,      // Hazelnut milk froth
+        pearlColor: 0x1a0c02,     // Cocoa tapioca
+        pearlGripRoughness: 0.25,
+        toppingName: '🍫 Chocolate Tapioca',
+        sweetness: '🍯 70% Sweet',
+        ice: '🧊 Less Ice',
+        accentHex: '#5d4037'
+      },
+      {
+        id: 'blueberry_lavender_mist',
+        name: 'Blueberry Lavender Mist',
+        category: 'Botanical Cloud',
+        desc: 'Soothing French lavender flowers steeped with wild blueberry nectar and purple popping boba.',
+        teaColor: 0x4c1d95,       // Deep royal violet
+        foamColor: 0xddd6fe,      // Lavender mist
+        pearlColor: 0x312e81,     // Wild blueberry boba
+        pearlGripRoughness: 0.1,
+        toppingName: '🫐 Blueberry Popping Boba',
+        sweetness: '🍯 50% Sweet',
+        ice: '🧊 Regular Ice',
+        accentHex: '#6d28d9'
+      }
+    ];
+
+    // State Variables & Storage
+    const STORAGE_KEY = 'boba_dream_save_v1';
+    let playerName = 'You (Boba Explorer)';
+    let activeLeaderboardTab = 'score';
+    let previousPlayerRank = null;
+
+    let currentFlavorIndex = 0;
+    let liquidLevel = 1.0;          // 1.0 = 100% full, 0.0 = empty
+    let isDrinking = false;
+    let isRefilling = false;
+    let sipsCount = 0;
+    let bobaSwallowedCount = 0;
+    let cupsCompleted = 0;
+    let unlockedFlavorIds = new Set(['tiger_brown_sugar']);
+    let audioMuted = false;
+
+    // Cafe Regulars (Leaderboard Competitors)
+    const CAFE_REGULARS = [
+      {
+        id: 'matcha_queen',
+        name: 'MatchaQueen',
+        avatar: '👑',
+        title: 'Matcha Supreme 🍵',
+        quote: 'Matcha is life!',
+        cups: 24,
+        boba: 512,
+        sips: 1040,
+        flavors: 11,
+        score: 18450
+      },
+      {
+        id: 'taro_fiend',
+        name: 'TaroBobaFiend',
+        avatar: '💜',
+        title: 'Mochi Master 🍡',
+        quote: 'Extra chewy taro pearls please!',
+        cups: 18,
+        boba: 380,
+        sips: 780,
+        flavors: 9,
+        score: 13900
+      },
+      {
+        id: 'tiger_stripes',
+        name: 'TigerStripes',
+        avatar: '🐯',
+        title: 'Sugar Artisan 🟤',
+        quote: 'Caramelized brown sugar forever.',
+        cups: 14,
+        boba: 310,
+        sips: 620,
+        flavors: 7,
+        score: 10750
+      },
+      {
+        id: 'slurp_champion',
+        name: 'SlurpChampion',
+        avatar: '⚡',
+        title: 'Speed Sipper 🥤',
+        quote: 'Fastest straw in the cafe!',
+        cups: 10,
+        boba: 220,
+        sips: 450,
+        flavors: 6,
+        score: 7850
+      },
+      {
+        id: 'barista_sam',
+        name: 'BaristaSam',
+        avatar: '☕',
+        title: 'Head Brewer ✨',
+        quote: 'Steeped to absolute perfection.',
+        cups: 7,
+        boba: 160,
+        sips: 320,
+        flavors: 5,
+        score: 5400
+      },
+      {
+        id: 'strawberry_sweetie',
+        name: 'StrawberrySweetie',
+        avatar: '🍓',
+        title: 'Fruit Tea Lover 💖',
+        quote: 'Popping boba are magical!',
+        cups: 4,
+        boba: 95,
+        sips: 210,
+        flavors: 4,
+        score: 3250
+      },
+      {
+        id: 'bubble_pup',
+        name: 'BubblePup',
+        avatar: '🐶',
+        title: 'Curious Sipper 🐾',
+        quote: 'Tail wags for every refill!',
+        cups: 2,
+        boba: 50,
+        sips: 105,
+        flavors: 2,
+        score: 1550
+      },
+      {
+        id: 'cozy_novice',
+        name: 'CozyNovice',
+        avatar: '🌱',
+        title: 'Boba Beginner 🐣',
+        quote: 'Just discovered the wonderful world of boba!',
+        cups: 1,
+        boba: 24,
+        sips: 48,
+        flavors: 1,
+        score: 650
+      }
+    ];
+
+    function calculatePlayerScore() {
+      return (cupsCompleted * 500) + 
+             (bobaSwallowedCount * 15) + 
+             (unlockedFlavorIds.size * 250) + 
+             Math.floor(sipsCount / 5);
+    }
+
+    function getPlayerTitle(score) {
+      if (score >= 15000) return 'Legendary Boba Royalty 👑';
+      if (score >= 10000) return 'Diamond Boba Master 💎';
+      if (score >= 5000) return 'Golden Tapioca Titan 🥇';
+      if (score >= 2500) return 'Silver Slurper 🥈';
+      if (score >= 1000) return 'Bronze Sipper 🥉';
+      return 'Boba Novice 🌱';
+    }
+
+    function saveGame() {
+      try {
+        const data = {
+          playerName,
+          cupsCompleted,
+          bobaSwallowedCount,
+          sipsCount,
+          unlockedFlavors: Array.from(unlockedFlavorIds)
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch(e) {}
+    }
+
+    function loadGame() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.playerName) playerName = data.playerName;
+          if (typeof data.cupsCompleted === 'number') cupsCompleted = data.cupsCompleted;
+          if (typeof data.bobaSwallowedCount === 'number') bobaSwallowedCount = data.bobaSwallowedCount;
+          if (typeof data.sipsCount === 'number') sipsCount = data.sipsCount;
+          if (Array.isArray(data.unlockedFlavors)) {
+            data.unlockedFlavors.forEach(id => unlockedFlavorIds.add(id));
+          }
+        }
+      } catch(e) {}
+    }
+
+    function getLeaderboardData(sortBy = 'score') {
+      const playerScore = calculatePlayerScore();
+      const playerEntry = {
+        id: 'player',
+        isPlayer: true,
+        name: playerName,
+        avatar: '🧋',
+        title: getPlayerTitle(playerScore),
+        quote: 'Loving every single sip! ✨',
+        cups: cupsCompleted,
+        boba: bobaSwallowedCount,
+        sips: Math.floor(sipsCount / 10),
+        flavors: unlockedFlavorIds.size,
+        score: playerScore
+      };
+
+      const list = [...CAFE_REGULARS, playerEntry];
+
+      if (sortBy === 'cups') {
+        list.sort((a, b) => b.cups - a.cups || b.score - a.score);
+      } else if (sortBy === 'boba') {
+        list.sort((a, b) => b.boba - a.boba || b.score - a.score);
+      } else {
+        list.sort((a, b) => b.score - a.score);
+      }
+
+      return list;
+    }
+
+    // Cup Physical Dimensions
+    const CUP_TOP_RADIUS = 1.35;
+    const CUP_BOTTOM_RADIUS = 0.95;
+    const CUP_HEIGHT = 4.2;
+    const CUP_Y_OFFSET = CUP_HEIGHT / 2;
+    const TOTAL_PEARLS = 42;
+
+    /* =========================================================================
+       2. PROCEDURAL WEB AUDIO SYNTHESIZER
+       ========================================================================= */
+    class BobaAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.slurpOsc = null;
+        this.slurpGain = null;
+        this.slurpNoiseNode = null;
+        this.isSlurpingAudio = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // Start continuous slurping sound loop with bubbly resonance
+      startSlurp() {
+        if (audioMuted) return;
+        this.init();
+        if (this.isSlurpingAudio) return;
+        this.isSlurpingAudio = true;
+
+        const ctx = this.ctx;
+        const now = ctx.currentTime;
+
+        // White noise generator for straw liquid turbulence
+        const bufferSize = ctx.sampleRate * 2;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        const whiteNoise = ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        // Bandpass filter to mimic straw resonance
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(650, now);
+        filter.Q.setValueAtTime(4.0, now);
+
+        // Low frequency oscillator to create bubbly gurgles
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(8 + Math.random() * 5, now);
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.setValueAtTime(320, now);
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
+
+        const mainGain = ctx.createGain();
+        mainGain.gain.setValueAtTime(0.001, now);
+        mainGain.gain.exponentialRampToValueAtTime(0.25, now + 0.15);
+
+        whiteNoise.connect(filter);
+        filter.connect(mainGain);
+        mainGain.connect(ctx.destination);
+
+        whiteNoise.start(now);
+        lfo.start(now);
+
+        this.slurpNodes = { whiteNoise, lfo, filter, mainGain };
+      }
+
+      stopSlurp() {
+        if (!this.isSlurpingAudio || !this.slurpNodes) return;
+        this.isSlurpingAudio = false;
+        const { whiteNoise, lfo, mainGain } = this.slurpNodes;
+        const now = this.ctx.currentTime;
+        mainGain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+        setTimeout(() => {
+          try {
+            whiteNoise.stop();
+            lfo.stop();
+            whiteNoise.disconnect();
+            lfo.disconnect();
+          } catch(e) {}
+        }, 120);
+        this.slurpNodes = null;
+      }
+
+      // Satisfying "pop-thwip" suction sound when a boba pearl shoots through straw
+      playPearlPop() {
+        if (audioMuted) return;
+        this.init();
+        const ctx = this.ctx;
+        const now = ctx.currentTime;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        // Pitch sweep from 220Hz up to 680Hz then snap down
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(740, now + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(320, now + 0.12);
+
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.13);
+      }
+
+      // Resonant crystal glass ice clinks
+      playIceClink() {
+        if (audioMuted) return;
+        this.init();
+        const ctx = this.ctx;
+        const now = ctx.currentTime;
+
+        const baseFreq = 2200 + Math.random() * 800;
+        const harmonics = [baseFreq, baseFreq * 1.52, baseFreq * 2.15];
+
+        harmonics.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+
+          const decay = 0.18 + idx * 0.05;
+          const vol = (0.15 / (idx + 1)) * (0.8 + Math.random() * 0.4);
+
+          gain.gain.setValueAtTime(vol, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + decay + 0.01);
+        });
+      }
+
+      // Pouring tea splash during refill
+      playPourSound() {
+        if (audioMuted) return;
+        this.init();
+        const ctx = this.ctx;
+        const now = ctx.currentTime;
+
+        const bufferSize = ctx.sampleRate * 2.2;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = noiseBuffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(400, now);
+        filter.frequency.linearRampToValueAtTime(1400, now + 1.8);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.28, now + 0.4);
+        gain.gain.linearRampToValueAtTime(0.22, now + 1.6);
+        gain.gain.linearRampToValueAtTime(0.001, now + 2.2);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        noise.start(now);
+        noise.stop(now + 2.25);
+      }
+
+      // Celebratory fanfare arpeggio on fresh refill
+      playFanfare() {
+        if (audioMuted) return;
+        this.init();
+        const ctx = this.ctx;
+        const now = ctx.currentTime;
+
+        // C Major pentatonic chime: C5, E5, G5, A5, C6
+        const notes = [523.25, 659.25, 783.99, 880.00, 1046.50];
+
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const noteStart = now + i * 0.08;
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, noteStart);
+
+          gain.gain.setValueAtTime(0.001, noteStart);
+          gain.gain.linearRampToValueAtTime(0.2, noteStart + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.7);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(noteStart);
+          osc.stop(noteStart + 0.75);
+        });
+      }
+    }
+
+    const audio = new BobaAudioEngine();
+
+    /* =========================================================================
+       3. THREE.JS 3D SCENE SETUP
+       ========================================================================= */
+    const container = document.getElementById('webgl-container');
+    if (typeof THREE === 'undefined') {
+      container.innerHTML = `
+        <div style="display:grid;place-items:center;height:100%;text-align:center;padding:2rem;">
+          <div style="background:white;padding:2rem;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.1);max-width:420px;">
+            <div style="font-size:3.5rem;margin-bottom:1rem;">🧋</div>
+            <h2 style="margin-bottom:0.5rem;font-family:'Plus Jakarta Sans',sans-serif;">Loading 3D Boba Dream...</h2>
+            <p style="color:#7d6b5e;font-size:0.9rem;">Please check your connection so Three.js 3D assets can load.</p>
+          </div>
+        </div>
+      `;
+      throw new Error('Three.js library failed to load.');
+    }
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xf5ebe0, 0.035);
+
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 3.2, 7.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    container.appendChild(renderer.domElement);
+
+    // Orbit Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 4.0;
+    controls.maxDistance = 12.0;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05; // Don't orbit below table level
+    controls.target.set(0, CUP_Y_OFFSET, 0);
+
+    /* =========================================================================
+       4. LIGHTING & ENVIRONMENT
+       ========================================================================= */
+    // Warm key light
+    const keyLight = new THREE.DirectionalLight(0xfff5eb, 1.25);
+    keyLight.position.set(4, 8, 5);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 20;
+    keyLight.shadow.bias = -0.001;
+    scene.add(keyLight);
+
+    // Cool soft rim light from behind
+    const rimLight = new THREE.DirectionalLight(0xe0f2fe, 0.7);
+    rimLight.position.set(-4, 5, -4);
+    scene.add(rimLight);
+
+    // Warm ambient light
+    const ambientLight = new THREE.AmbientLight(0xfffaed, 0.65);
+    scene.add(ambientLight);
+
+    /* =========================================================================
+       5. CAFE TABLE & ROOM ENVIRONMENT
+       ========================================================================= */
+    // Circular wooden table top
+    const tableGeo = new THREE.CylinderGeometry(4.2, 4.4, 0.4, 64);
+    const tableMat = new THREE.MeshStandardMaterial({
+      color: 0xdeb887,
+      roughness: 0.6,
+      metalness: 0.05
+    });
+    const tableMesh = new THREE.Mesh(tableGeo, tableMat);
+    tableMesh.position.y = -0.2;
+    tableMesh.receiveShadow = true;
+    scene.add(tableMesh);
+
+    // Cozy drink coaster underneath cup
+    const coasterGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.04, 32);
+    const coasterMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.4,
+      metalness: 0.0
+    });
+    const coasterMesh = new THREE.Mesh(coasterGeo, coasterMat);
+    coasterMesh.position.y = 0.02;
+    coasterMesh.receiveShadow = true;
+    scene.add(coasterMesh);
+
+    /* =========================================================================
+       6. 3D BOBA CUP & STRAW ASSEMBLY
+       ========================================================================= */
+    const cupGroup = new THREE.Group();
+    scene.add(cupGroup);
+
+    // 1. Transparent Acrylic Cup Body
+    const cupBodyGeo = new THREE.CylinderGeometry(
+      CUP_TOP_RADIUS,
+      CUP_BOTTOM_RADIUS,
+      CUP_HEIGHT,
+      48,
+      1,
+      true // open-ended cylinder
+    );
+    const cupMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.28,
+      roughness: 0.08,
+      metalness: 0.1,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      transmission: 0.85,
+      ior: 1.45,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const cupMesh = new THREE.Mesh(cupBodyGeo, cupMaterial);
+    cupMesh.position.y = CUP_Y_OFFSET;
+    cupGroup.add(cupMesh);
+
+    // 2. Cup Curved Bottom Disk
+    const cupBottomGeo = new THREE.CylinderGeometry(CUP_BOTTOM_RADIUS, CUP_BOTTOM_RADIUS * 0.95, 0.1, 48);
+    const cupBottomMesh = new THREE.Mesh(cupBottomGeo, cupMaterial);
+    cupBottomMesh.position.y = 0.05;
+    cupGroup.add(cupBottomMesh);
+
+    // 3. Smooth Rolled Rim Lip at Top
+    const rimGeo = new THREE.TorusGeometry(CUP_TOP_RADIUS, 0.05, 16, 48);
+    rimGeo.rotateX(Math.PI / 2);
+    const rimMesh = new THREE.Mesh(rimGeo, cupMaterial);
+    rimMesh.position.y = CUP_HEIGHT;
+    cupGroup.add(rimMesh);
+
+    // 4. Sealed Cup Dome Lid with Hole for Straw
+    const lidGeo = new THREE.SphereGeometry(CUP_TOP_RADIUS * 1.02, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.42);
+    const lidMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.4,
+      roughness: 0.15,
+      clearcoat: 0.9,
+      transmission: 0.7,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const lidMesh = new THREE.Mesh(lidGeo, lidMat);
+    lidMesh.position.y = CUP_HEIGHT - 0.1;
+    cupGroup.add(lidMesh);
+
+    // 5. Cup Cafe Logo Sticker (Procedural Canvas Texture)
+    function createCupLogoTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      // Circular sticker badge background
+      ctx.beginPath();
+      ctx.arc(256, 256, 220, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.fill();
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = '#c68a4c';
+      ctx.stroke();
+
+      // Dotted inner ring
+      ctx.beginPath();
+      ctx.arc(256, 256, 195, 0, Math.PI * 2);
+      ctx.setLineDash([8, 8]);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#8c5826';
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Cute Boba Icon
+      ctx.font = '110px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🧋', 256, 200);
+
+      // Title Text
+      ctx.font = 'bold 44px sans-serif';
+      ctx.fillStyle = '#3d2b1f';
+      ctx.fillText('BOBA DREAM', 256, 290);
+
+      ctx.font = '500 24px sans-serif';
+      ctx.fillStyle = '#8c5826';
+      ctx.fillText('★ Freshly Brewed ★', 256, 335);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
+    }
+
+    const stickerGeo = new THREE.PlaneGeometry(1.2, 1.2);
+    const stickerMat = new THREE.MeshBasicMaterial({
+      map: createCupLogoTexture(),
+      transparent: true,
+      opacity: 0.92,
+      side: THREE.DoubleSide
+    });
+    const stickerMesh = new THREE.Mesh(stickerGeo, stickerMat);
+    stickerMesh.position.set(0, CUP_Y_OFFSET + 0.1, CUP_TOP_RADIUS * 0.92);
+    cupGroup.add(stickerMesh);
+
+    // 6. Angled Boba Straw
+    const STRAW_RADIUS = 0.14;
+    const STRAW_LENGTH = 5.6;
+    const strawGeo = new THREE.CylinderGeometry(STRAW_RADIUS, STRAW_RADIUS, STRAW_LENGTH, 32);
+    const strawMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.55,           // Semi-translucent so we can see pearls suctioning inside!
+      roughness: 0.15,
+      metalness: 0.05,
+      clearcoat: 0.8,
+      transmission: 0.5,
+      side: THREE.DoubleSide
+    });
+    const strawMesh = new THREE.Mesh(strawGeo, strawMat);
+    // Position straw tilted nicely through lid down into the pearls
+    const strawTiltAngle = 0.16; // radians
+    strawMesh.rotation.z = strawTiltAngle;
+    strawMesh.position.set(-0.25, 2.5, 0);
+    cupGroup.add(strawMesh);
+
+    // Calculate Straw Bottom & Top in Cup Coordinates
+    const strawCenterY = 2.5;
+    const strawCenterX = -0.25;
+    const halfLen = STRAW_LENGTH / 2; // 2.8
+    // bottom point (just above bottom floor inside boba pile):
+    const strawBottomX = strawCenterX + Math.sin(strawTiltAngle) * (halfLen - 0.55);
+    const strawBottomY = strawCenterY - Math.cos(strawTiltAngle) * (halfLen - 0.55);
+    // top point (poking out above dome lid):
+    const strawTopX = strawCenterX - Math.sin(strawTiltAngle) * (halfLen - 0.3);
+    const strawTopY = strawCenterY + Math.cos(strawTiltAngle) * (halfLen - 0.3);
+
+    /* =========================================================================
+       7. DYNAMIC 3D LIQUID MESH & RICH COLORED SURFACE
+       ========================================================================= */
+    const liquidGroup = new THREE.Group();
+    cupGroup.add(liquidGroup);
+
+    // Procedural Rich Liquid Surface Canvas Texture (Foam Swirls + Meniscus Ring)
+    function createSurfaceTexture(flavor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      const cx = 256, cy = 256, r = 256;
+
+      const teaHex = '#' + flavor.teaColor.toString(16).padStart(6, '0');
+      const foamHex = '#' + flavor.foamColor.toString(16).padStart(6, '0');
+      const accentHex = flavor.accentHex;
+
+      // Base vibrant tea color
+      ctx.fillStyle = teaHex;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Radial gradient for depth: soft foam center, vibrant tea body, rich dark meniscus edge
+      const grad = ctx.createRadialGradient(cx, cy, 30, cx, cy, r);
+      grad.addColorStop(0, foamHex);
+      grad.addColorStop(0.35, accentHex);
+      grad.addColorStop(0.75, teaHex);
+      grad.addColorStop(1.0, '#1c110a'); // Darker liquid meniscus rim at the cup wall
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Cream foam ripples and swirls
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(0.35);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.42)';
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(0, 0, 140, 0.2, Math.PI * 1.4);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+      ctx.lineWidth = 18;
+      ctx.beginPath();
+      ctx.arc(15, -10, 185, 2.0, Math.PI * 1.85);
+      ctx.stroke();
+
+      // Delicate inner foam swirl
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(-10, 10, 75, 1.0, Math.PI * 1.9);
+      ctx.stroke();
+
+      ctx.restore();
+
+      // Micro bubbles on top surface
+      const bubbles = [
+        [cx - 80, cy - 60, 14], [cx + 100, cy + 40, 18], [cx - 40, cy + 120, 12],
+        [cx + 70, cy - 100, 16], [cx - 120, cy + 30, 11], [cx + 30, cy + 80, 13],
+        [cx + 130, cy - 40, 10], [cx - 90, cy - 110, 12], [cx + 40, cy - 140, 9]
+      ];
+      for (const [bx, by, br] of bubbles) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.beginPath();
+        ctx.arc(bx, by, br + 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.generateMipmaps = true;
+      return texture;
+    }
+
+    // Liquid Cylinder Material
+    const liquidMaterial = new THREE.MeshStandardMaterial({
+      color: FLAVORS[0].teaColor,
+      roughness: 0.25,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.92,
+      side: THREE.DoubleSide
+    });
+
+    // Rich Surface Disc Material (Single solid cap, NO z-fighting)
+    let surfaceTexture = createSurfaceTexture(FLAVORS[0]);
+    const surfaceMaterial = new THREE.MeshStandardMaterial({
+      map: surfaceTexture,
+      roughness: 0.25,
+      metalness: 0.05,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1
+    });
+
+    function updateSurfaceTexture(flavor) {
+      if (surfaceTexture) surfaceTexture.dispose();
+      surfaceTexture = createSurfaceTexture(flavor);
+      surfaceMaterial.map = surfaceTexture;
+      surfaceMaterial.needsUpdate = true;
+    }
+
+    let liquidMesh = null;
+    let surfaceMesh = null;
+
+    function buildLiquidGeometry(level) {
+      if (liquidMesh) liquidGroup.remove(liquidMesh);
+      if (surfaceMesh) liquidGroup.remove(surfaceMesh);
+
+      if (level <= 0.01) return;
+
+      const currentH = Math.max(0.04, (CUP_HEIGHT - 0.4) * level);
+      const rBottom = CUP_BOTTOM_RADIUS * 0.96;
+      // Interpolate top radius based on height
+      const t = currentH / (CUP_HEIGHT - 0.4);
+      const rTop = THREE.MathUtils.lerp(rBottom, CUP_TOP_RADIUS * 0.96, t);
+
+      // Open-ended cylinder: NO top face, completely eliminating z-fighting glitch!
+      const geo = new THREE.CylinderGeometry(rTop, rBottom, currentH, 48, 1, true);
+      liquidMesh = new THREE.Mesh(geo, liquidMaterial);
+      liquidMesh.position.y = 0.15 + currentH / 2;
+      liquidGroup.add(liquidMesh);
+
+      // Single rich, colored surface disc at the liquid level
+      const surfaceGeo = new THREE.CircleGeometry(rTop * 0.99, 48);
+      surfaceGeo.rotateX(-Math.PI / 2);
+      surfaceMesh = new THREE.Mesh(surfaceGeo, surfaceMaterial);
+      surfaceMesh.position.y = 0.15 + currentH;
+      liquidGroup.add(surfaceMesh);
+    }
+
+    buildLiquidGeometry(liquidLevel);
+
+    /* =========================================================================
+       8. 3D BOBA PEARLS SYSTEM WITH REAL GRAVITY & STRAW SUCTION PHYSICS
+       ========================================================================= */
+    const PEARL_RADIUS = 0.125;
+    const pearlGeo = new THREE.SphereGeometry(PEARL_RADIUS, 18, 18);
+    const pearlMaterial = new THREE.MeshStandardMaterial({
+      color: FLAVORS[0].pearlColor,
+      roughness: FLAVORS[0].pearlGripRoughness,
+      metalness: 0.1
+    });
+
+    const pearls = [];
+
+    class BobaPearl {
+      constructor(idx) {
+        this.mesh = new THREE.Mesh(pearlGeo, pearlMaterial);
+        cupGroup.add(this.mesh);
+
+        this.idx = idx;
+        this.state = 'IN_CUP'; // 'IN_CUP', 'TRAVELING_STRAW', 'CONSUMED', 'FALLING_IN'
+        this.strawProgress = 0; // 0 (bottom) to 1 (top of straw)
+
+        this.pos = new THREE.Vector3();
+        this.vel = new THREE.Vector3();
+        this.jiggleTime = Math.random() * 10;
+
+        this.resetPosition();
+      }
+
+      resetPosition() {
+        this.state = 'IN_CUP';
+        this.mesh.visible = true;
+        this.strawProgress = 0;
+
+        // Distribute pearls naturally inside cup bottom
+        const angle = Math.random() * Math.PI * 2;
+        const maxR = CUP_BOTTOM_RADIUS * 0.65;
+        const r = Math.sqrt(Math.random()) * maxR;
+        const layer = Math.floor(Math.random() * 3);
+
+        this.pos.set(
+          Math.cos(angle) * r,
+          0.18 + PEARL_RADIUS + layer * (PEARL_RADIUS * 1.8) + (Math.random() * 0.04),
+          Math.sin(angle) * r
+        );
+        this.vel.set(0, 0, 0);
+        this.mesh.position.copy(this.pos);
+      }
+
+      startRefillDrop() {
+        this.state = 'FALLING_IN';
+        this.mesh.visible = true;
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.random() * 0.4;
+        this.pos.set(
+          Math.cos(angle) * r,
+          CUP_HEIGHT + 0.8 + Math.random() * 2.8,
+          Math.sin(angle) * r
+        );
+        this.vel.set(
+          (Math.random() - 0.5) * 0.3,
+          -(1.5 + Math.random() * 2.0),
+          (Math.random() - 0.5) * 0.3
+        );
+        this.mesh.position.copy(this.pos);
+      }
+
+      startStrawSuction() {
+        if (this.state !== 'IN_CUP') return;
+        this.state = 'TRAVELING_STRAW';
+        this.strawProgress = 0;
+        audio.playPearlPop();
+      }
+
+      update(dt, currentLiquidLevel) {
+        if (this.state === 'CONSUMED') return;
+
+        if (this.state === 'TRAVELING_STRAW') {
+          // Rapid travel up along the straw axis
+          this.strawProgress += dt * 3.0; // ~0.33s to shoot up the straw
+          if (this.strawProgress >= 1.0) {
+            this.state = 'CONSUMED';
+            this.mesh.visible = false;
+            bobaSwallowedCount++;
+            updateStatsUI();
+            spawnFloatingSlurpText('+1 Boba! 🧋');
+          } else {
+            const px = THREE.MathUtils.lerp(strawBottomX, strawTopX, this.strawProgress);
+            const py = THREE.MathUtils.lerp(strawBottomY, strawTopY, this.strawProgress);
+            this.pos.set(px, py, 0);
+            this.mesh.position.copy(this.pos);
+          }
+          return;
+        }
+
+        // Active in cup or falling in
+        this.jiggleTime += dt * 3;
+
+        // Calculate current liquid surface level
+        const surfaceY = currentLiquidLevel > 0.01 
+          ? (0.15 + (CUP_HEIGHT - 0.4) * currentLiquidLevel) 
+          : 0.0;
+
+        // Is this pearl submerged in liquid or exposed to air?
+        const submerged = this.pos.y < surfaceY;
+
+        if (!submerged) {
+          // EXPOSED TO AIR (when pearl is not in liquid):
+          // Realistic downward gravity acceleration!
+          this.vel.y -= 22.0 * dt;
+          // Air resistance damping
+          const airDamp = Math.pow(0.96, dt * 60);
+          this.vel.x *= airDamp;
+          this.vel.z *= airDamp;
+        } else {
+          // SUBMERGED IN TEA:
+          // Slower downward gravity due to buoyancy + viscous liquid damping
+          this.vel.y -= 4.5 * dt;
+          const fluidDamp = Math.pow(0.82, dt * 60);
+          this.vel.x *= fluidDamp;
+          this.vel.y *= fluidDamp;
+          this.vel.z *= fluidDamp;
+
+          // Subtle Brownian drift while floating in tea
+          this.vel.x += Math.sin(this.jiggleTime + this.pos.z) * 0.03 * dt;
+          this.vel.z += Math.cos(this.jiggleTime + this.pos.x) * 0.03 * dt;
+        }
+
+        // Apply velocity to position
+        this.pos.x += this.vel.x * dt;
+        this.pos.y += this.vel.y * dt;
+        this.pos.z += this.vel.z * dt;
+
+        // Cup Floor Collision
+        const floorY = 0.18 + PEARL_RADIUS;
+        if (this.pos.y <= floorY) {
+          this.pos.y = floorY;
+          if (this.vel.y < -0.3) {
+            this.vel.y = -this.vel.y * 0.22; // slight elastic bounce
+          } else {
+            this.vel.y = 0;
+          }
+          // Floor friction
+          this.vel.x *= 0.85;
+          this.vel.z *= 0.85;
+
+          if (this.state === 'FALLING_IN') {
+            this.state = 'IN_CUP';
+            audio.playPearlPop();
+          }
+        }
+
+        // Tapered Cup Wall Collision
+        const normY = Math.max(0, Math.min(1, (this.pos.y - 0.15) / CUP_HEIGHT));
+        const cupRadiusAtY = THREE.MathUtils.lerp(CUP_BOTTOM_RADIUS * 0.94, CUP_TOP_RADIUS * 0.94, normY);
+        const maxR = Math.max(0.05, cupRadiusAtY - PEARL_RADIUS);
+
+        const r = Math.hypot(this.pos.x, this.pos.z);
+        if (r > maxR) {
+          const nx = this.pos.x / r;
+          const nz = this.pos.z / r;
+          this.pos.x = nx * maxR;
+          this.pos.z = nz * maxR;
+
+          // Reflect horizontal velocity with friction
+          const dot = this.vel.x * nx + this.vel.z * nz;
+          if (dot > 0) {
+            this.vel.x -= 1.35 * dot * nx;
+            this.vel.z -= 1.35 * dot * nz;
+          }
+        }
+
+        this.mesh.position.copy(this.pos);
+      }
+    }
+
+    // Resolve pearl-to-pearl collisions & natural stacking physics
+    function resolvePearlCollisions() {
+      const minDist = PEARL_RADIUS * 2.0;
+      const minDistSq = minDist * minDist;
+      const len = pearls.length;
+
+      for (let i = 0; i < len; i++) {
+        const p1 = pearls[i];
+        if (p1.state !== 'IN_CUP' && p1.state !== 'FALLING_IN') continue;
+
+        for (let j = i + 1; j < len; j++) {
+          const p2 = pearls[j];
+          if (p2.state !== 'IN_CUP' && p2.state !== 'FALLING_IN') continue;
+
+          const dx = p2.pos.x - p1.pos.x;
+          const dy = p2.pos.y - p1.pos.y;
+          const dz = p2.pos.z - p1.pos.z;
+          const distSq = dx * dx + dy * dy + dz * dz;
+
+          if (distSq < minDistSq && distSq > 0.00001) {
+            const dist = Math.sqrt(distSq);
+            const overlap = (minDist - dist) * 0.5;
+            const nx = dx / dist;
+            const ny = dy / dist;
+            const nz = dz / dist;
+
+            // Push apart along contact normal
+            p1.pos.x -= nx * overlap;
+            p1.pos.y -= ny * overlap;
+            p1.pos.z -= nz * overlap;
+
+            p2.pos.x += nx * overlap;
+            p2.pos.y += ny * overlap;
+            p2.pos.z += nz * overlap;
+
+            // Momentum transfer
+            const relV = (p1.vel.x - p2.vel.x) * nx +
+                         (p1.vel.y - p2.vel.y) * ny +
+                         (p1.vel.z - p2.vel.z) * nz;
+            if (relV > 0) {
+              const impulse = relV * 0.35;
+              p1.vel.x -= nx * impulse;
+              p1.vel.y -= ny * impulse;
+              p1.vel.z -= nz * impulse;
+              p2.vel.x += nx * impulse;
+              p2.vel.y += ny * impulse;
+              p2.vel.z += nz * impulse;
+            }
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < TOTAL_PEARLS; i++) {
+      pearls.push(new BobaPearl(i));
+    }
+
+    /* =========================================================================
+       9. 3D FLOATING ICE CUBES
+       ========================================================================= */
+    const iceCubes = [];
+    const ICE_SIZE = 0.55;
+    const iceGeo = new THREE.BoxGeometry(ICE_SIZE, ICE_SIZE, ICE_SIZE);
+    const iceMat = new THREE.MeshPhysicalMaterial({
+      color: 0xe0f2fe,
+      transparent: true,
+      opacity: 0.65,
+      roughness: 0.1,
+      metalness: 0.05,
+      clearcoat: 1.0,
+      transmission: 0.75,
+      ior: 1.31
+    });
+
+    class IceCube {
+      constructor(idx) {
+        this.mesh = new THREE.Mesh(iceGeo, iceMat);
+        cupGroup.add(this.mesh);
+
+        this.idx = idx;
+        const angle = (idx / 5) * Math.PI * 2 + Math.random() * 0.5;
+        const r = 0.35 + Math.random() * 0.3;
+        this.offsetX = Math.cos(angle) * r;
+        this.offsetZ = Math.sin(angle) * r;
+        this.bobOffset = Math.random() * Math.PI * 2;
+        this.rotSpeedX = (Math.random() - 0.5) * 0.5;
+        this.rotSpeedY = (Math.random() - 0.5) * 0.5;
+
+        this.mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+      }
+
+      update(dt, currentLiquidLevel) {
+        if (currentLiquidLevel <= 0.05) {
+          // Ice rests at bottom when cup is empty
+          this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, 0.45, 0.1);
+          return;
+        }
+
+        // Float on liquid surface
+        const surfaceY = 0.15 + (CUP_HEIGHT - 0.4) * currentLiquidLevel;
+        const targetY = surfaceY - (ICE_SIZE * 0.4) + Math.sin(Date.now() * 0.003 + this.bobOffset) * 0.04;
+
+        this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, targetY, 0.1);
+        this.mesh.position.x = this.offsetX;
+        this.mesh.position.z = this.offsetZ;
+
+        this.mesh.rotation.x += this.rotSpeedX * dt;
+        this.mesh.rotation.y += this.rotSpeedY * dt;
+      }
+    }
+
+    for (let i = 0; i < 5; i++) {
+      iceCubes.push(new IceCube(i));
+    }
+
+    /* =========================================================================
+       10. 3D REFILL POURING STREAM PARTICLES
+       ========================================================================= */
+    const pourStreamGeo = new THREE.CylinderGeometry(0.12, 0.16, 6.0, 16);
+    const pourStreamMat = new THREE.MeshStandardMaterial({
+      color: FLAVORS[0].teaColor,
+      transparent: true,
+      opacity: 0,
+      roughness: 0.3
+    });
+    const pourStreamMesh = new THREE.Mesh(pourStreamGeo, pourStreamMat);
+    pourStreamMesh.position.set(0, CUP_HEIGHT + 2.5, 0);
+    scene.add(pourStreamMesh);
+
+    /* =========================================================================
+       11. DRINKING & REFILL GAME LOOP LOGIC
+       ========================================================================= */
+    let lastPearlSuctionTime = 0;
+
+    function handleDrinking(dt) {
+      if (!isDrinking || isRefilling) return;
+
+      if (liquidLevel > 0) {
+        // Decrease liquid volume gradually
+        liquidLevel -= dt * 0.12; // Full cup takes ~8 seconds of continuous sipping
+        if (liquidLevel < 0) liquidLevel = 0;
+        buildLiquidGeometry(liquidLevel);
+        updateLiquidLevelUI();
+
+        // Increment sips
+        sipsCount++;
+        updateStatsUI();
+
+        // Periodic straw suction for remaining boba pearls
+        const now = Date.now();
+        if (now - lastPearlSuctionTime > 340) { // every ~340ms of drinking
+          lastPearlSuctionTime = now;
+
+          // Find closest pearl to the straw base
+          let closestPearl = null;
+          let minD = Infinity;
+          for (const p of pearls) {
+            if (p.state === 'IN_CUP') {
+              const d = Math.hypot(p.pos.x - strawBottomX, p.pos.y - strawBottomY, p.pos.z);
+              if (d < minD) {
+                minD = d;
+                closestPearl = p;
+              }
+            }
+          }
+
+          if (closestPearl) {
+            closestPearl.startStrawSuction();
+          }
+        }
+
+        // Hide interaction hint on first drink
+        const hint = document.getElementById('interactionHint');
+        if (hint && !hint.classList.contains('hidden')) {
+          hint.classList.add('hidden');
+        }
+      }
+
+      // Check if cup is finished!
+      if (liquidLevel <= 0) {
+        const remainingPearls = pearls.filter(p => p.state === 'IN_CUP' || p.state === 'TRAVELING_STRAW');
+        if (remainingPearls.length === 0 && !isRefilling) {
+          triggerCupFinished();
+        }
+      }
+    }
+
+    function triggerCupFinished() {
+      if (isRefilling) return;
+      isRefilling = true;
+      audio.stopSlurp();
+
+      // Confetti celebration!
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+
+      cupsCompleted++;
+      updateStatsUI();
+      spawnFloatingSlurpText('🎉 CUP FINISHED! 🎉');
+
+      // Begin 3D Refill sequence after short breath
+      setTimeout(() => {
+        executeRefillSequence();
+      }, 900);
+    }
+
+    function executeRefillSequence(targetIndex = null) {
+      isRefilling = true;
+      audio.stopSlurp();
+
+      // Determine next flavor
+      if (targetIndex !== null) {
+        currentFlavorIndex = targetIndex;
+      } else {
+        currentFlavorIndex = (currentFlavorIndex + 1) % FLAVORS.length;
+      }
+
+      const nextFlavor = FLAVORS[currentFlavorIndex];
+      unlockedFlavorIds.add(nextFlavor.id);
+
+      // Phase 1: Update Material Colors & Rich Surface Texture
+      liquidMaterial.color.setHex(nextFlavor.teaColor);
+      updateSurfaceTexture(nextFlavor);
+      pearlMaterial.color.setHex(nextFlavor.pearlColor);
+      pearlMaterial.roughness = nextFlavor.pearlGripRoughness;
+      pourStreamMat.color.setHex(nextFlavor.teaColor);
+
+      // Phase 2: Boba Pearls Cascade In
+      pearls.forEach(p => p.startRefillDrop());
+
+      // Phase 3: Pouring Stream Animation & Sound
+      audio.playPourSound();
+      pourStreamMat.opacity = 0.85;
+
+      let refillProgress = 0;
+      const refillDuration = 2.2; // seconds
+      const startTime = performance.now();
+
+      function animateRefill(now) {
+        const elapsed = (now - startTime) / 1000;
+        refillProgress = Math.min(1.0, elapsed / refillDuration);
+
+        // Raise liquid level smoothly
+        liquidLevel = refillProgress;
+        buildLiquidGeometry(liquidLevel);
+        updateLiquidLevelUI();
+
+        // Shake cup slightly while filling with tea
+        cupGroup.position.x = Math.sin(now * 0.05) * 0.03 * (1 - refillProgress);
+
+        if (refillProgress < 1.0) {
+          requestAnimationFrame(animateRefill);
+        } else {
+          // Refill Complete!
+          pourStreamMat.opacity = 0;
+          cupGroup.position.x = 0;
+          liquidLevel = 1.0;
+          buildLiquidGeometry(liquidLevel);
+          updateLiquidLevelUI();
+
+          // Ice Clinks & Fanfare
+          audio.playIceClink();
+          setTimeout(() => audio.playFanfare(), 150);
+
+          // Confetti burst for new flavor
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 50,
+              spread: 60,
+              colors: [nextFlavor.accentHex, '#ffffff', '#deb887'],
+              origin: { y: 0.55 }
+            });
+          }
+
+          // Show flavor celebration banner
+          showAnnouncementBanner(nextFlavor);
+          updateFlavorCardUI(nextFlavor);
+          isRefilling = false;
+        }
+      }
+
+      requestAnimationFrame(animateRefill);
+    }
+
+    // Shake Cup physics & clink SFX
+    function shakeCup() {
+      if (isRefilling) return;
+      audio.playIceClink();
+
+      // Give physics pearls an upward and lateral impulse!
+      pearls.forEach(p => {
+        if (p.state === 'IN_CUP') {
+          p.vel.x += (Math.random() - 0.5) * 2.4;
+          p.vel.y += 1.4 + Math.random() * 2.2;
+          p.vel.z += (Math.random() - 0.5) * 2.4;
+        }
+      });
+
+      const startTime = performance.now();
+      const duration = 400; // ms
+
+      function animateShake(now) {
+        const elapsed = now - startTime;
+        if (elapsed < duration) {
+          const intensity = (1 - elapsed / duration) * 0.15;
+          cupGroup.rotation.z = Math.sin(elapsed * 0.06) * intensity;
+          cupGroup.position.x = Math.cos(elapsed * 0.08) * intensity;
+          requestAnimationFrame(animateShake);
+        } else {
+          cupGroup.rotation.z = 0;
+          cupGroup.position.x = 0;
+        }
+      }
+      requestAnimationFrame(animateShake);
+    }
+
+    /* =========================================================================
+       12. FLOATING TEXT & HUD NOTIFICATIONS
+       ========================================================================= */
+    function spawnFloatingSlurpText(text) {
+      const el = document.createElement('div');
+      el.className = 'slurp-float-text';
+      el.textContent = text;
+      el.style.left = `${window.innerWidth / 2 + (Math.random() - 0.5) * 100}px`;
+      el.style.top = `${window.innerHeight * 0.38 + (Math.random() - 0.5) * 60}px`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1200);
+    }
+
+    function showAnnouncementBanner(flavor) {
+      const banner = document.getElementById('announcementBanner');
+      document.getElementById('announcedFlavorTitle').textContent = flavor.name;
+      document.getElementById('announcedFlavorDesc').textContent = flavor.desc;
+      banner.classList.add('show');
+    }
+
+    document.getElementById('enjoyNewCupBtn').addEventListener('click', () => {
+      document.getElementById('announcementBanner').classList.remove('show');
+    });
+
+    /* =========================================================================
+       13. UI BINDINGS & STATE CONTROLS
+       ========================================================================= */
+    const drinkBtn = document.getElementById('drinkBtn');
+    const drinkBtnLabel = document.getElementById('drinkBtnLabel');
+    const levelFillBar = document.getElementById('levelFillBar');
+    const levelPercentText = document.getElementById('levelPercentText');
+
+    function startDrinking() {
+      if (isRefilling) return;
+      isDrinking = true;
+      drinkBtn.classList.add('sipping');
+      drinkBtnLabel.textContent = 'SIPPING...';
+      audio.startSlurp();
+      if (navigator.vibrate) {
+        try { navigator.vibrate(15); } catch(e) {}
+      }
+    }
+
+    function stopDrinking() {
+      isDrinking = false;
+      drinkBtn.classList.remove('sipping');
+      drinkBtnLabel.textContent = 'DRINK';
+      audio.stopSlurp();
+    }
+
+    // Touch & Mouse bindings for main drink button
+    drinkBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startDrinking(); });
+    window.addEventListener('mouseup', () => stopDrinking());
+
+    drinkBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startDrinking(); }, { passive: false });
+    window.addEventListener('touchend', () => stopDrinking());
+
+    // Spacebar drinking
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.repeat && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        startDrinking();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        stopDrinking();
+      }
+    });
+
+    // Shake Button
+    document.getElementById('shakeBtn').addEventListener('click', () => {
+      shakeCup();
+    });
+
+    // Refill / Next Flavor Button
+    document.getElementById('refillBtn').addEventListener('click', () => {
+      executeRefillSequence();
+    });
+
+    // Reset Camera
+    document.getElementById('resetCamBtn').addEventListener('click', () => {
+      camera.position.set(0, 3.2, 7.2);
+      controls.target.set(0, CUP_Y_OFFSET, 0);
+      controls.update();
+    });
+
+    // Audio Toggle
+    const audioBtn = document.getElementById('audioToggleBtn');
+    audioBtn.addEventListener('click', () => {
+      audioMuted = !audioMuted;
+      audioBtn.textContent = audioMuted ? '🔇' : '🔊';
+      if (audioMuted) audio.stopSlurp();
+    });
+
+    function updateLiquidLevelUI() {
+      const pct = Math.round(liquidLevel * 100);
+      levelFillBar.style.width = `${pct}%`;
+      levelPercentText.textContent = `${pct}%`;
+    }
+
+    function updateStatsUI() {
+      document.getElementById('cupsCountText').textContent = cupsCompleted;
+      document.getElementById('bobaCountText').textContent = bobaSwallowedCount;
+      const score = calculatePlayerScore();
+      document.getElementById('pointsCountText').textContent = score.toLocaleString();
+
+      checkRankProgression();
+      saveGame();
+    }
+
+    function checkRankProgression() {
+      const list = getLeaderboardData('score');
+      const playerIndex = list.findIndex(e => e.isPlayer);
+      const currentRank = playerIndex + 1;
+
+      const rankEl = document.getElementById('rankText');
+      if (rankEl) rankEl.textContent = `#${currentRank}`;
+
+      if (previousPlayerRank === null) {
+        previousPlayerRank = currentRank;
+      } else if (currentRank < previousPlayerRank) {
+        // Player overtook someone and ranked up!
+        previousPlayerRank = currentRank;
+        audio.playFanfare();
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 70,
+            spread: 80,
+            origin: { y: 0.5 }
+          });
+        }
+        spawnFloatingSlurpText(`🏆 RANK UP! You're now #${currentRank}!`);
+      } else {
+        previousPlayerRank = currentRank;
+      }
+    }
+
+    function updateFlavorCardUI(flavor) {
+      document.documentElement.style.setProperty('--flavor-accent', flavor.accentHex);
+      document.getElementById('flavorCategory').textContent = flavor.category;
+      document.getElementById('flavorName').textContent = flavor.name;
+      document.getElementById('flavorDesc').textContent = flavor.desc;
+      document.getElementById('toppingsBadge').textContent = flavor.toppingName;
+      document.getElementById('sweetnessBadge').textContent = flavor.sweetness;
+      document.getElementById('iceBadge').textContent = flavor.ice;
+    }
+
+    // Initialize initial flavor card
+    updateFlavorCardUI(FLAVORS[0]);
+
+    /* =========================================================================
+       14. BOBADEX (COLLECTION JOURNAL) MODAL
+       ========================================================================= */
+    const bobadexModal = document.getElementById('bobadexModal');
+    const bobadexBtn = document.getElementById('bobadexBtn');
+    const closeBobadexBtn = document.getElementById('closeBobadexBtn');
+    const bobadexList = document.getElementById('bobadexList');
+
+    function renderBobadex() {
+      bobadexList.innerHTML = '';
+      FLAVORS.forEach((fl, idx) => {
+        const isUnlocked = unlockedFlavorIds.has(fl.id);
+        const card = document.createElement('div');
+        card.className = `flavor-entry-card ${isUnlocked ? '' : 'locked'}`;
+
+        card.innerHTML = `
+          <div class="entry-title">
+            <span class="entry-color-dot" style="background:${fl.accentHex}"></span>
+            ${fl.name}
+          </div>
+          <div class="entry-desc">${isUnlocked ? fl.desc : 'Drink more cups to unlock this delightful recipe!'}</div>
+          <div class="entry-status">
+            ${isUnlocked ? '✓ Discovered' : '🔒 Locked Recipe'}
+          </div>
+        `;
+
+        if (isUnlocked) {
+          card.style.cursor = 'pointer';
+          card.title = 'Click to brew this flavor!';
+          card.addEventListener('click', () => {
+            executeRefillSequence(idx);
+            bobadexModal.classList.remove('open');
+          });
+        }
+
+        bobadexList.appendChild(card);
+      });
+    }
+
+    bobadexBtn.addEventListener('click', () => {
+      renderBobadex();
+      bobadexModal.classList.add('open');
+    });
+
+    closeBobadexBtn.addEventListener('click', () => {
+      bobadexModal.classList.remove('open');
+    });
+
+    bobadexModal.addEventListener('click', (e) => {
+      if (e.target === bobadexModal) {
+        bobadexModal.classList.remove('open');
+      }
+    });
+
+    /* =========================================================================
+       15. LEADERBOARD MODAL & EVENTS
+       ========================================================================= */
+    const leaderboardModal = document.getElementById('leaderboardModal');
+    const leaderboardBtn = document.getElementById('leaderboardBtn');
+    const closeLeaderboardBtn = document.getElementById('closeLeaderboardBtn');
+    const leaderboardRows = document.getElementById('leaderboardRows');
+    const hudRankChip = document.getElementById('hudRankChip');
+    const editNameBtn = document.getElementById('editNameBtn');
+
+    function renderLeaderboard() {
+      const list = getLeaderboardData(activeLeaderboardTab);
+      const playerScore = calculatePlayerScore();
+      const playerRank = list.findIndex(e => e.isPlayer) + 1;
+
+      document.getElementById('playerNameDisplay').textContent = playerName;
+      document.getElementById('playerTitleDisplay').textContent = getPlayerTitle(playerScore);
+      document.getElementById('playerRankDisplay').textContent = `#${playerRank}`;
+      document.getElementById('playerPointsDisplay').textContent = playerScore.toLocaleString();
+
+      leaderboardRows.innerHTML = '';
+
+      list.forEach((item, idx) => {
+        const rankNum = idx + 1;
+        const row = document.createElement('div');
+        row.className = `leaderboard-item ${item.isPlayer ? 'is-user' : ''}`;
+
+        let rankBadgeClass = '';
+        let rankDisplay = `#${rankNum}`;
+        if (rankNum === 1) { rankDisplay = '🥇 1'; rankBadgeClass = 'rank-1'; }
+        else if (rankNum === 2) { rankDisplay = '🥈 2'; rankBadgeClass = 'rank-2'; }
+        else if (rankNum === 3) { rankDisplay = '🥉 3'; rankBadgeClass = 'rank-3'; }
+
+        let mainStatVal = `${item.score.toLocaleString()} pts`;
+        let subStatVal = `${item.cups} cups • ${item.boba} boba`;
+        if (activeLeaderboardTab === 'cups') {
+          mainStatVal = `${item.cups} cups`;
+          subStatVal = `${item.score.toLocaleString()} pts`;
+        } else if (activeLeaderboardTab === 'boba') {
+          mainStatVal = `${item.boba} boba`;
+          subStatVal = `${item.score.toLocaleString()} pts`;
+        }
+
+        row.innerHTML = `
+          <div class="item-rank ${rankBadgeClass}">${rankDisplay}</div>
+          <div class="item-avatar">${item.avatar}</div>
+          <div class="item-details">
+            <div class="item-name-row">
+              <span class="item-name">${item.name}</span>
+              ${item.isPlayer ? '<span class="you-pill">YOU</span>' : ''}
+            </div>
+            <div class="item-quote">${item.title} — "${item.quote}"</div>
+          </div>
+          <div class="item-stats">
+            <div class="item-main-val">${mainStatVal}</div>
+            <div class="item-sub-val">${subStatVal}</div>
+          </div>
+        `;
+
+        leaderboardRows.appendChild(row);
+      });
+    }
+
+    // Tabs switching
+    const tabScoreBtn = document.getElementById('tabScoreBtn');
+    const tabCupsBtn = document.getElementById('tabCupsBtn');
+    const tabBobaBtn = document.getElementById('tabBobaBtn');
+
+    function switchLeaderboardTab(newTab, btn) {
+      activeLeaderboardTab = newTab;
+      [tabScoreBtn, tabCupsBtn, tabBobaBtn].forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderLeaderboard();
+    }
+
+    tabScoreBtn.addEventListener('click', () => switchLeaderboardTab('score', tabScoreBtn));
+    tabCupsBtn.addEventListener('click', () => switchLeaderboardTab('cups', tabCupsBtn));
+    tabBobaBtn.addEventListener('click', () => switchLeaderboardTab('boba', tabBobaBtn));
+
+    leaderboardBtn.addEventListener('click', () => {
+      renderLeaderboard();
+      leaderboardModal.classList.add('open');
+    });
+
+    hudRankChip.addEventListener('click', () => {
+      renderLeaderboard();
+      leaderboardModal.classList.add('open');
+    });
+
+    closeLeaderboardBtn.addEventListener('click', () => {
+      leaderboardModal.classList.remove('open');
+    });
+
+    leaderboardModal.addEventListener('click', (e) => {
+      if (e.target === leaderboardModal) {
+        leaderboardModal.classList.remove('open');
+      }
+    });
+
+    editNameBtn.addEventListener('click', () => {
+      const newName = prompt('Enter your Boba Cafe nickname:', playerName);
+      if (newName && newName.trim()) {
+        playerName = newName.trim().slice(0, 20);
+        saveGame();
+        renderLeaderboard();
+      }
+    });
+
+    // Download Standalone Game HTML File
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+      try {
+        let htmlText = '';
+        try {
+          const resp = await fetch(window.location.href);
+          if (resp.ok) htmlText = await resp.text();
+        } catch(e) {}
+
+        if (!htmlText) {
+          htmlText = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+        }
+
+        const blob = new Blob([htmlText], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'boba-dream-3d.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        spawnFloatingSlurpText('💾 Downloaded Game File!');
+      } catch(err) {
+        alert('File is ready on your computer at: /Users/emmafx/Documents/AI Project 1/index.html');
+      }
+    });
+
+    // Load saved game and initialize stats & rank
+    loadGame();
+    updateStatsUI();
+
+    /* =========================================================================
+       15. MAIN RENDER LOOP & RESIZE HANDLER
+       ========================================================================= */
+    let lastTime = performance.now();
+
+    function animate(now) {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(0.1, (now - lastTime) / 1000);
+      lastTime = now;
+
+      // Handle drinking mechanics
+      handleDrinking(dt);
+
+      // Update Boba Pearls physics with current liquid level
+      pearls.forEach(p => p.update(dt, liquidLevel));
+      resolvePearlCollisions();
+
+      // Update Ice Cubes physics
+      iceCubes.forEach(c => c.update(dt, liquidLevel));
+
+      // Soft idle cup floating / rotation when not dragging
+      if (!controls.state || controls.state === -1) {
+        cupGroup.position.y = Math.sin(now * 0.0015) * 0.04;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    requestAnimationFrame(animate);
+
+    // Responsive Canvas Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+  </script>
+</body>
+</html>
