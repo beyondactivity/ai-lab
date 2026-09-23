@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World of Instruments</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js for 3D Viewer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Navigation -->
+  <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="text-2xl font-black tracking-tight text-indigo-400">
+        World of <span class="text-amber-400">Instruments</span>
+      </div>
+      <nav class="hidden md:flex gap-6 font-semibold text-sm text-slate-300">
+        <a href="#showcase" class="hover:text-amber-400 transition-colors">Showcase & Benefits</a>
+        <a href="#studio" class="hover:text-amber-400 transition-colors">Sound Studio</a>
+        <a href="#explorer" class="hover:text-amber-400 transition-colors">3D Explorer</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-900 py-16 px-4 text-center border-b border-slate-800">
+    <div class="max-w-4xl mx-auto space-y-6">
+      <span class="inline-block px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full text-xs font-semibold uppercase tracking-wider">
+        Interactive Musical Journey
+      </span>
+      <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white">
+        World of Instruments
+      </h1>
+      <p class="text-xl md:text-2xl font-medium text-amber-300 max-w-2xl mx-auto">
+        Explore the Sounds, Shapes, and Stories Behind Instruments Around the Globe!
+      </p>
+      <p class="text-slate-300 text-base md:text-lg max-w-3xl mx-auto leading-relaxed pt-2">
+        Welcome to World of Instruments! Discover how musical instruments work across 10 global favorites. Play a full 8-note octave for each instrument, inspect interactive 3D models, learn their inner components, and find the perfect instrument for you.
+      </p>
+      <div class="pt-4 flex flex-wrap justify-center gap-4">
+        <a href="#showcase" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg">
+          View All 10 Instruments
+        </a>
+        <a href="#studio" class="bg-amber-400 text-slate-950 hover:bg-amber-300 font-bold px-6 py-3 rounded-lg transition-all shadow-lg shadow-amber-500/20">
+          Play Sound Studio
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 1: Showcase & Benefits -->
+  <section id="showcase" class="py-16 px-4 max-w-7xl mx-auto w-full">
+    <div class="text-center mb-12 space-y-3">
+      <h2 class="text-3xl font-bold text-white">Instrument Showcase & Benefits</h2>
+      <p class="text-slate-400 max-w-2xl mx-auto">
+        Browse 10 instruments from around the world. Select any card to load its full 8-note octave and 3D model below!
+      </p>
+    </div>
+
+    <!-- Grid for 10 Instruments -->
+    <div id="showcase-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <!-- Populated Dynamically by JavaScript -->
+    </div>
+  </section>
+
+  <!-- Section 2: Sound Studio -->
+  <section id="studio" class="py-16 bg-slate-950/80 border-y border-slate-800">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="text-center mb-10 space-y-3">
+        <h2 class="text-3xl font-bold text-white">Sound Studio (1 Full Octave)</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto">
+          Play an entire octave ($C, D, E, F, G, A, B, C$) of your selected instrument! Click keys or press numbers <kbd class="px-1.5 py-0.5 bg-slate-800 text-amber-400 border border-slate-700 rounded">1</kbd> through <kbd class="px-1.5 py-0.5 bg-slate-800 text-amber-400 border border-slate-700 rounded">8</kbd> on your keyboard.
+        </p>
+      </div>
+
+      <!-- Interactive Octave Keyboard Box -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 md:p-8 max-w-4xl mx-auto shadow-2xl">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-slate-700 pb-4 gap-2">
+          <div>
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Active Instrument</span>
+            <h3 id="active-instrument-title" class="text-2xl font-bold text-amber-400">Piano</h3>
+          </div>
+          <div class="text-xs text-slate-300 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-700">
+            Diatonic Scale Octave Active
+          </div>
+        </div>
+
+        <!-- 8 Octave Note Pads -->
+        <div id="soundboard-pads" class="grid grid-cols-4 sm:grid-cols-8 gap-2 md:gap-3 mb-6">
+          <!-- Dynamic Pads Populated by JS -->
+        </div>
+
+        <div class="flex justify-between items-center text-xs text-slate-400 pt-2">
+          <span>Root Note pitch tuned for instrument's natural range.</span>
+          <span class="text-indigo-400 font-mono">Keys: 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: 3D Explorer -->
+  <section id="explorer" class="py-16 max-w-6xl mx-auto px-4 w-full">
+    <div class="text-center mb-10 space-y-3">
+      <h2 class="text-3xl font-bold text-white">3D Explorer</h2>
+      <p class="text-slate-400 max-w-2xl mx-auto">
+        Rotate and inspect 3D models for each instrument. Click part labels to learn how key components function.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6 items-start">
+      <!-- 3D Canvas Viewport -->
+      <div class="md:col-span-2 bg-slate-950 border border-slate-800 rounded-2xl h-[420px] relative overflow-hidden flex items-center justify-center">
+        <canvas id="three-canvas" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+        <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded text-xs text-slate-400 border border-slate-800">
+          🖱️ Click and drag to rotate 3D model
+        </div>
+      </div>
+
+      <!-- Parts Info Panel -->
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 h-[420px] flex flex-col justify-between">
+        <div>
+          <h3 id="explorer-title" class="text-xl font-bold text-white mb-1">Piano Anatomy</h3>
+          <p class="text-xs text-slate-400 mb-4">Click a part label to read its description:</p>
+          
+          <div id="part-buttons" class="flex flex-col gap-2 mb-4">
+            <!-- Dynamic Part Buttons -->
+          </div>
+        </div>
+
+        <div id="part-description-box" class="bg-slate-900/90 border border-slate-700 p-4 rounded-xl">
+          <h4 id="part-name" class="text-amber-400 font-bold text-sm mb-1">Select a part above</h4>
+          <p id="part-desc" class="text-xs text-slate-300 leading-relaxed">
+            Discover how this part shapes tone, tuning, and overall performance.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="mt-auto bg-slate-950 border-t border-slate-800 py-8 px-4 text-center text-slate-500 text-sm">
+    <div class="max-w-6xl mx-auto space-y-2">
+      <p class="font-bold text-slate-400">World of Instruments</p>
+      <p>Interactive educational guide for music students and explorers worldwide.</p>
+    </div>
+  </footer>
+
+  <!-- Application Logic & Web Audio Synthesizer -->
+  <script>
+    // --- Data Store for 10 Instruments with Octaves ---
+    // Diatonic ratios for 1 Octave: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8, 2]
+    const ratios = [1, 1.125, 1.25, 1.3333, 1.5, 1.6667, 1.875, 2];
+    const octaveNames = ['Do (C)', 'Re (D)', 'Mi (E)', 'Fa (F)', 'Sol (G)', 'La (A)', 'Ti (B)', 'Do (C)'];
+
+    function generateOctave(baseFreq) {
+      return ratios.map((ratio, idx) => ({
+        label: octaveNames[idx],
+        note: baseFreq * ratio,
+        key: (idx + 1).toString()
+      }));
+    }
+
+    const instruments = {
+      piano: {
+        name: 'Piano',
+        icon: '🎹',
+        color: 'indigo',
+        desc: 'Versatile keyboard instrument with strings struck by felt-covered hammers.',
+        benefits: ['Builds two-handed spatial coordination', 'Teaches harmony & fundamental music theory', 'Extremely easy to start producing clean notes'],
+        type: 'sine',
+        pads: generateOctave(261.63), // C4 Octave
+        parts: [
+          { name: 'Keys', desc: 'Weighted levers pressed by fingers to activate internal hammer actions.' },
+          { name: 'Hammers', desc: 'Felt-covered mallets that strike steel strings when keys are pressed.' },
+          { name: 'Soundboard', desc: 'Large wooden diaphragm that resonant-amplifies string vibrations.' }
+        ]
+      },
+      guitar: {
+        name: 'Acoustic Guitar',
+        icon: '🎸',
+        color: 'amber',
+        desc: 'Fretted string instrument producing warm, organic acoustic sounds.',
+        benefits: ['Highly portable for social gatherings', 'Builds finger dexterity and rhythm strumming', 'Ideal for song-writing and accompaniment'],
+        type: 'triangle',
+        pads: generateOctave(146.83), // D3 Octave
+        parts: [
+          { name: 'Fretboard', desc: 'Neck containing frets to press strings against, altering pitch length.' },
+          { name: 'Soundhole', desc: 'Circular body opening that radiates acoustic air resonance.' },
+          { name: 'Bridge', desc: 'Anchors strings onto the soundboard to transfer vibration.' }
+        ]
+      },
+      drums: {
+        name: 'Drums',
+        icon: '🥁',
+        color: 'rose',
+        desc: 'Percussion set providing essential groove, tempo, and physical drive.',
+        benefits: ['Incredible physical outlet for energy', 'Develops precise timing & limb independence', 'Core backbone of modern music bands'],
+        type: 'square',
+        pads: generateOctave(110.00), // Percussive resonant pitch octave
+        parts: [
+          { name: 'Drumhead', desc: 'Taut plastic membrane struck by sticks to create impact waves.' },
+          { name: 'Shell', desc: 'Hollow wooden cylinder projecting and enriching tone.' },
+          { name: 'Cymbals', desc: 'Bronze discs producing high-frequency shimmer and crashes.' }
+        ]
+      },
+      violin: {
+        name: 'Violin',
+        icon: '🎻',
+        color: 'emerald',
+        desc: 'High-pitched bowed string instrument with expressive singing timbre.',
+        benefits: ['Trains fine ear-pitch discrimination', 'Improves posture & arm control', 'Featured across classical, folk, and pop genres'],
+        type: 'sawtooth',
+        pads: generateOctave(293.66), // D4 Octave
+        parts: [
+          { name: 'Bow', desc: 'Horsehair stick drawn across strings to produce continuous vibration.' },
+          { name: 'F-Holes', desc: 'Carved sound holes allowing internal body air to project output.' },
+          { name: 'Tuning Pegs', desc: 'Tension pegs used to adjust string pitch accurately.' }
+        ]
+      },
+      flute: {
+        name: 'Flute',
+        icon: '🪈',
+        color: 'cyan',
+        desc: 'Woodwind instrument played by blowing across an embouchure hole.',
+        benefits: ['Enhances breath control & lung capacity', 'Lightweight and easy to carry anywhere', 'Plays bright, soaring melodic solos'],
+        type: 'sine',
+        pads: generateOctave(523.25), // C5 High Octave
+        parts: [
+          { name: 'Embouchure Hole', desc: 'Hole across which the player blows to create split air oscillations.' },
+          { name: 'Keys & Pads', desc: 'Padded covers that seal tone holes to lengthen the air column.' },
+          { name: 'Foot Joint', desc: 'Lower segment extending the low-register pitch range.' }
+        ]
+      },
+      trumpet: {
+        name: 'Trumpet',
+        icon: '🎺',
+        color: 'yellow',
+        desc: 'Powerful brass instrument with three piston valves and brilliant tone.',
+        benefits: ['Strengthens core facial muscles & breath power', 'Teaches confidence through bold lead lines', 'Crucial in jazz bands, orchestras, and brass ensembles'],
+        type: 'sawtooth',
+        pads: generateOctave(233.08), // Bb3 Octave
+        parts: [
+          { name: 'Valves', desc: 'Three pistons pressed to divert air into additional tuning slides.' },
+          { name: 'Bell', desc: 'Flared opening projecting brassy acoustic soundwaves.' },
+          { name: 'Mouthpiece', desc: 'Cup where player buzzes lips to initiate sound frequency.' }
+        ]
+      },
+      saxophone: {
+        name: 'Saxophone',
+        icon: '🎷',
+        color: 'orange',
+        desc: 'Brass-bodied woodwind instrument using a single reed mouthpiece.',
+        benefits: ['Highly expressive tone control for jazz & pop', 'Teaches smooth fingering patterns', 'Rich, warm sound with iconic musical history'],
+        type: 'square',
+        pads: generateOctave(207.65), // Ab3 Octave
+        parts: [
+          { name: 'Single Reed', desc: 'Vibrating cane strip attached to mouthpiece that generates sound.' },
+          { name: 'Neck & Octave Key', desc: 'Curved tube section allowing easy octave register shifts.' },
+          { name: 'Keywork System', desc: 'Interconnected levers covering large body tone holes.' }
+        ]
+      },
+      marimba: {
+        name: 'Marimba',
+        icon: '🪵',
+        color: 'stone',
+        desc: 'Melodic percussion instrument with wooden bars and metal resonator tubes.',
+        benefits: ['Combines rhythm with rich melodic chord playing', 'Enhances visual-spatial mallet precision', 'Beautiful, warm liquid tone'],
+        type: 'sine',
+        pads: generateOctave(261.63), // C4 Octave
+        parts: [
+          { name: 'Rosewood Bars', desc: 'Tuned wooden bars struck with soft yarn mallets.' },
+          { name: 'Resonator Pipes', desc: 'Vertical metal tubes underneath that amplify fundamental pitch.' },
+          { name: 'Frame & Dampers', desc: 'Sturdy support structure isolating bar vibrations.' }
+        ]
+      },
+      bass: {
+        name: 'Bass Guitar',
+        icon: '🎸',
+        color: 'purple',
+        desc: 'Low-pitched 4-string electric instrument linking rhythm and harmony.',
+        benefits: ['Provides the foundational groove for any song', 'Relatively quick to learn core basslines', 'Always in high demand for music groups'],
+        type: 'triangle',
+        pads: generateOctave(82.41), // E1 Low Octave
+        parts: [
+          { name: 'Heavy Strings', desc: 'Thick steel wound strings producing deep low frequencies.' },
+          { name: 'Pickups', desc: 'Magnetic sensors capturing string motion for amplification.' },
+          { name: 'Long Scale Neck', desc: 'Extended neck length required for low string tension.' }
+        ]
+      },
+      steelpan: {
+        name: 'Steelpan',
+        icon: '🪘',
+        color: 'sky',
+        desc: 'Caribbean percussion instrument made from hammered steel drum heads.',
+        benefits: ['Joyful, uplifting acoustic sound profile', 'Fun geometric layout for learning pitch layout', 'Rich cultural history from Trinidad and Tobago'],
+        type: 'sine',
+        pads: generateOctave(293.66), // D4 Octave
+        parts: [
+          { name: 'Concave Dish', desc: 'Sunken steel surface divided into hammered pitch zones.' },
+          { name: 'Note Skirts', desc: 'Shaped perimeter sections controlling harmonic resonance.' },
+          { name: 'Rubber Mallets', desc: 'Soft-tipped sticks striking individual note dents.' }
+        ]
+      }
+    };
+
+    let currentKey = 'piano';
+
+    // --- Web Audio Synthesizer Engine ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function playSynthTone(freq, type = 'sine') {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+      // Envelope shaping
+      gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.2);
+    }
+
+    // --- Render Showcase Cards ---
+    function renderShowcase() {
+      const grid = document.getElementById('showcase-grid');
+      grid.innerHTML = '';
+
+      Object.keys(instruments).forEach(key => {
+        const item = instruments[key];
+        const card = document.createElement('div');
+        card.className = `bg-slate-800/80 border ${currentKey === key ? 'border-amber-400 bg-slate-800' : 'border-slate-700/70'} rounded-xl p-4 hover:border-amber-400 transition-all flex flex-col justify-between`;
+        
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-2xl">${item.icon}</span>
+              <h3 class="font-bold text-white text-base">${item.name}</h3>
+            </div>
+            <p class="text-xs text-slate-300 mb-3">${item.desc}</p>
+            <div class="space-y-1 mb-4">
+              ${item.benefits.map(b => `<div class="text-[11px] text-slate-400 flex items-start gap-1"><span class="text-emerald-400 font-bold">✓</span><span>${b}</span></div>`).join('')}
+            </div>
+          </div>
+          <button onclick="selectInstrument('${key}')" class="w-full ${currentKey === key ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-700 hover:bg-indigo-600 text-white'} py-2 rounded-lg text-xs font-semibold transition-colors">
+            ${currentKey === key ? 'Active Instrument' : 'Select Instrument'}
+          </button>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // --- Select & Switch Instrument ---
+    function selectInstrument(key) {
+      currentKey = key;
+      const data = instruments[key];
+
+      renderShowcase();
+
+      // Update Sound Studio Header
+      document.getElementById('active-instrument-title').innerText = `${data.icon} ${data.name}`;
+
+      // Update Sound Studio Octave Pads
+      const padsContainer = document.getElementById('soundboard-pads');
+      padsContainer.innerHTML = '';
+
+      data.pads.forEach((pad) => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-slate-700 hover:bg-amber-400 hover:text-slate-950 text-white font-bold py-5 px-2 rounded-xl transition-all shadow border border-slate-600 active:scale-95 flex flex-col items-center justify-center';
+        btn.innerHTML = `
+          <span class="text-[10px] opacity-60 mb-1">Key ${pad.key}</span>
+          <span class="text-xs font-extrabold">${pad.label}</span>
+        `;
+        btn.onclick = () => playSynthTone(pad.note, data.type);
+        padsContainer.appendChild(btn);
+      });
+
+      // Update 3D Explorer Panel
+      document.getElementById('explorer-title').innerText = `${data.name} Anatomy`;
+      const buttonsContainer = document.getElementById('part-buttons');
+      buttonsContainer.innerHTML = '';
+
+      data.parts.forEach((part) => {
+        const pBtn = document.createElement('button');
+        pBtn.className = 'text-left bg-slate-700/60 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-xs font-semibold border border-slate-600/60 transition-colors';
+        pBtn.innerText = `• ${part.name}`;
+        pBtn.onclick = () => showPartDescription(part.name, part.desc);
+        buttonsContainer.appendChild(pBtn);
+      });
+
+      showPartDescription(data.parts[0].name, data.parts[0].desc);
+      update3DModel(key);
+    }
+
+    function showPartDescription(name, desc) {
+      document.getElementById('part-name').innerText = name;
+      document.getElementById('part-desc').innerText = desc;
+    }
+
+    // Keyboard Listeners (1-8 for octave notes)
+    window.addEventListener('keydown', (e) => {
+      const data = instruments[currentKey];
+      const match = data.pads.find(p => p.key === e.key);
+      if (match) {
+        playSynthTone(match.note, data.type);
+      }
+    });
+
+    // --- Three.js 3D Rendering Engine ---
+    let scene, camera, renderer, currentMesh;
+
+    function init3D() {
+      const container = document.getElementById('three-canvas').parentElement;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 2, 5.5);
+      camera.lookAt(0, 0, 0);
+
+      renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfbbf24, 1.2);
+      dirLight.position.set(5, 8, 5);
+      scene.add(dirLight);
+
+      // Drag Orbit Interactions
+      let isDragging = false;
+      let previousMousePosition = { x: 0, y: 0 };
+      const canvas = document.getElementById('three-canvas');
+
+      canvas.addEventListener('mousedown', () => { isDragging = true; });
+      canvas.addEventListener('mousemove', (e) => {
+        if (isDragging && currentMesh) {
+          const deltaMove = { x: e.offsetX - previousMousePosition.x, y: e.offsetY - previousMousePosition.y };
+          currentMesh.rotation.y += deltaMove.x * 0.01;
+          currentMesh.rotation.x += deltaMove.y * 0.01;
+        }
+        previousMousePosition = { x: e.offsetX, y: e.offsetY };
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+
+      // Window Resize Listener
+      window.addEventListener('resize', () => {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+
+      // Animation Loop
+      function animate() {
+        requestAnimationFrame(animate);
+        if (currentMesh && !isDragging) {
+          currentMesh.rotation.y += 0.005;
+        }
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    // Procedural 3D Mesh Generator for 10 Instruments
+    function update3DModel(type) {
+      if (currentMesh) scene.remove(currentMesh);
+      const group = new THREE.Group();
+
+      if (type === 'piano') {
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.9, 1.2), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+        const keys = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.15, 0.4), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+        keys.position.set(0, -0.1, 0.5);
+        group.add(body, keys);
+      } else if (type === 'guitar') {
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
+        body.rotation.x = Math.PI / 2;
+        const neck = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+        neck.position.set(0, 1.1, 0);
+        group.add(body, neck);
+      } else if (type === 'drums') {
+        const drum = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.9, 24), new THREE.MeshStandardMaterial({ color: 0xe11d48 }));
+        const cymbal = new THREE.Mesh(new THREE.ConeGeometry(0.8, 0.08, 32), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8 }));
+        cymbal.position.set(1.1, 0.9, 0);
+        group.add(drum, cymbal);
+      } else if (type === 'violin') {
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.25), new THREE.MeshStandardMaterial({ color: 0xb45309 }));
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 12), new THREE.MeshStandardMaterial({ color: 0x27272a }));
+        neck.position.set(0, 1.0, 0);
+        group.add(body, neck);
+      } else if (type === 'flute') {
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.8, 16), new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 }));
+        tube.rotation.z = Math.PI / 3;
+        group.add(tube);
+      } else if (type === 'trumpet') {
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.0, 16), new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.9 }));
+        tube.rotation.z = Math.PI / 2;
+        const bell = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.6, 24), new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.9 }));
+        bell.position.set(1.0, 0, 0);
+        bell.rotation.z = -Math.PI / 2;
+        group.add(tube, bell);
+      } else if (type === 'saxophone') {
+        const body = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.12, 12, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 }));
+        body.rotation.x = Math.PI / 2;
+        group.add(body);
+      } else if (type === 'marimba') {
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 0.8), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+        for(let i = -1; i <= 1; i += 0.25) {
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.7), new THREE.MeshStandardMaterial({ color: 0xb45309 }));
+          bar.position.set(i, 0.15, 0);
+          group.add(bar);
+        }
+        group.add(frame);
+      } else if (type === 'bass') {
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.2), new THREE.MeshStandardMaterial({ color: 0x68d391 }));
+        const neck = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.2, 0.08), new THREE.MeshStandardMaterial({ color: 0x1a202c }));
+        neck.position.set(0, 1.3, 0);
+        group.add(body, neck);
+      } else if (type === 'steelpan') {
+        const pan = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.0, 0.4, 24), new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.8, roughness: 0.2 }));
+        group.add(pan);
+      }
+
+      currentMesh = group;
+      scene.add(currentMesh);
+    }
+
+    // App Initialization
+    window.onload = () => {
+      init3D();
+      selectInstrument('piano');
+    };
+  </script>
+</body>
+</html>
