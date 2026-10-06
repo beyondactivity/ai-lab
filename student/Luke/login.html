@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizon Flight Sim - Authentication</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-hover: #1557b0;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-image: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        .auth-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .brand h1 {
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-main);
+        }
+
+        .brand p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 38px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .password-toggle:hover {
+            color: var(--text-main);
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .switch-mode {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .switch-mode a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .switch-mode a:hover {
+            text-decoration: underline;
+        }
+
+        /* Utility classes for toggling views */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div class="brand">
+            <h1 id="auth-title">Horizon Log In</h1>
+            <p id="auth-subtitle">Access your flight training dashboard</p>
+        </div>
+
+        <form id="auth-form" novalidate>
+            <!-- Name field (Hidden by default, shown during signup) -->
+            <div class="form-group hidden" id="name-group">
+                <label for="username">Pilot Name</label>
+                <input type="text" id="username" placeholder="e.g., Maverick">
+                <div class="error-message" id="name-error">Please enter a pilot name.</div>
+            </div>
+
+            <!-- Email field -->
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="pilot@horizon.com">
+                <div class="error-message" id="email-error">Please enter a valid email address.</div>
+            </div>
+
+            <!-- Password field -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••">
+                <button type="button" class="password-toggle" id="toggle-password">SHOW</button>
+                <div class="error-message" id="password-error">Password must be at least 6 characters.</div>
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">Log In</button>
+        </form>
+
+        <div class="switch-mode">
+            <span id="switch-text">New to the flight deck?</span>
+            <a href="#" id="switch-link">Create an account</a>
+        </div>
+    </div>
+
+    <script>
+        const authForm = document.getElementById('auth-form');
+        const authTitle = document.getElementById('auth-title');
+        const authSubtitle = document.getElementById('auth-subtitle');
+        const nameGroup = document.getElementById('name-group');
+        const submitBtn = document.getElementById('submit-btn');
+        const switchText = document.getElementById('switch-text');
+        const switchLink = document.getElementById('switch-link');
+        const togglePassword = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+
+        let isLoginMode = true;
+
+        // Toggle between Login and Registration Mode
+        switchLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            
+            // Clear prior errors
+            document.querySelectorAll('.error-message').forEach(err => err.style.display = 'none');
+            authForm.reset();
+
+            if (isLoginMode) {
+                authTitle.textContent = 'Horizon Log In';
+                authSubtitle.textContent = 'Access your flight training dashboard';
+                nameGroup.classList.add('hidden');
+                submitBtn.textContent = 'Log In';
+                switchText.textContent = 'New to the flight deck?';
+                switchLink.textContent = 'Create an account';
+            } else {
+                authTitle.textContent = 'Pilot Registration';
+                authSubtitle.textContent = 'Create your pilot profile to save flight logs';
+                nameGroup.classList.remove('hidden');
+                submitBtn.textContent = 'Register';
+                switchText.textContent = 'Already have an account?';
+                switchLink.textContent = 'Log in here';
+            }
+        });
+
+        // Toggle Password Visibility
+        togglePassword.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                togglePassword.textContent = 'HIDE';
+            } else {
+                passwordInput.type = 'password';
+                togglePassword.textContent = 'SHOW';
+            }
+        });
+
+        // Form Validation & Submission Handling
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let isValid = true;
+
+            const nameInput = document.getElementById('username');
+            const emailInput = document.getElementById('email');
+            const nameError = document.getElementById('name-error');
+            const emailError = document.getElementById('email-error');
+            const passwordError = document.getElementById('password-error');
+
+            // Reset errors
+            nameError.style.display = 'none';
+            emailError.style.display = 'none';
+            passwordError.style.display = 'none';
+
+            // Validate Name (only if in Signup mode)
+            if (!isLoginMode && nameInput.value.trim() === '') {
+                nameError.style.display = 'block';
+                isValid = false;
+            }
+
+            // Validate Email
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailInput.value)) {
+                emailError.style.display = 'block';
+                isValid = false;
+            }
+
+            // Validate Password
+            if (passwordInput.value.length < 6) {
+                passwordError.style.display = 'block';
+                isValid = false;
+            }
+
+            if (isValid) {
+                if (isLoginMode) {
+                    alert('Simulation: Logged in successfully!');
+                } else {
+                    alert('Simulation: Account registered successfully!');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
