@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wings of Fire: The Jade Mountain Prophecy (Arc 2)</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --secondary: #0f172a;
+            --accent: #ca8a04;
+            --accent-hover: #a16207;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --bg-card: #1e293b;
+            --bg-body: #0b0f19;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e1b4b, #0f172a);
+            border-bottom: 2px solid var(--accent);
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            color: #fef08a;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        nav {
+            background-color: var(--secondary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        section {
+            background-color: #111827;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            scroll-margin-top: 5rem;
+        }
+
+        section h2 {
+            font-size: 2rem;
+            color: #fef08a;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        /* Quiz Styling */
+        .quiz-container {
+            background: #1f2937;
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .quiz-container h3 {
+            margin-bottom: 1rem;
+            color: #fef08a;
+        }
+
+        .quiz-progress {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .option-btn {
+            background-color: #374151;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s ease;
+        }
+
+        .option-btn:hover {
+            background-color: #4b5563;
+            border-color: var(--accent);
+        }
+
+        .result-box {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.8rem;
+            color: #fef08a;
+            margin-top: 1rem;
+        }
+
+        .restart-btn {
+            margin-top: 1.5rem;
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .restart-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Book Grid */
+        .book-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .book-card {
+            background-color: #1f2937;
+            padding: 1.5rem;
+            border-left: 4px solid var(--accent);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .book-card h3 {
+            color: #fef08a;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Character Layouts */
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .char-card {
+            background-color: #1f2937;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border-top: 3px solid var(--accent);
+        }
+
+        .char-card h3 {
+            color: #fef08a;
+            margin-bottom: 0.5rem;
+        }
+
+        .strength-tag {
+            display: inline-block;
+            background-color: #b45309;
+            color: #fff;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.75rem;
+            font-weight: bold;
+        }
+
+        ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Wings of Fire: Arc 2 Hub</h1>
+        <p>Explore the Jade Mountain Prophecy storyline, unpack complex character transformations, and take the randomized personality test.</p>
+    </header>
+
+    <nav>
+        <a href="#quiz-section">Personality Quiz</a>
+        <a href="#summaries">Book Summaries</a>
+        <a href="#characters">Characters &amp; Strengths</a>
+        <a href="#development">Character Development</a>
+        <a href="#why-read">Why Read Arc 2</a>
+    </nav>
+
+    <div class="container">
+
+        <!-- QUIZ SECTION -->
+        <div id="quiz-section" class="quiz-container">
+            <h3>Interactive Personality Quiz: Which Dragonet Are You?</h3>
+            <div id="quiz-window">
+                <!-- Dynamic Content Loads via Javascript -->
+            </div>
+        </div>
+
+        <!-- SECTION 1: SUMMARIES -->
+        <section id="summaries">
+            <h2>1. Summaries of Each Book</h2>
+            <div class="book-grid">
+                <div class="book-card">
+                    <h3>Book 6: Moon Rising</h3>
+                    <p>As the newly founded Jade Mountain Academy opens its doors, a secret NightWing dragonet named Moonwatcher arrives burdened with long-lost powers: mind-reading and prophecy. When an assassin strikes inside the school, Moon must decide whether to keep her dangerous telepathy hidden or risk revealing herself to save her new cavemates from a looming catastrophe.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Book 7: Winter Turning</h3>
+                    <p>Prince Winter of the IceWings lives by rigid laws of honor, status, and family loyalty. However, when his disgraced brother Hailstorm is discovered alive captive within SkyWing territory, Winter is forced to abandon his academy training. Alongside his diverse Jade Winglet companions, he sets out on an emotional rescue mission that challenges everything his tribe taught him to believe.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Book 8: Escaping Peril</h3>
+                    <p>Peril is notorious across Pyrrhia for her deadly firescales, a curse that burns anyone she touches. Having spent her life acting as Queen Scarlet's personal executioner, she is desperate to prove her loyalty to her friend Clay. When a sinister spellcast crown threatens to rewrite the loyalty of every dragon she cares about, Peril must confront her explosive past head-on.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Book 9: Talons of Power</h3>
+                    <p>For years, Turtle has desperately hidden his identity as a secret SeaWing animus dragonet, crippled by the guilt of past failures. But when the ancient, megalomaniacal titan Darkstalker rises completely free from his underground prison, Turtle finds himself as the absolute last line of magical defense protecting a blissfully oblivious dragon kingdom.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Book 10: Darkness of Dragons</h3>
+                    <p>With Darkstalker successfully brainwashing the entire continent into absolute obedience, the clever but magicless SandWing Qibli must rely entirely on his sharp wits and tactical observation. Racing against time to defeat an all-powerful immortal sorcerer, Qibli travels back to his cruel childhood home to stop a massive, catastrophic tribal war before his friends are lost forever.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: CHARACTERS & STRENGTHS -->
+        <section id="characters">
+            <h2>2. Characters and Their Strengths</h2>
+            <div class="char-grid">
+                <div class="char-card">
+                    <h3>Moonwatcher (Moon)</h3>
+                    <span class="strength-tag">Telepathy &amp; Prophecy</span>
+                    <p>Born under the full light of two moons, she possesses authentic NightWing abilities. Her empathy allows her to look deep past the defensive armor of others, finding peaceful solutions where others see conflict.</p>
+                </div>
+                <div class="char-card">
+                    <h3>Winter</h3>
+                    <span class="strength-tag">Frostbreath &amp; Tactics</span>
+                    <p>Bred as premium IceWing royalty, Winter features dangerous frostbreath, acute combat training, and deep strategic knowledge. His fierce devotion means he will fight to the end for those he cares about.</p>
+                </div>
+                <div class="char-card">
+                    <h3>Peril</h3>
+                    <span class="strength-tag">Firescales &amp; Aerial Combat</span>
+                    <p>Possessing an excess of fire, she destroys anything she physically handles, rendering her impervious to physical weapons. She is one of the fastest, most unstoppable flyers in the skies of Pyrrhia.</p>
+                </div>
+                <div class="char-card">
+                    <h3>Turtle</h3>
+                    <span class="strength-tag">Animus Magic &amp; Stealth</span>
+                    <p>As a rare animus wizard, Turtle can enchant any physical object to perform impossible feats. He excels at operating entirely unnoticed, blending perfectly into the background to assess threats safely.</p>
+                </div>
+                <div class="char-card">
+                    <h3>Qibli</h3>
+                    <span class="strength-tag">Genius Intellect &amp; Adaptation</span>
+                    <p>Lacking raw magical power or elemental anomalies, Qibli thrives on extreme observational skills, rapid deductive reasoning, and tactical traps. He easily out-thinks opponents twice his physical size.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="development">
+            <h2>3. Character Development Over the Books</h2>
+            <div class="book-grid">
+                <div class="book-card">
+                    <h3>Moonwatcher's Transformation</h3>
+                    <p>Moon begins her arc completely paralyzed by anxiety, constantly wearing a sensory-blocking stone to mute the deafening thoughts of other dragons. Over the five books, she progresses from a frightened recluse into an influential, courageous leader. She willingly opens her mind to guide her companions and stands tall against ancient manipulation without losing her core kindness.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Winter's Transformation</h3>
+                    <p>Winter arrives at school deeply arrogant and riddled with systemic tribal prejudices, viewing all other dragon breeds as inherently inferior. His transformation is a painful unlearning of family indoctrination. By choosing his friends over his dynamic Royal rank, he successfully discards his rigid royal pride to find a true, self-defined sense of honor.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Peril's Transformation</h3>
+                    <p>Peril starts her journey entirely dependent on others to tell her right from wrong, shifting her obsessive loyalty from the abusive Queen Scarlet over to Clay. Throughout Arc 2, she learns the true meaning of free will. She realizes she is not inherently a monster and learns to trust her own conscience, ultimately using her dangerous firescales to protect the world rather than incinerate it.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Turtle's Transformation</h3>
+                    <p>Turtle spends his life deliberately failing and acting boring out of deep-seated terror that his animus magic will corrupt his soul. When his friends are threatened, however, his paralyzing fear transforms into quiet, fierce heroism. He stops hiding in the background, steps up to battle Darkstalker, and accepts the massive responsibility of his power.</p>
+                </div>
+                <div class="book-card">
+                    <h3>Qibli's Transformation</h3>
+                    <p>Qibli hides a massive insecurity beneath his charming, witty persona, desperately wishing for animus magic so everyone will finally love and validate him. When offered absolute, god-like magical powers by Darkstalker, Qibli achieves his ultimate growth by turning it down. He embraces his identity as an ordinary dragon, recognizing that his intellect and loyalty are more than enough.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="why-read">
+            <h2>4. Why You Should Read This Series</h2>
+            <p>The second arc of <em>Wings of Fire</em> stands out as a masterclass in fantasy world-building and complex character progression. Here is why it is an absolute must-read:</p>
+            <br>
+            <ul>
+                <li><strong>Deconstruction of Prejudice:</strong> By forcing dragonets from historically warring tribes into a single shared cave, the series provides a thoughtful exploration of how empathy dismantles generations of systemic hatred.</li>
+                <li><strong>A Masterful Villain:</strong> Darkstalker represents one of the most compelling villains in modern fantasy. He isn't evil for the sake of it; he is a charismatic, tragic figure whose slow manipulation of the cast makes every chapter intensely suspenseful.</li>
+                <li><strong>Diverse Perspectives:</strong> Each of the five books shifts to a completely different perspective, giving readers an intimate look into five distinct minds dealing with trauma, expectation, and self-worth.</li>
+                <li><strong>High-Stakes Magic:</strong> The rules governing Animus magic present a chilling thematic warning about absolute power and systemic corruption, adding massive stakes to every single enchantment cast.</li>
+            </ul>
+        </section>
+
+    <footer>
+        <p>&copy; 2026 Wings of Fire Fan Portal. All book concepts and characters belong to Tui T. Sutherland.</p>
+    </footer>
+
+    <script>
+        const quizData = [
+            {
+                question: "How do you naturally handle a major, high-stakes crisis?",
+                options: [
+                    { text: "I instantly analyze the surroundings and brainstorm tactical solutions.", char: "Qibli" },
+                    { text: "I charge directly in to eliminate the threat, protecting everyone with brute force.", char: "Peril" },
+                    { text: "I carefully take a step back into the background to assess things before doing anything risky.", char: "Turtle" },
+                    { text: "I try to look deep inside everyone's motives to understand why the crisis is happening.", char: "Moon" },
+                    { text: "I command control of the situation using standard, disciplined rules and pride.", char: "Winter" }
+                ]
+            },
+            {
+                question: "What is your biggest personal insecurity?",
+                options: [
+                    { text: "Feeling entirely plain or unappreciated without some special magic or status.", char: "Qibli" },
+                    { text: "The fear that I am secretly a destructive monster who hurts people accidentally.", char: "Peril" },
+                    { text: "Failing the high expectations of my strict family and being cast out.", char: "Winter" },
+                    { text: "Being completely overwhelmed by the constant stress and social expectations around me.", char: "Moon" },
+                    { text: "The terrifying fear of losing control of my actions or letting power corrupt me.", char: "Turtle" }
+                ]
+            },
+            {
+                question: "Pick an environment where you feel most comfortable relaxing:",
+                options: [
+                    { text: "Somewhere peaceful, quiet, and surrounded by nature or ancient books.", char: "Moon" },
+                    { text: "A highly organized, clean space where strict traditions and honors are respected.", char: "Winter" },
+                    { text: "Right next to a cozy, blazing campfire or out doing intensive physical activities.", char: "Peril" },
+                    { text: "A cozy hidden room or underwater spot where nobody can bother me.", char: "Turtle" },
+                    { text: "A lively, bustling room filled with friends where I can tell jokes and talk strategy.", char: "Qibli" }
+                ]
+            },
+            {
+                question: "Which mystical superpower would you secretly value the most?",
+                options: [
+                    { text: "Deep, unrestricted mind-reading to truly understand what people want.", char: "Moon" },
+                    { text: "Flawless strategic combat skills that ensure I never lose an honorable duel.", char: "Winter" },
+                    { text: "Being completely invulnerable and physically unstoppable against attacks.", char: "Peril" },
+                    { text: "Animus magic to secretly enchant objects to solve my problems.", char: "Turtle" },
+                    { text: "A super-genius brain that can read any social room and outsmart any trap.", char: "Qibli" }
+                ]
+            },
+            {
+                question: "How do your friends typically describe your role in the group?",
+                options: [
+                    { text: "The fiercely loyal protector who can occasionally be a bit too intense.", char: "Peril" },
+                    { text: "The incredibly clever, witty, and dependable coordinator.", char: "Qibli" },
+                    { text: "The quiet, gentle listener who always gives insightful advice.", char: "Moon" },
+                    { text: "The proud, sophisticated perfectionist who secretly cares deeply.", char: "Winter" },
+                    { text: "The laid-back, unassuming friend who avoids drama at all costs.", char: "Turtle" }
+                ]
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let scores = { Moon: 0, Winter: 0, Peril: 0, Turtle: 0, Qibli: 0 };
+
+        const quizWindow = document.getElementById("quiz-window");
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                renderResults();
+                return;
+            }
+
+            const currentData = quizData[currentQuestionIndex];
+            
+            let shuffledOptions = [...currentData.options];
+            for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+            }
+
+            quizWindow.innerHTML = `
+                <div class="quiz-progress">Question ${currentQuestionIndex + 1} of ${quizData.length}</div>
+                <p style="font-size: 1.15rem; font-weight: 600; margin-bottom: 1.5rem;">${currentData.question}</p>
+                <div class="options-list">
+                    ${shuffledOptions.map((opt) => `
+                        <button class="option-btn" onclick="selectOption('${opt.char.replace("'", "\\'")}')">
+                            ${opt.text}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function selectOption(character) {
+            scores[character]++;
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+
+        function renderResults() {
+            let maxScore = -1;
+            let winner = "";
+            
+            for (const character in scores) {
+                if (scores[character] > maxScore) {
+                    maxScore = scores[character];
+                    winner = character;
+                }
+            }
+
+            const descriptions = {
+                "Moon": "You are empathetic, quiet, and deeply intuitive. You sometimes feel overwhelmed by social pressures, but your inner strength and kindness guide your friends through the darkest times.",
+                "Winter": "You are disciplined, proud, and fiercely loyal. Though you can present a cold or distant exterior, you possess a massive heart and are capable of unlearning old biases to protect those you love.",
+                "Peril": "You are passionate, chaotic, and incredibly intense. You struggle with feeling misunderstood or dangerous, but your journey is about realizing your worth and choosing your own path.",
+                "Turtle": "You are observant, quiet, and cautious. You prefer to hide your talents away from the spotlight to avoid conflict, but when the moment strikes, your hidden bravery makes you a true hero.",
+                "Qibli": "You are exceptionally quick-witted, charming, and analytical. You rely entirely on your brain and resourcefulness to solve problems, valuing true friendship and loyalty far above raw power."
+            };
+
+            quizWindow.innerHTML = `
+                <div class="result-box">
+                    <p style="text-transform: uppercase; font-size: 0.9rem; letter-spacing: 2px; color: var(--text-muted);">Your Dynamic Match Result:</p>
+                    <h4 class="result-title">You are ${winner}!</h4>
+                    <p style="margin-top: 1rem; color: var(--text-main); font-size: 1.1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                        ${descriptions[winner]}
+                    </p>
+                    <button class="restart-btn" onclick="resetQuiz()">Take Quiz Again</button>
+                </div>
+            `;
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            scores = { Moon: 0, Winter: 0, Peril: 0, Turtle: 0, Qibli: 0 };
+            renderQuestion();
+        }
+
+        renderQuestion();
+    </script>
+</body>
+</html>
