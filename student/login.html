@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub Pages Comments - Email & Google Auth</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .hidden { display: none; }
+        .auth-container { background: #f4f4f4; padding: 20px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ddd; }
+        .auth-form input { display: block; width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
+        .auth-form button { margin-right: 10px; padding: 8px 12px; }
+        .divider { text-align: center; margin: 15px 0; border-bottom: 1px solid #ccc; line-height: 0.1em; }
+        .divider span { background:#f4f4f4; padding:0 10px; color: #666; font-size: 14px; }
+        .google-btn { display: block; width: 100%; padding: 10px; background-color: #4285F4; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .google-btn:hover { background-color: #357ae8; }
+        .toggle-auth { color: #0066cc; cursor: pointer; text-decoration: underline; font-size: 14px; display: inline-block; margin-top: 10px; }
+        #comments-list { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
+        .comment { background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        #error-message { color: red; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- Error Display -->
+    <div id="error-message"></div>
+
+    <!-- Authentication Container -->
+    <div id="auth-section" class="auth-container">
+        
+        <!-- Sign In Form -->
+        <div id="login-box" class="auth-form">
+            <h3>Sign In</h3>
+            <input type="email" id="login-email" placeholder="Email address" required>
+            <input type="password" id="login-password" placeholder="Password" required>
+            <button id="login-btn">Sign In</button>
+            <span id="go-to-register" class="toggle-auth">Need an account? Register</span>
+        </div>
+
+        <!-- Registration Form -->
+        <div id="register-box" class="auth-form hidden">
+            <h3>Create Account</h3>
+            <input type="email" id="register-email" placeholder="Email address" required>
+            <input type="password" id="register-password" placeholder="Password (min 6 characters)" required>
+            <button id="register-btn">Register</button>
+            <span id="go-to-login" class="toggle-auth">Already have an account? Login</span>
+        </div>
+
+        <!-- Visual Separator -->
+        <div class="divider"><span>OR</span></div>
+
+        <!-- Google Alternative -->
+        <button id="google-login-btn" class="google-btn">Sign in with Google</button>
+    </div>
+
+    <!-- User Profile Section -->
+    <div id="user-section" class="hidden">
+        <p>Logged in as: <strong id="user-display"></strong></p>
+        <button id="logout-btn">Sign Out</button>
+    </div>
+
+    <!-- Comment Submission Section -->
+    <div id="comment-section" class="hidden">
+        <h3>Leave a Comment</h3>
+        <textarea id="comment-input" rows="3" placeholder="Write your comment..."></textarea><br>
+        <button id="submit-comment">Post Comment</button>
+    </div>
+
+    <!-- Comments Display -->
+    <h3>Comments</h3>
+    <div id="comments-list">Loading comments...</div>
+
+    <!-- Firebase SDK Scripts -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-analytics.js";
+      // TODO: Add SDKs for Firebase products that you want to use
+      // https://firebase.google.com/docs/web/setup#available-libraries
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+  // Your web app's Firebase configuration
+          const firebaseConfig = {
+            apiKey: "AIzaSyBOgN2a2K5lc5HH269-UYNLtzyR8r9lQOM",
+            authDomain: "ai-lab-student-shirley.firebaseapp.com",
+            projectId: "ai-lab-student-shirley",
+            storageBucket: "ai-lab-student-shirley.firebasestorage.app",
+            messagingSenderId: "960015098852",
+            appId: "1:960015098852:web:22079c130d73fd58ee1df1"
+          };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // DOM Elements
+        const errMsg = document.getElementById("error-message");
+        const authSection = document.getElementById("auth-section");
+        const loginBox = document.getElementById("login-box");
+        const registerBox = document.getElementById("register-box");
+        const userSection = document.getElementById("user-section");
+        const userDisplay = document.getElementById("user-display");
+        const commentSection = document.getElementById("comment-section");
+        const commentInput = document.getElementById("comment-input");
+        const submitComment = document.getElementById("submit-comment");
+        const commentsList = document.getElementById("comments-list");
+
+        // Toggle UI between Login and Register View
+        document.getElementById("go-to-register").onclick = () => { loginBox.classList.add("hidden"); registerBox.classList.remove("hidden"); errMsg.textContent = ""; };
+        document.getElementById("go-to-login").onclick = () => { registerBox.classList.add("hidden"); loginBox.classList.remove("hidden"); errMsg.textContent = ""; };
+
+        // Handle Registration (Email)
+        document.getElementById("register-btn").onclick = async () => {
+            const email = document.getElementById("register-email").value.trim();
+            const password = document.getElementById("register-password").value;
+            errMsg.textContent = "";
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                errMsg.textContent = error.message;
+            }
+        };
+
+        // Handle Login (Email)
+        document.getElementById("login-btn").onclick = async () => {
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value;
+            errMsg.textContent = "";
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                errMsg.textContent = error.message;
+            }
+        };
+
+        // Handle Google Sign-In
+        document.getElementById("google-login-btn").onclick = async () => {
+            errMsg.textContent = "";
+            try {
+                await signInWithPopup(auth, googleProvider);
+            } catch (error) {
+                errMsg.textContent = error.message;
+            }
+        };
+
+        // Handle Logout
+        document.getElementById("logout-btn").onclick = () => signOut(auth);
+
+        // Track Authentication State Changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                authSection.classList.add("hidden");
+                userSection.classList.remove("hidden");
+                commentSection.classList.remove("hidden");
+                
+                // Show Google Display Name if available, otherwise fallback to Email
+                userDisplay.textContent = user.displayName || user.email;
+            } else {
+                authSection.classList.remove("hidden");
+                userSection.classList.add("hidden");
+                commentSection.classList.add("hidden");
+                userDisplay.textContent = "";
+            }
+        });
+
+        // Post Comment
+        submitComment.onclick = async () => {
+            const text = commentInput.value.trim();
+            if (!text) return;
+            const user = auth.currentUser;
+            
+            // Choose display name string based on login method
+            const commenterName = user.displayName || user.email.split('@')[0];
+            
+            try {
+                await addDoc(collection(db, "comments"), {
+                    name: commenterName,
+                    text: text,
+                    createdAt: serverTimestamp()
+                });
+                commentInput.value = "";
+            } catch (error) {
+                errMsg.textContent = "Error posting comment: " + error.message;
+            }
+        };
+
+        // Load Comments in Real-time
+        const q = query(collection(db, "comments"), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            commentsList.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const div = document.createElement("div");
+                div.className = "comment";
+                div.innerHTML = `<strong>${data.name || 'Anonymous'}</strong>: <p>${data.text}</p>`;
+                commentsList.appendChild(div);
+            });
+        });
+    </script>
+</body>
+</html>
