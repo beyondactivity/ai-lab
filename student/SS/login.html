@@ -308,7 +308,7 @@
 
             try {
                 // Mandatory Rule 1: Use proper public collection path format
-                const commentsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
+                const commentsCollectionRef = collection(db, 'comments');
                 
                 await addDoc(commentsCollectionRef, {
                     text: text,
