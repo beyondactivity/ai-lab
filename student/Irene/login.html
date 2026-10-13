@@ -1,117 +1,415 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Comments App</title>
-  <style>
-    body { font-family: sans-serif; margin: 2rem; max-width: 500px; line-height: 1.5; }
-    input, button { display: block; width: 100%; margin: 0.5rem 0; padding: 0.6rem; box-sizing: border-box; }
-    button { background-color: #039be5; color: white; border: none; font-weight: bold; cursor: pointer; }
-    button:hover { background-color: #0288d1; }
-    #comments-list { border: 1px solid #ccc; padding: 1rem; height: 220px; overflow-y: auto; margin-bottom: 1rem; background: #f9f9f9; }
-    .comment-item { padding: 0.4rem 0; border-bottom: 1px dashed #eee; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Community Hub</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body>
-  <div id="auth-section">
-    <h2>Login / Sign Up</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button id="login-btn">Login</button>
-    <button id="signup-btn" style="background-color: #555;">Sign Up</button>
-  </div>
-  <div id="comment-section" style="display:none;">
-    <h2>Welcome!</h2>
-    <button id="logout-btn" style="background-color: #d32f2f;">Logout</button>
-    <h3>Comments</h3>
-    <div id="comments-list"></div>
-    <form id="comment-form">
-      <input type="text" id="comment-input" placeholder="Write a comment..." required />
-      <button type="submit">Post Comment</button>
-    </form>
-  </div>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+<body class="h-full bg-slate-50 text-slate-800 flex flex-col justify-between">
 
-    const firebaseConfig = {
-       apiKey: "AIzaSyDBuh257UkCxRN260yziiF0mNx3WlO-b00",
-  authDomain: "irene-test-project-d6665.firebaseapp.com",
-  projectId: "irene-test-project-d6665",
-  storageBucket: "irene-test-project-d6665.firebasestorage.app",
-  messagingSenderId: "971824505194",
-  appId: "1:971824505194:web:d9645bed679f30be660513",
-  measurementId: "G-YTWPBYB91J”
-    }
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    F
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Community Hub</h1>
+                    <p class="text-xs text-slate-500">Firebase Auth & Firestore Demo</p>
+                </div>
+            </div>
+            <div id="user-status" class="flex items-center space-x-3">
+                <!-- Dynamically populated auth status -->
+                <span class="text-sm text-slate-500">Loading auth...</span>
+            </div>
+        </div>
+    </header>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    <main class="max-w-4xl w-full mx-auto px-4 py-8 flex-grow">
 
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const loginBtn = document.getElementById('login-btn');
-    const signupBtn = document.getElementById('signup-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const authSection = document.getElementById('auth-section');
-    const commentSection = document.getElementById('comment-section');
-    const commentForm = document.getElementById('comment-form');
-    const commentInput = document.getElementById('comment-input');
-    const commentsList = document.getElementById('comments-list');
+        <!-- Configuration Notice / Setup Modal Trigger -->
+        <div id="config-banner" class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 text-amber-900 shadow-sm">
+            <div class="flex items-start space-x-3">
+                <svg class="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div class="flex-grow">
+                    <h3 class="font-semibold text-amber-900">Firebase Configuration Required</h3>
+                    <p class="text-sm text-amber-700 mt-1">To use authentication and comments, please update your Firebase configuration keys in the script section below or connect your Firebase project.</p>
+                </div>
+            </div>
+        </div>
 
-    let unsubscribeComments;
+        <!-- Auth Section (Visible when logged out) -->
+        <div id="auth-container" class="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <div class="text-center mb-6">
+                <h2 id="auth-title" class="text-2xl font-bold text-slate-900">Welcome Back</h2>
+                <p id="auth-subtitle" class="text-sm text-slate-500 mt-1">Sign in to join the conversation</p>
+            </div>
 
-    loginBtn.addEventListener('click', () => {
-      signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(err => alert(err.message));
-    });
+            <!-- Custom Message Box -->
+            <div id="auth-alert" class="hidden mb-4 p-3 rounded-xl text-sm font-medium"></div>
 
-    signupBtn.addEventListener('click', () => {
-      createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
-        .then(() => alert("Account created!"))
-        .catch(err => alert(err.message));
-    });
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                    <input type="email" id="email" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" id="password" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200 text-sm">
+                    Sign In
+                </button>
+            </form>
 
-    logoutBtn.addEventListener('click', () => signOut(auth));
+            <div class="mt-6 text-center">
+                <button id="toggle-auth-mode" type="button" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                    Need an account? Sign Up
+                </button>
+            </div>
+        </div>
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        authSection.style.display = 'none';
-        commentSection.style.display = 'block';
-        const q = query(collection(db, 'comments'), orderBy('timestamp', 'asc'));
-        unsubscribeComments = onSnapshot(q, (snapshot) => {
-          commentsList.innerHTML = '';
-          snapshot.forEach((doc) => {
-            const div = document.createElement('div');
-            div.className = 'comment-item';
-            div.innerHTML = '<strong>' + doc.data().author + '</strong>: ' + doc.data().text;
-            commentsList.appendChild(div);
-          });
-          commentsList.scrollTop = commentsList.scrollHeight;
+        <!-- Dashboard / Comments Section (Visible when logged in) -->
+        <div id="app-container" class="hidden space-y-6">
+            
+            <!-- Welcome Banner -->
+            <div class="bg-gradient-to-r from-indigo-500 to-violet-600 rounded-2xl p-6 text-white shadow-md flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold">Community Discussion Board</h2>
+                    <p class="text-indigo-100 text-sm mt-1">Share your thoughts with other verified members in real-time.</p>
+                </div>
+                <div class="hidden sm:block bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-mono">
+                    Authenticated
+                </div>
+            </div>
+
+            <!-- Post Comment Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h3 class="text-lg font-semibold text-slate-900 mb-3">Leave a Comment</h3>
+                
+                <!-- Comment Alert Box -->
+                <div id="comment-alert" class="hidden mb-4 p-3 rounded-xl text-sm font-medium"></div>
+
+                <form id="comment-form" class="space-y-4">
+                    <textarea id="comment-input" rows="3" required class="w-full p-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm resize-none" placeholder="What's on your mind?"></textarea>
+                    <div class="flex justify-end">
+                        <button type="submit" id="comment-submit-btn" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-md transition duration-200 text-sm flex items-center space-x-2">
+                            <span>Post Comment</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Comments Feed -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold text-slate-900">Live Comments Feed</h3>
+                    <span id="comment-count" class="text-xs font-medium bg-slate-100 text-slate-600 px-3 py-1 rounded-full">0 comments</span>
+                </div>
+
+                <div id="comments-list" class="space-y-4">
+                    <!-- Dynamic comment items will load here -->
+                    <div class="text-center py-10 text-slate-400 text-sm">
+                        Loading comments...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500">
+        <p>Built with Tailwind CSS, Firebase Authentication, and Firestore.</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            onSnapshot, 
+            query, 
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase configuration resolution
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-community-app';
+        let firebaseConfig = {};
+        
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {
+            console.error("Error parsing firebase config", e);
+        }
+
+        // Fallback or explicit placeholder check
+        if (!firebaseConfig.apiKey) {
+            document.getElementById('config-banner').classList.remove('hidden');
+            // Mock config to prevent immediate fatal compilation crash before user sets keys
+            firebaseConfig = {
+                apiKey: "AIzaSyDXRNWlLLbDiA8ZNKQZOGqH22CarVkz8s8",
+                authDomain: "ba-ai-lab-project-elijah.firebaseapp.com",
+                projectId: "ba-ai-lab-project-elijah",
+                storageBucket: "ba-ai-lab-project-elijah.firebasestorage.app",
+                messagingSenderId: "1086559882135",
+                appId: "1:1086559882135:web:a3be4e98f6f4b001e412d2"
+            };
+        }
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // UI State Variables
+        let isSignUpMode = false;
+        let currentUser = null;
+
+        // DOM Elements
+        const authContainer = document.getElementById('auth-container');
+        const appContainer = document.getElementById('app-container');
+        const userStatusDiv = document.getElementById('user-status');
+        const authForm = document.getElementById('auth-form');
+        const authTitle = document.getElementById('auth-title');
+        const authSubtitle = document.getElementById('auth-subtitle');
+        const authSubmitBtn = document.getElementById('auth-submit-btn');
+        const toggleAuthModeBtn = document.getElementById('toggle-auth-mode');
+        const authAlert = document.getElementById('auth-alert');
+        const commentForm = document.getElementById('comment-form');
+        const commentInput = document.getElementById('comment-input');
+        const commentSubmitBtn = document.getElementById('comment-submit-btn');
+        const commentAlert = document.getElementById('comment-alert');
+        const commentsList = document.getElementById('comments-list');
+        const commentCount = document.getElementById('comment-count');
+
+        // Helper function to display custom alerts instead of alert()
+        function showAlert(element, message, type = 'error') {
+            element.textContent = message;
+            element.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border', 'border-red-200', 'bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
+            if (type === 'error') {
+                element.classList.add('bg-red-50', 'text-red-700', 'border', 'border-red-200');
+            } else {
+                element.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-200');
+            }
+            setTimeout(() => {
+                element.classList.add('hidden');
+            }, 6000);
+        }
+
+        // Toggle Auth Mode (Sign In vs Sign Up)
+        toggleAuthModeBtn.addEventListener('click', () => {
+            isSignUpMode = !isSignUpMode;
+            if (isSignUpMode) {
+                authTitle.textContent = "Create Account";
+                authSubtitle.textContent = "Sign up to start sharing comments";
+                authSubmitBtn.textContent = "Sign Up";
+                toggleAuthModeBtn.textContent = "Already have an account? Sign In";
+            } else {
+                authTitle.textContent = "Welcome Back";
+                authSubtitle.textContent = "Sign in to join the conversation";
+                authSubmitBtn.textContent = "Sign In";
+                toggleAuthModeBtn.textContent = "Need an account? Sign Up";
+            }
         });
-      } else {
-        authSection.style.display = 'block';
-        commentSection.style.display = 'none';
-        if (unsubscribeComments) unsubscribeComments();
-      }
-    });
 
-    commentForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      try {
-        await addDoc(collection(db, 'comments'), {
-          text: commentInput.value,
-          author: auth.currentUser.email,
-          timestamp: serverTimestamp()
+        // Handle Authentication Submission
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            authSubmitBtn.disabled = true;
+            authSubmitBtn.textContent = isSignUpMode ? "Creating Account..." : "Signing In...";
+
+            try {
+                if (isSignUpMode) {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showAlert(authAlert, "Account created successfully!", "success");
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showAlert(authAlert, "Signed in successfully!", "success");
+                }
+            } catch (error) {
+                showAlert(authAlert, error.message, "error");
+            } finally {
+                authSubmitBtn.disabled = false;
+                authSubmitBtn.textContent = isSignUpMode ? "Sign Up" : "Sign In";
+            }
         });
-        commentInput.value = '';
-      } catch (err) {
-        alert(err.message);
-      }
-    });
-  <\/script>
+
+        // Handle Authentication State Changes
+        async function initAuth() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                try {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } catch (e) {
+                    console.error("Custom token sign in failed", e);
+                }
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (user) {
+                    authContainer.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    userStatusDiv.innerHTML = `
+                        <div class="text-right hidden sm:block">
+                            <p class="text-xs font-semibold text-slate-800">${user.email || 'Anonymous User'}</p>
+                            <p class="text-[10px] text-slate-400 font-mono">ID: ${user.uid.substring(0, 8)}...</p>
+                        </div>
+                        <button id="signout-btn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                            Sign Out
+                        </button>
+                    `;
+                    document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
+                    
+                    // Start listening to Firestore comments
+                    loadComments();
+                } else {
+                    authContainer.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                    userStatusDiv.innerHTML = `<span class="text-sm text-slate-500">Not signed in</span>`;
+                }
+            });
+        }
+
+        // Handle Comment Submission
+        commentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const text = commentInput.value.trim();
+            if (!text) return;
+
+            commentSubmitBtn.disabled = true;
+            commentSubmitBtn.textContent = "Posting...";
+
+            try {
+                // Mandatory Rule 1: Use proper public collection path format
+                const commentsCollectionRef = collection(db, 'comments');
+                
+                await addDoc(commentsCollectionRef, {
+                    text: text,
+                    userEmail: currentUser.email || 'Anonymous User',
+                    userId: currentUser.uid,
+                    createdAt: serverTimestamp()
+                });
+
+                commentInput.value = '';
+                showAlert(commentAlert, "Comment posted successfully!", "success");
+            } catch (error) {
+                console.error("Error posting comment:", error);
+                showAlert(commentAlert, currentUser.email+ " " + currentUser.uid + " Failed to post comment: " + error.message, "error");
+            } finally {
+                commentSubmitBtn.disabled = false;
+                commentSubmitBtn.textContent = "Post Comment";
+            }
+        });
+
+        // Load Comments with Real-time Realtime Listener (onSnapshot)
+        function loadComments() {
+            if (!currentUser) return;
+
+            // Mandatory Rule 1: Use proper public collection path format
+            const commentsCollectionRef = collection(db, 'comments');
+            
+            // Mandatory Rule 2: Simple query without compound ordering/filtering indexes to guarantee flawless execution
+            const q = query(commentsCollectionRef);
+
+            // Mandatory Rule 3: Error callback required for onSnapshot
+            onSnapshot(q, (snapshot) => {
+                const comments = [];
+                snapshot.forEach((doc) => {
+                    comments.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Sort comments in memory (newest first) to comply with rule 2
+                comments.sort((a, b) => {
+                    const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+                    const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
+                commentCount.textContent = `${comments.length} comment${comments.length === 1 ? '' : 's'}`;
+
+                if (comments.length === 0) {
+                    commentsList.innerHTML = `
+                        <div class="text-center py-10 text-slate-400 text-sm">
+                            No comments yet. Be the first to share your thoughts!
+                        </div>
+                    `;
+                    return;
+                }
+
+                commentsList.innerHTML = comments.map(comment => {
+                    const dateStr = comment.createdAt?.toDate ? comment.createdAt.toDate().toLocaleString() : 'Just now';
+                    const isOwnComment = currentUser && comment.userId === currentUser.uid;
+                    
+                    return `
+                        <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-7 h-7 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-xs">
+                                        ${comment.userEmail.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span class="text-xs font-semibold text-slate-800">${escapeHtml(comment.userEmail)}</span>
+                                    ${isOwnComment ? '<span class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium">You</span>' : ''}
+                                </div>
+                                <span class="text-[11px] text-slate-400">${dateStr}</span>
+                            </div>
+                            <p class="text-sm text-slate-700 pl-9 whitespace-pre-wrap">${escapeHtml(comment.text)}</p>
+                        </div>
+                    `;
+                }).join('');
+
+            }, (error) => {
+                console.error("Firestore snapshot error:", error);
+                commentsList.innerHTML = `
+                    <div class="text-center py-10 text-red-500 text-sm">
+                        Unable to load comments. Please check your Firebase permissions.
+                    </div>
+                `;
+            });
+        }
+
+        // Basic HTML Escaper for security
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Initialize application on load
+        window.onload = function() {
+            initAuth();
+        };
+    </script>
+
 </body>
-</html>`;
-
-
+</html>
