@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Community — Firebase Login</title>
+<style>
+:root{--ink:#192b40;--muted:#718096;--paper:#f5f7fb;--blue:#435bea;--blue-light:#eef0ff;--line:#e7ebf2;--white:#fff}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,sans-serif}.top{height:70px;padding:0 max(calc((100vw - 960px)/2),6vw);display:flex;align-items:center;justify-content:space-between;background:white;border-bottom:1px solid var(--line)}.brand{font-size:19px;font-weight:800}.logo{display:inline-grid;place-items:center;background:var(--blue);color:white;width:34px;height:34px;border-radius:11px;margin-right:9px}.muted{color:var(--muted);font-size:13px}main{max-width:960px;margin:45px auto;padding:0 22px}.intro{margin:0 0 24px}.intro h1{font-size:36px;margin:0 0 9px;letter-spacing:-1px}.intro p{color:var(--muted);line-height:1.55;margin:0}.grid{display:grid;grid-template-columns:minmax(260px,.8fr) 1.2fr;gap:20px}.card{background:white;border:1px solid var(--line);border-radius:19px;padding:24px;box-shadow:0 8px 28px #283c5b08}.card h2{font-size:19px;margin:0 0 8px}.help{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 17px}.tabs{display:flex;gap:8px;margin-bottom:14px}.tab,.secondary{border:1px solid var(--line);background:white;border-radius:9px;padding:9px 12px;font-weight:700;color:var(--muted);cursor:pointer}.tab.active{background:var(--blue-light);border-color:#c5cbff;color:var(--blue)}input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;margin:0 0 10px;color:var(--ink)}textarea{min-height:100px;resize:vertical}.primary{background:var(--blue);color:white;border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}.auth-submit{width:100%}.compose{display:flex;flex-direction:column;align-items:flex-end}.feed{margin-top:18px;max-height:480px;overflow:auto}.comment{border-top:1px solid var(--line);padding:14px 0}.comment-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:12px}.comment-head span{color:var(--muted)}.comment-text{font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.status{min-height:20px;font-size:12px;color:var(--muted);margin:9px 0 0}.error{color:#b84b3d}.notice{font-size:12px;color:#806023;background:#fff8e6;padding:11px;border-radius:9px;line-height:1.45;margin-top:13px}.signed-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.signed-name{font-size:14px;font-weight:700;overflow-wrap:anywhere}[hidden]{display:none!important}button:disabled,textarea:disabled{opacity:.55;cursor:not-allowed}@media(max-width:700px){main{margin:28px auto}.grid{grid-template-columns:1fr}.card{padding:20px}.intro h1{font-size:30px}.top{padding:0 20px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><span class="logo">✦</span>Student Community</div><span class="muted">A kind place to talk math</span></header>
+<main>
+<section class="intro"><h1>Sign in & share</h1><p>Create an account or sign in to leave a comment. Use a nickname and keep personal information private.</p></section>
+<div class="grid">
+<section class="card">
+<h2 id="auth-title">Welcome back</h2><p class="help" id="auth-help">Sign in or create an account to join the conversation.</p>
+<div id="auth-panel"><div class="tabs"><button class="tab active" id="signin-tab" type="button">Sign in</button><button class="tab" id="signup-tab" type="button">Create account</button></div>
+<form id="auth-form"><input id="nickname" type="text" maxlength="30" autocomplete="nickname" placeholder="Nickname" hidden><input id="email" type="email" autocomplete="email" placeholder="Email address" required><input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="Password (at least 6 characters)" required><button class="primary auth-submit" id="auth-submit" type="submit">Sign in</button></form><p class="status" id="auth-status" role="status"></p></div>
+<div id="signed-panel" hidden><div class="signed-row"><span class="signed-name" id="signed-name"></span><button class="secondary" id="signout" type="button">Sign out</button></div><p class="status">You can now post a comment.</p></div>
+<div class="notice" id="config-note">Add your Firebase web app config below, enable Email/Password sign-in, and open this page over HTTPS or localhost.</div>
+</section>
+<section class="card"><h2>Comments</h2><p class="help">Ask a math question, share a tip, or celebrate a win.</p>
+<form class="compose" id="comment-form"><textarea id="comment" maxlength="500" placeholder="Write a helpful, kind comment…" disabled required></textarea><button class="primary" id="post-button" type="submit" disabled>Post comment</button></form><p class="status" id="comment-status" role="status"></p><div class="feed" id="feed"><p class="help">Connect Firebase to load comments.</p></div>
+</section>
+</div>
+</main>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+
+// Replace these values with your Firebase project's web app config.
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = (selector) => document.querySelector(selector);
+let mode = 'signin';
+let signedInUser = null;
+
+function message(element, text, isError = false) {
+  element.textContent = text;
+  element.classList.toggle('error', isError);
+}
+function setMode(nextMode) {
+  mode = nextMode;
+  const signup = mode === 'signup';
+  $('#signin-tab').classList.toggle('active', !signup);
+  $('#signup-tab').classList.toggle('active', signup);
+  $('#auth-title').textContent = signup ? 'Create your account' : 'Welcome back';
+  $('#auth-help').textContent = signup ? 'Use an email and password to join the conversation.' : 'Sign in to join the conversation.';
+  $('#nickname').hidden = !signup;
+  $('#nickname').required = signup;
+  $('#password').autocomplete = signup ? 'new-password' : 'current-password';
+  $('#auth-submit').textContent = signup ? 'Create account' : 'Sign in';
+  message($('#auth-status'), '');
+}
+$('#signin-tab').addEventListener('click', () => setMode('signin'));
+$('#signup-tab').addEventListener('click', () => setMode('signup'));
+
+$('#auth-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const email = $('#email').value.trim();
+  const password = $('#password').value;
+  $('#auth-submit').disabled = true;
+  message($('#auth-status'), mode === 'signup' ? 'Creating account…' : 'Signing in…');
+  try {
+    if (mode === 'signup') {
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      const nickname = $('#nickname').value.trim();
+      if (nickname) await updateProfile(credential.user, { displayName: nickname });
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+    }
+    $('#auth-form').reset();
+    message($('#auth-status'), '');
+  } catch (error) {
+    const errors = {
+      'auth/email-already-in-use': 'That email already has an account. Try signing in.',
+      'auth/invalid-email': 'Enter a valid email address.',
+      'auth/invalid-credential': 'Email or password is incorrect.',
+      'auth/weak-password': 'Choose a password with at least 6 characters.',
+      'auth/too-many-requests': 'Too many tries. Wait a bit and try again.'
+    };
+    message($('#auth-status'), errors[error.code] || 'Could not sign in. Check your Firebase setup and try again.', true);
+  } finally {
+    $('#auth-submit').disabled = false;
+  }
+});
+$('#signout').addEventListener('click', () => signOut(auth));
+
+function renderComments(snapshot) {
+  const feed = $('#feed');
+  feed.replaceChildren();
+  if (snapshot.empty) {
+    const empty = document.createElement('p');
+    empty.className = 'help';
+    empty.textContent = 'No comments yet. Be the first to share a helpful tip!';
+    feed.append(empty);
+    return;
+  }
+  snapshot.forEach((item) => {
+    const data = item.data();
+    const article = document.createElement('article');
+    const header = document.createElement('div');
+    const author = document.createElement('strong');
+    const date = document.createElement('span');
+    const text = document.createElement('p');
+    article.className = 'comment';
+    header.className = 'comment-head';
+    author.textContent = data.authorName || 'Student';
+    date.textContent = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString() : 'Just now';
+    text.className = 'comment-text';
+    text.textContent = data.text || '';
+    header.append(author, date);
+    article.append(header, text);
+    feed.append(article);
+  });
+}
+
+onAuthStateChanged(auth, (user) => {
+  signedInUser = user;
+  const signedIn = Boolean(user);
+  $('#auth-panel').hidden = signedIn;
+  $('#signed-panel').hidden = !signedIn;
+  $('#signed-name').textContent = signedIn ? `Signed in as ${user.displayName || user.email}` : '';
+  $('#comment').disabled = !signedIn;
+  $('#post-button').disabled = !signedIn;
+  $('#config-note').hidden = true;
+  const comments = query(collection(db, 'comments'), orderBy('createdAt', 'desc'), limit(50));
+  onSnapshot(comments, renderComments, (error) => {
+    const note = document.createElement('p');
+    note.className = 'help';
+    note.textContent = 'Could not load comments. Check your Firestore rules.';
+    $('#feed').replaceChildren(note);
+    console.error(error);
+  });
+});
+
+$('#comment-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!signedInUser) return message($('#comment-status'), 'Sign in before posting.', true);
+  const text = $('#comment').value.trim();
+  if (!text) return message($('#comment-status'), 'Write a comment first.', true);
+  $('#post-button').disabled = true;
+  message($('#comment-status'), 'Posting…');
+  try {
+    await addDoc(collection(db, 'comments'), {
+      uid: signedInUser.uid,
+      authorName: (signedInUser.displayName || signedInUser.email?.split('@')[0] || 'Student').slice(0, 30),
+      text: text.slice(0, 500),
+      createdAt: serverTimestamp()
+    });
+    $('#comment').value = '';
+    message($('#comment-status'), 'Your comment was posted.');
+  } catch (error) {
+    message($('#comment-status'), error.code === 'permission-denied' ? 'Posting was blocked. Check your Firestore rules.' : 'Could not post. Check your Firebase setup.', true);
+  } finally {
+    $('#post-button').disabled = !signedInUser;
+  }
+});
+</script>
+</body>
+</html>
