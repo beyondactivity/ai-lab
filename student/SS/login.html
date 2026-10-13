@@ -333,7 +333,7 @@
             if (!currentUser) return;
 
             // Mandatory Rule 1: Use proper public collection path format
-            const commentsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'comments');
+            const commentsCollectionRef = collection(db, 'comments');
             
             // Mandatory Rule 2: Simple query without compound ordering/filtering indexes to guarantee flawless execution
             const q = query(commentsCollectionRef);
