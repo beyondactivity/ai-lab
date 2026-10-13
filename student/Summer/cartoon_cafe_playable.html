@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartoon Café</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#fff3d6,#ffe0b2);color:#3b2a20}
+  button{font:inherit;cursor:pointer;border:0}
+  .top{background:#7b3f20;color:white;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 3px 10px #0002}
+  .logo{font-size:26px;font-weight:900}
+  .money{background:#fff;color:#5b321c;padding:10px 16px;border-radius:20px;font-weight:bold}
+  .screen{max-width:1100px;margin:auto;padding:24px}
+  .home{min-height:calc(100vh - 70px);display:flex;align-items:center;justify-content:center;text-align:center}
+  .hero{background:#fffaf0;border:4px solid #7b3f20;border-radius:28px;padding:50px;box-shadow:0 12px 30px #0002;max-width:700px}
+  h1{font-size:64px;margin:0 0 10px;color:#8d431f}
+  .hero p{font-size:20px}
+  .play{background:#ef7d24;color:#fff;padding:18px 45px;border-radius:18px;font-size:24px;font-weight:900;box-shadow:0 5px 0 #a84e17}
+  .play:active{transform:translateY(4px);box-shadow:0 1px 0 #a84e17}
+  .game{display:none}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .stat,.panel{background:#fffaf0;border:3px solid #d69b68;border-radius:18px;padding:15px;box-shadow:0 5px 15px #0001}
+  .stat b{display:block;font-size:24px}
+  .layout{display:grid;grid-template-columns:1.4fr .8fr;gap:18px}
+  .customer{text-align:center;min-height:380px;display:flex;flex-direction:column;justify-content:center}
+  .animal{font-size:100px;animation:bob 1.5s infinite ease-in-out}
+  @keyframes bob{50%{transform:translateY(-8px)}}
+  .tag{display:inline-block;padding:6px 12px;border-radius:20px;color:white;font-weight:900;margin:8px}
+  .common{background:#65a30d}.rare{background:#2563eb}.epic{background:#9333ea}.legendary{background:#d97706}
+  .order{font-size:28px;font-weight:900;margin:10px}
+  .timer{height:14px;background:#ead8c5;border-radius:10px;overflow:hidden;margin:15px 0}
+  .timer span{display:block;height:100%;background:#ef7d24;width:100%;transition:width .2s}
+  .foods{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .food{background:#f3c27b;padding:15px;border-radius:14px;font-size:18px;font-weight:bold}
+  .food:hover{background:#efaa51}
+  .food:disabled{opacity:.45;cursor:not-allowed}
+  .message{min-height:28px;font-weight:bold;margin:10px}
+  .upgrades{margin-top:18px}
+  .upgrade{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #e0c4aa}
+  .buy{background:#7b3f20;color:white;padding:9px 13px;border-radius:10px}
+  .buy:disabled{opacity:.4}
+  .critic{display:none;background:#fff0a8;border:3px solid #d69b00;border-radius:18px;padding:15px;margin-bottom:18px;text-align:center;font-weight:bold}
+  @media(max-width:800px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}h1{font-size:44px}.hero{padding:30px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">🍳 Cartoon Café</div>
+  <div class="money">💰 $<span id="money">0</span></div>
+</header>
+
+<section id="home" class="screen home">
+  <div class="hero">
+    <h1>🍳 Cartoon Café</h1>
+    <p>Cook delicious food for adorable animals, earn money, and build the best restaurant in town!</p>
+    <p id="away"></p>
+    <button class="play" onclick="startGame()">▶ PLAY</button>
+  </div>
+</section>
+
+<main id="game" class="screen game">
+  <div id="critic" class="critic">⭐ FOOD CRITIC ALERT! Impress this customer for a huge bonus!</div>
+  <div class="stats">
+    <div class="stat">💰 Money<b>$<span id="money2">0</span></b></div>
+    <div class="stat">⭐ Served<b><span id="served">0</span></b></div>
+    <div class="stat">🏪 Restaurant<b>Lv. <span id="restLv">1</span></b></div>
+    <div class="stat">👨‍🍳 Chef<b>Lv. <span id="chefLv">1</span></b></div>
+  </div>
+
+  <div class="layout">
+    <section class="panel customer">
+      <div id="animal" class="animal">🐶</div>
+      <div id="rank" class="tag common">COMMON</div>
+      <div id="customerName" style="font-size:20px;font-weight:bold">Buddy</div>
+      <div class="order" id="order">🍔 Burger</div>
+      <div>Patience: <span id="patienceText">100</span>%</div>
+      <div class="timer"><span id="bar"></span></div>
+      <div class="message" id="message">Choose the food they ordered!</div>
+      <div class="foods" id="foods"></div>
+    </section>
+
+    <aside class="panel">
+      <h2>🛠️ Upgrades</h2>
+      <div class="upgrade">
+        <div><b>👨‍🍳 Better Chef</b><br><small>Customers wait longer.</small></div>
+        <button class="buy" id="chefBuy" onclick="buyChef()">$<span id="chefCost">100</span></button>
+      </div>
+      <div class="upgrade">
+        <div><b>🏪 Bigger Restaurant</b><br><small>Earn more from every order.</small></div>
+        <button class="buy" id="restBuy" onclick="buyRestaurant()">$<span id="restCost">150</span></button>
+      </div>
+      <div class="upgrade">
+        <div><b>⭐ Customer Rank</b><br><small>Unlock better-paying customers.</small></div>
+        <button class="buy" id="rankBuy" onclick="buyRank()">$<span id="rankCost">250</span></button>
+      </div>
+      <hr>
+      <p><b>Tip:</b> Higher-ranked animals pay more, but their orders are harder!</p>
+      <button class="buy" onclick="resetGame()">Reset Game</button>
+    </aside>
+  </div>
+</main>
+
+<script>
+const foods = [
+  ["🍔","Burger"],["🍕","Pizza"],["🌮","Taco"],["🍩","Donut"],
+  ["🍜","Ramen"],["🥞","Pancakes"],["🍣","Sushi"],["🍦","Ice Cream"]
+];
+const animals = [
+  ["🐶","Buddy"],["🐱","Milo"],["🐰","Coco"],["🦊","Ruby"],
+  ["🐼","Panda"],["🐸","Peppy"],["🐨","Kiki"],["🐯","Tigger"]
+];
+const ranks = [
+  {name:"COMMON", cls:"common", base:25, difficulty:1, min:1},
+  {name:"RARE", cls:"rare", base:55, difficulty:1.2, min:2},
+  {name:"EPIC", cls:"epic", base:110, difficulty:1.5, min:3},
+  {name:"LEGENDARY", cls:"legendary", base:250, difficulty:1.9, min:4}
+];
+
+let state = JSON.parse(localStorage.getItem("cartoonCafe")) || {
+  money:100, served:0, chef:1, restaurant:1, rank:1, last:Date.now()
+};
+let current, timer, critic=false;
+
+function save(){state.last=Date.now();localStorage.setItem("cartoonCafe",JSON.stringify(state)); updateUI();}
+function updateUI(){
+  document.querySelectorAll("#money,#money2").forEach(x=>x.textContent=Math.floor(state.money));
+  served.textContent=state.served; chefLv.textContent=state.chef; restLv.textContent=state.restaurant;
+  chefCost.textContent=100*state.chef; restCost.textContent=150*state.restaurant; rankCost.textContent=250*state.rank;
+  chefBuy.disabled=state.money<100*state.chef;
+  restBuy.disabled=state.money<150*state.restaurant;
+  rankBuy.disabled=state.money<250*state.rank || state.rank>=4;
+}
+function startGame(){
+  document.getElementById("home").style.display="none";
+  document.getElementById("game").style.display="block";
+  updateUI(); newCustomer();
+}
+function newCustomer(){
+  clearInterval(timer);
+  const maxRank=state.rank;
+  const r=Math.floor(Math.random()*maxRank);
+  const rank=ranks[r];
+  const a=animals[Math.floor(Math.random()*animals.length)];
+  let count=rank.min + Math.floor(Math.random()*2);
+  if(rank===ranks[0]) count=1;
+  const chosen=[];
+  while(chosen.length<count){
+    const f=foods[Math.floor(Math.random()*foods.length)];
+    if(!chosen.some(x=>x[1]===f[1])) chosen.push(f);
+  }
+  current={rank,animal:a,order:chosen,time:Math.max(14,25-rank.difficulty*5-state.chef)};
+  animal.textContent=a[0]; customerName.textContent=a[1];
+  rank.textContent=rank.name; rank.className="tag "+rank.cls;
+  order.textContent="Order: "+chosen.map(x=>x[0]+" "+x[1]).join(" + ");
+  patienceText.textContent=100; bar.style.width="100%"; message.textContent="Choose the food they ordered!";
+  foodsEl.innerHTML="";
+  foods.forEach(f=>{
+    const b=document.createElement("button");b.className="food";b.textContent=f[0]+" "+f[1];
+    b.onclick=()=>cook(f,b); foodsEl.appendChild(b);
+  });
+  critic=Math.random()<0.08;
+  document.getElementById("critic").style.display=critic?"block":"none";
+  let left=current.time;
+  timer=setInterval(()=>{
+    left-=.2; const pct=Math.max(0,left/current.time*100);
+    bar.style.width=pct+"%";patienceText.textContent=Math.ceil(pct);
+    if(left<=0){clearInterval(timer);message.textContent="😢 They left! Try the next customer.";setTimeout(newCustomer,900);}
+  },200);
+}
+const foodsEl=document.getElementById("foods");
+function cook(f,b){
+  if(!current||current.time<=0)return;
+  b.disabled=true;
+  const found=current.order.find(x=>x[1]===f[1]);
+  if(!found){message.textContent="❌ Wrong food!";setTimeout(()=>b.disabled=false,500);return;}
+  found.done=true;b.textContent="✅ "+f[1];
+  if(current.order.every(x=>x.done)){
+    clearInterval(timer);
+    const remaining=parseInt(patienceText.textContent);
+    let reward=Math.round(current.rank.base*(1+state.restaurant*.18)*(0.65+remaining/250));
+    if(critic)reward*=3;
+    const tip=Math.random()<0.35?Math.round(reward*.25):0;
+    reward+=tip;state.money+=reward;state.served++;
+    message.textContent="🎉 Great job! +$"+reward+(tip?" (tip included!)":"");
+    save();setTimeout(newCustomer,1000);
+  }
+}
+function buyChef(){const c=100*state.chef;if(state.money>=c){state.money-=c;state.chef++;save();}}
+function buyRestaurant(){const c=150*state.restaurant;if(state.money>=c){state.money-=c;state.restaurant++;save();}}
+function buyRank(){const c=250*state.rank;if(state.money>=c&&state.rank<4){state.money-=c;state.rank++;save();}}
+function resetGame(){if(confirm("Reset all progress?")){localStorage.removeItem("cartoonCafe");location.reload();}}
+function applyAway(){
+  const now=Date.now(), elapsed=Math.max(0,(now-(state.last||now))/1000);
+  const earned=Math.min(500,Math.floor(elapsed/60)*2);
+  if(earned>0){state.money+=earned;document.getElementById("away").textContent="Welcome back! You made $"+earned+" while you were gone! 💰";save();}
+}
+applyAway();updateUI();
+</script>
+</body>
+</html>
