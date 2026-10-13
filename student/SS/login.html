@@ -321,7 +321,7 @@
                 showAlert(commentAlert, "Comment posted successfully!", "success");
             } catch (error) {
                 console.error("Error posting comment:", error);
-                showAlert(commentAlert, "Failed to post comment: " + error.message, "error");
+                showAlert(commentAlert, currentUser.email+ " " + currentUser.uid + " Failed to post comment: " + error.message, "error");
             } finally {
                 commentSubmitBtn.disabled = false;
                 commentSubmitBtn.textContent = "Post Comment";
