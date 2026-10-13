@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🐾 Cartoon Cafe Guestbook ☕</title>
+  <style>
+    body {
+      background-color: #fcf6f0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #5c4033;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .cafe-card {
+      background: white;
+      border: 3px solid #ffccb6;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+    }
+    h1 { text-align: center; color: #ff8b94; }
+    input, textarea, button {
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      border: 2px solid #ffe3e3;
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #ffb7b2;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover { background-color: #ff8b94; }
+    .hidden { display: none; }
+    #comments-display p {
+      background: #fff5f5;
+      padding: 10px;
+      border-radius: 10px;
+      border-left: 4px solid #ffb7b2;
+    }
+  </style>
+</head>
+<body>
+
+<div class="cafe-card">
+  <h1>🐾 Cartoon Cafe ☕</h1>
+  
+  <!-- Auth Section -->
+  <div id="auth-section">
+    <h3>Sign in to leave a comment!</h3>
+    <input type="email" id="email" placeholder="Your cute email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="login-btn">🐾 Enter Cafe</button>
+  </div>
+
+  <!-- Comments Section -->
+  <div id="comments-section" class="hidden">
+    <h3>Leave a cute note:</h3>
+    <textarea id="comment-input" placeholder="Meow! Drop a comment..."></textarea>
+    <button id="submit-comment">Post Comment 🐾</button>
+    <button id="logout-btn" style="background-color: #ddd; color: #555;">Leave Cafe</button>
+    <div id="comments-display"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "cartoon-cafe.firebaseapp.com",
+    projectId: "cartoon-cafe",
+    storageBucket: "cartoon-cafe.appspot.com",
+    messagingSenderId: "520205488064",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const authSec = document.getElementById('auth-section');
+  const commentsSec = document.getElementById('comments-section');
+
+  // Handle Login
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) { alert("Error entering cafe: " + e.message); }
+  });
+
+  // Handle Logout
+  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+  // Track Auth State changes
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      authSec.classList.add('hidden');
+      commentsSec.classList.remove('hidden');
+      loadComments();
+    } else {
+      authSec.classList.remove('hidden');
+      commentsSec.classList.add('hidden');
+    }
+  });
+
+  // Submit comment
+  document.getElementById('submit-comment').addEventListener('click', async () => {
+    const textInput = document.getElementById('comment-input');
+    if (!textInput.value) return;
+    try {
+      await addDoc(collection(db, 'comments'), {
+        text: textInput.value,
+        timestamp: Date.now(),
+        userId: auth.currentUser.uid
+      });
+      textInput.value = '';
+    } catch(e) { alert("Save error: " + e.message); }
+  });
+
+  // Load comments in real-time
+  function loadComments() {
+    const q = query(collection(db, 'comments'), orderBy('timestamp', 'desc'));
+    onSnapshot(q, (snapshot) => {
+      const list = document.getElementById('comments-display');
+      list.innerHTML = '';
+      snapshot.forEach((doc) => {
+        const p = document.createElement('p');
+        p.textContent = `🐾: ${doc.data().text}`;
+        list.appendChild(p);
+      });
+    });
+  }
+</script>
+</body>
+</html>
