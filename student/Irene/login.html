@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Comments App</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; max-width: 500px; line-height: 1.5; }
+    input, button { display: block; width: 100%; margin: 0.5rem 0; padding: 0.6rem; box-sizing: border-box; }
+    button { background-color: #039be5; color: white; border: none; font-weight: bold; cursor: pointer; }
+    button:hover { background-color: #0288d1; }
+    #comments-list { border: 1px solid #ccc; padding: 1rem; height: 220px; overflow-y: auto; margin-bottom: 1rem; background: #f9f9f9; }
+    .comment-item { padding: 0.4rem 0; border-bottom: 1px dashed #eee; }
+  </style>
+</head>
+<body>
+  <div id="auth-section">
+    <h2>Login / Sign Up</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="login-btn">Login</button>
+    <button id="signup-btn" style="background-color: #555;">Sign Up</button>
+  </div>
+  <div id="comment-section" style="display:none;">
+    <h2>Welcome!</h2>
+    <button id="logout-btn" style="background-color: #d32f2f;">Logout</button>
+    <h3>Comments</h3>
+    <div id="comments-list"></div>
+    <form id="comment-form">
+      <input type="text" id="comment-input" placeholder="Write a comment..." required />
+      <button type="submit">Post Comment</button>
+    </form>
+  </div>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "irene-test-project-d6665.firebaseapp.com",
+      projectId: "irene-test-project-d6665",
+      storageBucket: "irene-test-project-d6665.appspot.com",
+      messagingSenderId: "971824505194",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const authSection = document.getElementById('auth-section');
+    const commentSection = document.getElementById('comment-section');
+    const commentForm = document.getElementById('comment-form');
+    const commentInput = document.getElementById('comment-input');
+    const commentsList = document.getElementById('comments-list');
+
+    let unsubscribeComments;
+
+    loginBtn.addEventListener('click', () => {
+      signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(err => alert(err.message));
+    });
+
+    signupBtn.addEventListener('click', () => {
+      createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
+        .then(() => alert("Account created!"))
+        .catch(err => alert(err.message));
+    });
+
+    logoutBtn.addEventListener('click', () => signOut(auth));
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        authSection.style.display = 'none';
+        commentSection.style.display = 'block';
+        const q = query(collection(db, 'comments'), orderBy('timestamp', 'asc'));
+        unsubscribeComments = onSnapshot(q, (snapshot) => {
+          commentsList.innerHTML = '';
+          snapshot.forEach((doc) => {
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.innerHTML = '<strong>' + doc.data().author + '</strong>: ' + doc.data().text;
+            commentsList.appendChild(div);
+          });
+          commentsList.scrollTop = commentsList.scrollHeight;
+        });
+      } else {
+        authSection.style.display = 'block';
+        commentSection.style.display = 'none';
+        if (unsubscribeComments) unsubscribeComments();
+      }
+    });
+
+    commentForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await addDoc(collection(db, 'comments'), {
+          text: commentInput.value,
+          author: auth.currentUser.email,
+          timestamp: serverTimestamp()
+        });
+        commentInput.value = '';
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  <\/script>
+</body>
+</html>`;
+
+
