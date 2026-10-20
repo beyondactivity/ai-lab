@@ -3,495 +3,1057 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wings of Fire: The Jade Mountain Prophecy (Arc 2)</title>
+    <title>Wings of Fire: Battle for Pyrrhia</title>
     <style>
-        :root {
-            --primary: #1e293b;
-            --secondary: #0f172a;
-            --accent: #ca8a04;
-            --accent-hover: #a16207;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --bg-card: #1e293b;
-            --bg-body: #0b0f19;
-            --border: #334155;
-        }
-
         * {
             box-sizing: border-box;
+            user-select: none;
+        }
+        body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            line-height: 1.6;
-        }
-
-        header {
-            background: linear-gradient(135deg, #1e1b4b, #0f172a);
-            border-bottom: 2px solid var(--accent);
-            padding: 3rem 1rem;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 2.8rem;
-            color: #fef08a;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        header p {
-            color: var(--text-muted);
-            font-size: 1.2rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        nav {
-            background-color: var(--secondary);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        nav a {
-            color: var(--text-main);
-            text-decoration: none;
-            padding: 1rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        nav a:hover {
-            color: var(--accent);
-            background-color: rgba(255,255,255,0.05);
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
-        }
-
-        section {
-            background-color: #111827;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 2.5rem;
-            margin-bottom: 3rem;
-            scroll-margin-top: 5rem;
-        }
-
-        section h2 {
-            font-size: 2rem;
-            color: #fef08a;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
-        }
-
-        /* Quiz Styling */
-        .quiz-container {
-            background: #1f2937;
-            border: 2px solid var(--accent);
-            border-radius: 8px;
-            padding: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .quiz-container h3 {
-            margin-bottom: 1rem;
-            color: #fef08a;
-        }
-
-        .quiz-progress {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        .options-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .option-btn {
-            background-color: #374151;
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            padding: 1rem;
-            border-radius: 6px;
-            text-align: left;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.2s ease;
-        }
-
-        .option-btn:hover {
-            background-color: #4b5563;
-            border-color: var(--accent);
-        }
-
-        .result-box {
-            text-align: center;
-            padding: 1rem;
-        }
-
-        .result-title {
-            font-size: 1.8rem;
-            color: #fef08a;
-            margin-top: 1rem;
-        }
-
-        .restart-btn {
-            margin-top: 1.5rem;
-            background-color: var(--accent);
-            color: #000;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .restart-btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        /* Book Grid */
-        .book-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .book-card {
-            background-color: #1f2937;
-            padding: 1.5rem;
-            border-left: 4px solid var(--accent);
-            border-radius: 0 6px 6px 0;
-        }
-
-        .book-card h3 {
-            color: #fef08a;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Character Layouts */
-        .char-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .char-card {
-            background-color: #1f2937;
-            padding: 1.5rem;
-            border-radius: 6px;
-            border-top: 3px solid var(--accent);
-        }
-
-        .char-card h3 {
-            color: #fef08a;
-            margin-bottom: 0.5rem;
-        }
-
-        .strength-tag {
-            display: inline-block;
-            background-color: #b45309;
+            background: #111;
             color: #fff;
-            font-size: 0.8rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            margin-bottom: 0.75rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #222;
+            transition: background 0.5s;
+        }
+        
+        /* Personality Quiz Setup */
+        #quiz-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1e1e2e, #0f0f1a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+            text-align: center;
+        }
+        .quiz-card {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .quiz-option {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .quiz-option:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: #00ffcc;
+            transform: translateX(5px);
+        }
+
+        /* Top HUD Elements */
+        #top-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.6);
+            z-index: 10;
+        }
+        .hud-item {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .hud-btn {
+            background: #ff4757;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
             font-weight: bold;
         }
 
-        ul {
-            margin-left: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        li {
-            margin-bottom: 0.5rem;
-        }
-
-        footer {
+        /* Zelda Style Boss Health Bar */
+        #boss-ui {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            max-width: 600px;
             text-align: center;
-            padding: 2rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--border);
-            margin-top: 4rem;
+            z-index: 10;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        #boss-ui.active {
+            display: block;
+            opacity: 1;
+        }
+        #boss-name {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 8px #ff0000;
+        }
+        #boss-bar-container {
+            width: 100%;
+            height: 14px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #fff;
+            border-radius: 4px;
+            padding: 2px;
+            box-shadow: 0 0 10px rgba(255,0,0,0.5);
+        }
+        #boss-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff0055, #ff5500);
+            transition: width 0.1s ease;
+        }
+
+        /* Battlefield Lane Area */
+        #battlefield {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            background: #333;
+        }
+        .decor-item {
+            position: absolute;
+            font-size: 32px;
+            opacity: 0.25;
+            pointer-events: none;
+            animation: float 4s ease-in-out infinite alternate;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        /* Pure Raw Emojis - No Bubbles/Circles allowed */
+        .sprite {
+            position: absolute;
+            bottom: 60px;
+            font-size: 45px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center bottom;
+            transition: left 0.1s linear;
+            z-index: 5;
+        }
+        .sprite.enemy {
+            transform: scaleX(-1);
+        }
+        .sprite.boss-dragon {
+            font-size: 120px !important;
+            z-index: 6;
+        }
+        .mini-spawn {
+            position: absolute;
+            font-size: 24px;
+            bottom: 60px;
+            z-index: 4;
+            transition: left 0.1s linear;
+        }
+
+        /* Mini Clean Health Bars */
+        .sprite-hp {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(1);
+            width: 30px;
+            height: 4px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #fff;
+            border-radius: 2px;
+        }
+        .sprite.enemy .sprite-hp {
+            transform: translateX(-50%) scaleX(-1);
+        }
+        .sprite-hp-fill {
+            height: 100%;
+            background: #2ed573;
+            width: 100%;
+        }
+
+        /* FX and Magic overlays */
+        .magic-fx {
+            position: absolute;
+            pointer-events: none;
+            z-index: 7;
+            font-size: 50px;
+            animation: fx-fade 0.6s ease-out forwards;
+        }
+        @keyframes fx-fade {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -80%) scale(1.5); }
+            100% { opacity: 0; transform: translate(-50%, -110%) scale(1); }
+        }
+
+        /* Towers */
+        .base-tower {
+            position: absolute;
+            bottom: 40px;
+            font-size: 90px;
+            z-index: 3;
+            text-align: center;
+        }
+        .base-tower .tower-hp {
+            font-size: 14px;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #aaa;
+            display: block;
+            margin-top: -10px;
+        }
+        #player-tower { left: 30px; }
+        #enemy-tower { right: 30px; }
+
+        /* Bottom Controls Menu */
+        #controls-panel {
+            background: #111;
+            padding: 10px;
+            border-top: 4px solid #444;
+            z-index: 10;
+        }
+        #wallet-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px 8px 10px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 8px;
+        }
+        #unit-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+        .unit-btn {
+            background: #2d3436;
+            border: 2px solid #555;
+            border-radius: 6px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.1s;
+        }
+        .unit-btn:hover:not(.disabled) {
+            background: #4b4b4b;
+            border-color: #00ffcc;
+        }
+        .unit-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #1e272e;
+        }
+        .unit-btn .icon { font-size: 24px; margin-bottom: 2px; }
+        .unit-btn .cost { font-size: 12px; color: #ffd32a; font-weight: bold; }
+        .unit-btn .cooldown-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #ff3838;
+            border-radius: 4px;
+            display: none;
+        }
+
+        /* Post-Win Gimkit Style Shop Modal */
+        #shop-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 20, 0.95);
+            z-index: 110;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .shop-header {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.3);
+        }
+        .shop-currency {
+            font-size: 20px;
+            color: #00ffcc;
+            margin-bottom: 20px;
+        }
+        .shop-grid {
+            display: flex;
+            gap: 20px;
+            max-width: 900px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .shop-item {
+            background: #1e1e30;
+            border: 2px solid #3b3b5c;
+            border-radius: 12px;
+            padding: 20px;
+            width: 240px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+        .shop-item:hover {
+            transform: translateY(-5px);
+            border-color: #ffd700;
+        }
+        .shop-item .title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+        .shop-item .desc { font-size: 13px; color: #b5b5c9; margin-bottom: 15px; height: 40px; }
+        .shop-item .cost-tag { font-size: 16px; color: #ffd32a; font-weight: bold; margin-bottom: 12px; }
+        .shop-btn {
+            background: #6c5ce7;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .shop-btn:hover { background: #5b4cc4; }
+        #close-shop-btn {
+            margin-top: 30px;
+            background: #2ed573;
+            padding: 12px 30px;
+            font-size: 18px;
+        }
+
+        /* Floating Notifications */
+        #alert-msg {
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 71, 87, 0.9);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 50;
+            display: none;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Wings of Fire: Arc 2 Hub</h1>
-        <p>Explore the Jade Mountain Prophecy storyline, unpack complex character transformations, and take the randomized personality test.</p>
-    </header>
-
-    <nav>
-        <a href="#quiz-section">Personality Quiz</a>
-        <a href="#summaries">Book Summaries</a>
-        <a href="#characters">Characters &amp; Strengths</a>
-        <a href="#development">Character Development</a>
-        <a href="#why-read">Why Read Arc 2</a>
-    </nav>
-
-    <div class="container">
-
-        <!-- QUIZ SECTION -->
-        <div id="quiz-section" class="quiz-container">
-            <h3>Interactive Personality Quiz: Which Dragonet Are You?</h3>
-            <div id="quiz-window">
-                <!-- Dynamic Content Loads via Javascript -->
+    <div id="game-container">
+        <div id="quiz-screen">
+            <div class="quiz-card" id="quiz-card">
+                <h2 style="color: #00ffcc; margin-bottom: 10px;">Jade Mountain Academy Enrollment</h2>
+                <p style="color: #aaa; margin-bottom: 25px;">Answer honestly to reveal your inner dragon tribe identity...</p>
+                <div id="quiz-question" style="font-size: 20px; font-weight: bold; margin-bottom: 20px;"></div>
+                <div id="quiz-options"></div>
             </div>
         </div>
 
-        <!-- SECTION 1: SUMMARIES -->
-        <section id="summaries">
-            <h2>1. Summaries of Each Book</h2>
-            <div class="book-grid">
-                <div class="book-card">
-                    <h3>Book 6: Moon Rising</h3>
-                    <p>As the newly founded Jade Mountain Academy opens its doors, a secret NightWing dragonet named Moonwatcher arrives burdened with long-lost powers: mind-reading and prophecy. When an assassin strikes inside the school, Moon must decide whether to keep her dangerous telepathy hidden or risk revealing herself to save her new cavemates from a looming catastrophe.</p>
+        <div id="top-hud">
+            <div>
+                <span class="hud-item" style="color: #ffd700; margin-right: 20px;">🪙 Coins: <span id="coin-txt">0</span></span>
+                <span class="hud-item" style="color: #00ffcc;">✨ Faction XP: <span id="xp-txt">0</span></span>
+            </div>
+            <div>
+                <span class="hud-item" style="color: #ff9f43; margin-right: 15px;">Stage: <span id="stage-txt">1</span></span>
+                <span class="hud-item" id="skin-status" style="color: #eccc68; margin-right: 15px; font-size: 14px;">Skin: Classic</span>
+                <button class="hud-btn" id="audio-toggle-btn" onclick="toggleAudio()">🎵 Music: ON</button>
+            </div>
+        </div>
+
+        <div id="boss-ui">
+            <div id="boss-name">ANONYMOUS VILLAIN</div>
+            <div id="boss-bar-container">
+                <div id="boss-bar-fill"></div>
+            </div>
+        </div>
+
+        <div id="alert-msg">NOT ENOUGH DRAGON COINS!</div>
+
+        <div id="battlefield">
+            <div class="base-tower" id="player-tower">🏰<span class="tower-hp" id="player-hp-txt">3500/3500</span></div>
+            <div class="base-tower" id="enemy-tower">🌋<span class="tower-hp" id="enemy-hp-txt">1200/1200</span></div>
+        </div>
+
+        <div id="controls-panel">
+            <div id="wallet-container">
+                <div>
+                    <span style="font-weight: bold; color: #4cd137;">Wallet: 🪙<span id="wallet-txt">0</span> / 🪙<span id="max-wallet-txt">400</span></span>
                 </div>
-                <div class="book-card">
-                    <h3>Book 7: Winter Turning</h3>
-                    <p>Prince Winter of the IceWings lives by rigid laws of honor, status, and family loyalty. However, when his disgraced brother Hailstorm is discovered alive captive within SkyWing territory, Winter is forced to abandon his academy training. Alongside his diverse Jade Winglet companions, he sets out on an emotional rescue mission that challenges everything his tribe taught him to believe.</p>
+                <button onclick="upgradeWorker()" id="worker-btn" style="background:#222; border:1px solid #777; color:#fff; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">
+                    Upgrade Wallet Efficiency (Cost: 🪙<span id="worker-cost-txt">150</span>)
+                </button>
+            </div>
+            <div id="unit-grid"></div>
+        </div>
+
+        <div id="shop-screen">
+            <div class="shop-header">🎉 STAGE CLEAR EXTRAVAGANZA!</div>
+            <div class="shop-currency">Current Assets: 🪙<span id="shop-coin-txt">0</span> Dragon Coins</div>
+            <div class="shop-grid">
+                <div class="shop-item">
+                    <div class="title">🤖 Cyber Dragon Pack</div>
+                    <div class="desc">Transforms ALL defenders into neon neon-robotic cyber dragons! Also buffs attack damage (+25 DMG).</div>
+                    <div class="cost-tag">🪙 200 Coins</div>
+                    <button class="shop-btn" onclick="buyShopItem('cyber', 200)">Equip Cyber Skins</button>
                 </div>
-                <div class="book-card">
-                    <h3>Book 8: Escaping Peril</h3>
-                    <p>Peril is notorious across Pyrrhia for her deadly firescales, a curse that burns anyone she touches. Having spent her life acting as Queen Scarlet's personal executioner, she is desperate to prove her loyalty to her friend Clay. When a sinister spellcast crown threatens to rewrite the loyalty of every dragon she cares about, Peril must confront her explosive past head-on.</p>
+                <div class="shop-item">
+                    <div class="title">👻 Ghost Dragon Pack</div>
+                    <div class="desc">Transforms ALL defenders into translucent cosmic phantoms! Also buffs attack damage (+25 DMG).</div>
+                    <div class="cost-tag">🪙 250 Coins</div>
+                    <button class="shop-btn" onclick="buyShopItem('ghost', 250)">Equip Ghost Skins</button>
                 </div>
-                <div class="book-card">
-                    <h3>Book 9: Talons of Power</h3>
-                    <p>For years, Turtle has desperately hidden his identity as a secret SeaWing animus dragonet, crippled by the guilt of past failures. But when the ancient, megalomaniacal titan Darkstalker rises completely free from his underground prison, Turtle finds himself as the absolute last line of magical defense protecting a blissfully oblivious dragon kingdom.</p>
+                <div class="shop-item">
+                    <div class="title">💎 Diamond Fortress Skin</div>
+                    <div class="desc">Transforms your base fortress into a Diamond Citadel, adding +2500 Max Tower HP.</div>
+                    <div class="cost-tag">🪙 350 Coins</div>
+                    <button class="shop-btn" onclick="buyShopItem('skin_diamond', 350)">Equip 💎 Skin</button>
                 </div>
-                <div class="book-card">
-                    <h3>Book 10: Darkness of Dragons</h3>
-                    <p>With Darkstalker successfully brainwashing the entire continent into absolute obedience, the clever but magicless SandWing Qibli must rely entirely on his sharp wits and tactical observation. Racing against time to defeat an all-powerful immortal sorcerer, Qibli travels back to his cruel childhood home to stop a massive, catastrophic tribal war before his friends are lost forever.</p>
+                <div class="shop-item">
+                    <div class="title">🪐 Cosmic Matrix Skin</div>
+                    <div class="desc">Transforms your base into a celestial cosmic anchor with an unmatched +6000 Max Tower HP boost.</div>
+                    <div class="cost-tag">🪙 500 Coins</div>
+                    <button class="shop-btn" onclick="buyShopItem('skin_cosmic', 500)">Equip 🪐 Skin</button>
                 </div>
             </div>
-        </section>
+            <button class="shop-btn" id="close-shop-btn" onclick="closeShopAndProgress()">Advance to Next Stage ➡️</button>
+        </div>
+    </div>
 
-        <!-- SECTION 2: CHARACTERS & STRENGTHS -->
-        <section id="characters">
-            <h2>2. Characters and Their Strengths</h2>
-            <div class="char-grid">
-                <div class="char-card">
-                    <h3>Moonwatcher (Moon)</h3>
-                    <span class="strength-tag">Telepathy &amp; Prophecy</span>
-                    <p>Born under the full light of two moons, she possesses authentic NightWing abilities. Her empathy allows her to look deep past the defensive armor of others, finding peaceful solutions where others see conflict.</p>
-                </div>
-                <div class="char-card">
-                    <h3>Winter</h3>
-                    <span class="strength-tag">Frostbreath &amp; Tactics</span>
-                    <p>Bred as premium IceWing royalty, Winter features dangerous frostbreath, acute combat training, and deep strategic knowledge. His fierce devotion means he will fight to the end for those he cares about.</p>
-                </div>
-                <div class="char-card">
-                    <h3>Peril</h3>
-                    <span class="strength-tag">Firescales &amp; Aerial Combat</span>
-                    <p>Possessing an excess of fire, she destroys anything she physically handles, rendering her impervious to physical weapons. She is one of the fastest, most unstoppable flyers in the skies of Pyrrhia.</p>
-                </div>
-                <div class="char-card">
-                    <h3>Turtle</h3>
-                    <span class="strength-tag">Animus Magic &amp; Stealth</span>
-                    <p>As a rare animus wizard, Turtle can enchant any physical object to perform impossible feats. He excels at operating entirely unnoticed, blending perfectly into the background to assess threats safely.</p>
-                </div>
-                <div class="char-card">
-                    <h3>Qibli</h3>
-                    <span class="strength-tag">Genius Intellect &amp; Adaptation</span>
-                    <p>Lacking raw magical power or elemental anomalies, Qibli thrives on extreme observational skills, rapid deductive reasoning, and tactical traps. He easily out-thinks opponents twice his physical size.</p>
-                </div>
-            </div>
-        </section>
+<script>
+    let audioCtx = null;
+    let isMuted = false;
+    let audioSequenceInterval = null;
 
-        <section id="development">
-            <h2>3. Character Development Over the Books</h2>
-            <div class="book-grid">
-                <div class="book-card">
-                    <h3>Moonwatcher's Transformation</h3>
-                    <p>Moon begins her arc completely paralyzed by anxiety, constantly wearing a sensory-blocking stone to mute the deafening thoughts of other dragons. Over the five books, she progresses from a frightened recluse into an influential, courageous leader. She willingly opens her mind to guide her companions and stands tall against ancient manipulation without losing her core kindness.</p>
-                </div>
-                <div class="book-card">
-                    <h3>Winter's Transformation</h3>
-                    <p>Winter arrives at school deeply arrogant and riddled with systemic tribal prejudices, viewing all other dragon breeds as inherently inferior. His transformation is a painful unlearning of family indoctrination. By choosing his friends over his dynamic Royal rank, he successfully discards his rigid royal pride to find a true, self-defined sense of honor.</p>
-                </div>
-                <div class="book-card">
-                    <h3>Peril's Transformation</h3>
-                    <p>Peril starts her journey entirely dependent on others to tell her right from wrong, shifting her obsessive loyalty from the abusive Queen Scarlet over to Clay. Throughout Arc 2, she learns the true meaning of free will. She realizes she is not inherently a monster and learns to trust her own conscience, ultimately using her dangerous firescales to protect the world rather than incinerate it.</p>
-                </div>
-                <div class="book-card">
-                    <h3>Turtle's Transformation</h3>
-                    <p>Turtle spends his life deliberately failing and acting boring out of deep-seated terror that his animus magic will corrupt his soul. When his friends are threatened, however, his paralyzing fear transforms into quiet, fierce heroism. He stops hiding in the background, steps up to battle Darkstalker, and accepts the massive responsibility of his power.</p>
-                </div>
-                <div class="book-card">
-                    <h3>Qibli's Transformation</h3>
-                    <p>Qibli hides a massive insecurity beneath his charming, witty persona, desperately wishing for animus magic so everyone will finally love and validate him. When offered absolute, god-like magical powers by Darkstalker, Qibli achieves his ultimate growth by turning it down. He embraces his identity as an ordinary dragon, recognizing that his intellect and loyalty are more than enough.</p>
-                </div>
-            </div>
-        </section>
+    function initAudio() {
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            playColgeraChiptuneLoop();
+        } catch(e) { console.log("Audio contexts failed to start initialization."); }
+    }
 
-        <section id="why-read">
-            <h2>4. Why You Should Read This Series</h2>
-            <p>The second arc of <em>Wings of Fire</em> stands out as a masterclass in fantasy world-building and complex character progression. Here is why it is an absolute must-read:</p>
-            <br>
-            <ul>
-                <li><strong>Deconstruction of Prejudice:</strong> By forcing dragonets from historically warring tribes into a single shared cave, the series provides a thoughtful exploration of how empathy dismantles generations of systemic hatred.</li>
-                <li><strong>A Masterful Villain:</strong> Darkstalker represents one of the most compelling villains in modern fantasy. He isn't evil for the sake of it; he is a charismatic, tragic figure whose slow manipulation of the cast makes every chapter intensely suspenseful.</li>
-                <li><strong>Diverse Perspectives:</strong> Each of the five books shifts to a completely different perspective, giving readers an intimate look into five distinct minds dealing with trauma, expectation, and self-worth.</li>
-                <li><strong>High-Stakes Magic:</strong> The rules governing Animus magic present a chilling thematic warning about absolute power and systemic corruption, adding massive stakes to every single enchantment cast.</li>
-            </ul>
-        </section>
-
-    <footer>
-        <p>&copy; 2026 Wings of Fire Fan Portal. All book concepts and characters belong to Tui T. Sutherland.</p>
-    </footer>
-
-    <script>
-        const quizData = [
-            {
-                question: "How do you naturally handle a major, high-stakes crisis?",
-                options: [
-                    { text: "I instantly analyze the surroundings and brainstorm tactical solutions.", char: "Qibli" },
-                    { text: "I charge directly in to eliminate the threat, protecting everyone with brute force.", char: "Peril" },
-                    { text: "I carefully take a step back into the background to assess things before doing anything risky.", char: "Turtle" },
-                    { text: "I try to look deep inside everyone's motives to understand why the crisis is happening.", char: "Moon" },
-                    { text: "I command control of the situation using standard, disciplined rules and pride.", char: "Winter" }
-                ]
-            },
-            {
-                question: "What is your biggest personal insecurity?",
-                options: [
-                    { text: "Feeling entirely plain or unappreciated without some special magic or status.", char: "Qibli" },
-                    { text: "The fear that I am secretly a destructive monster who hurts people accidentally.", char: "Peril" },
-                    { text: "Failing the high expectations of my strict family and being cast out.", char: "Winter" },
-                    { text: "Being completely overwhelmed by the constant stress and social expectations around me.", char: "Moon" },
-                    { text: "The terrifying fear of losing control of my actions or letting power corrupt me.", char: "Turtle" }
-                ]
-            },
-            {
-                question: "Pick an environment where you feel most comfortable relaxing:",
-                options: [
-                    { text: "Somewhere peaceful, quiet, and surrounded by nature or ancient books.", char: "Moon" },
-                    { text: "A highly organized, clean space where strict traditions and honors are respected.", char: "Winter" },
-                    { text: "Right next to a cozy, blazing campfire or out doing intensive physical activities.", char: "Peril" },
-                    { text: "A cozy hidden room or underwater spot where nobody can bother me.", char: "Turtle" },
-                    { text: "A lively, bustling room filled with friends where I can tell jokes and talk strategy.", char: "Qibli" }
-                ]
-            },
-            {
-                question: "Which mystical superpower would you secretly value the most?",
-                options: [
-                    { text: "Deep, unrestricted mind-reading to truly understand what people want.", char: "Moon" },
-                    { text: "Flawless strategic combat skills that ensure I never lose an honorable duel.", char: "Winter" },
-                    { text: "Being completely invulnerable and physically unstoppable against attacks.", char: "Peril" },
-                    { text: "Animus magic to secretly enchant objects to solve my problems.", char: "Turtle" },
-                    { text: "A super-genius brain that can read any social room and outsmart any trap.", char: "Qibli" }
-                ]
-            },
-            {
-                question: "How do your friends typically describe your role in the group?",
-                options: [
-                    { text: "The fiercely loyal protector who can occasionally be a bit too intense.", char: "Peril" },
-                    { text: "The incredibly clever, witty, and dependable coordinator.", char: "Qibli" },
-                    { text: "The quiet, gentle listener who always gives insightful advice.", char: "Moon" },
-                    { text: "The proud, sophisticated perfectionist who secretly cares deeply.", char: "Winter" },
-                    { text: "The laid-back, unassuming friend who avoids drama at all costs.", char: "Turtle" }
-                ]
-            }
-        ];
-
-        let currentQuestionIndex = 0;
-        let scores = { Moon: 0, Winter: 0, Peril: 0, Turtle: 0, Qibli: 0 };
-
-        const quizWindow = document.getElementById("quiz-window");
-
-        function renderQuestion() {
-            if (currentQuestionIndex >= quizData.length) {
-                renderResults();
-                return;
-            }
-
-            const currentData = quizData[currentQuestionIndex];
+    function playColgeraChiptuneLoop() {
+        if (!audioCtx || isMuted) return;
+        let noteIdx = 0;
+        const colgeraPattern = [110, 110, 130, 110, 165, 147, 110, 220, 196, 165, 130, 110];
+        
+        audioSequenceInterval = setInterval(() => {
+            if (isMuted || !audioCtx) return;
+            let osc = audioCtx.createOscillator();
+            let gainNode = audioCtx.createGain();
             
-            let shuffledOptions = [...currentData.options];
-            for (let i = shuffledOptions.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
-            }
-
-            quizWindow.innerHTML = `
-                <div class="quiz-progress">Question ${currentQuestionIndex + 1} of ${quizData.length}</div>
-                <p style="font-size: 1.15rem; font-weight: 600; margin-bottom: 1.5rem;">${currentData.question}</p>
-                <div class="options-list">
-                    ${shuffledOptions.map((opt) => `
-                        <button class="option-btn" onclick="selectOption('${opt.char.replace("'", "\\'")}')">
-                            ${opt.text}
-                        </button>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function selectOption(character) {
-            scores[character]++;
-            currentQuestionIndex++;
-            renderQuestion();
-        }
-
-        function renderResults() {
-            let maxScore = -1;
-            let winner = "";
+            osc.type = (noteIdx % 4 === 0) ? 'sawtooth' : 'square';
+            osc.frequency.setValueAtTime(colgeraPattern[noteIdx % colgeraPattern.length], audioCtx.currentTime);
             
-            for (const character in scores) {
-                if (scores[character] > maxScore) {
-                    maxScore = scores[character];
-                    winner = character;
-                }
-            }
+            gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.24);
+            noteIdx++;
+        }, 130);
+    }
 
-            const descriptions = {
-                "Moon": "You are empathetic, quiet, and deeply intuitive. You sometimes feel overwhelmed by social pressures, but your inner strength and kindness guide your friends through the darkest times.",
-                "Winter": "You are disciplined, proud, and fiercely loyal. Though you can present a cold or distant exterior, you possess a massive heart and are capable of unlearning old biases to protect those you love.",
-                "Peril": "You are passionate, chaotic, and incredibly intense. You struggle with feeling misunderstood or dangerous, but your journey is about realizing your worth and choosing your own path.",
-                "Turtle": "You are observant, quiet, and cautious. You prefer to hide your talents away from the spotlight to avoid conflict, but when the moment strikes, your hidden bravery makes you a true hero.",
-                "Qibli": "You are exceptionally quick-witted, charming, and analytical. You rely entirely on your brain and resourcefulness to solve problems, valuing true friendship and loyalty far above raw power."
+    function playSoundEffect(type) {
+        if (!audioCtx || isMuted) return;
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'spawn') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        } else if (type === 'hit') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+        } else if (type === 'magic') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        } else if (type === 'win') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+            setTimeout(() => osc.frequency.setValueAtTime(659.25, audioCtx.currentTime), 100);
+            setTimeout(() => osc.frequency.setValueAtTime(783.99, audioCtx.currentTime), 200);
+            setTimeout(() => osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime), 300);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        }
+    }
+
+    function toggleAudio() {
+        isMuted = !isMuted;
+        document.getElementById('audio-toggle-btn').innerText = isMuted ? "🎵 Music: OFF" : "🎵 Music: ON";
+        if (isMuted) {
+            if (audioSequenceInterval) clearInterval(audioSequenceInterval);
+        } else {
+            if (!audioCtx) initAudio();
+            playColgeraChiptuneLoop();
+        }
+    }
+
+    let coins = 0;
+    let xp = 0;
+    let stage = 1;
+    let walletMoney = 0;
+    let maxWallet = 400;
+    let walletUpgradeCost = 150;
+    let loopInterval = null;
+    
+    let playerFaction = null;
+    let currentBoss = null;
+    let bossSpawned = false;
+
+    let baseMaxHp = 3500;
+    let playerHp = 3500;
+    let enemyHp = 1200;
+    let enemyMaxHp = 1200;
+    
+    let activeTowerSkin = "classic";
+    let activeDragonSkin = "classic"; // Custom skin state tracker ("classic", "cyber", "ghost")
+
+    let allies = [];
+    let enemies = [];
+    let magicEffects = [];
+
+    const factions = {
+        qibli: { name: "Qibli", emoji: "🟡🐉💨", cyberEmoji: "🤖🐉⚡", ghostEmoji: "🔮🐉💨", tower: "🏜️", decor: ["🌵", "☀️", "🌴", "🪵"], boss: "Vulture", bossEmoji: "🏜️🐉💀", bg: "linear-gradient(to top, #f3a683, #f7d794)" },
+        moon: { name: "Moon", emoji: "🔮🐉✨", cyberEmoji: "🦾🐉✨", ghostEmoji: "👻🐉✨", tower: "🏰", decor: ["🌌", "✨", "🔮", "☄️"], boss: "Darkstalker", bossEmoji: "🖤🐉🌌", bg: "linear-gradient(to top, #3d3d5c, #1a1a2e)" },
+        winter: { name: "Winter", emoji: "❄️🐉🛡️", cyberEmoji: "🎛️🐉❄️", ghostEmoji: "🪐🐉🌫️", tower: "🏔️", decor: ["❄️", "🧊", "🏔️", "💎"], boss: "Chameleon", bossEmoji: "🎭🐉🟢", bg: "linear-gradient(to top, #7efff5, #3ae374)" },
+        peril: { name: "Peril", emoji: "🔥🐉💥", cyberEmoji: "🚀🐉🔥", ghostEmoji: "💀🐉🔥", tower: "🌋", decor: ["🔥", "☄️", "🌋", "💨"], boss: "Queen Scarlet", bossEmoji: "👑🐉🔥", bg: "linear-gradient(to top, #ff4d4d, #ff9f43)" },
+        turtle: { name: "Turtle", emoji: "🌊🐉🟢", cyberEmoji: "📟🐉🧪", ghostEmoji: "🫧🐉🌫️", tower: "🔱", decor: ["🪸", "🐠", "🌊", "🫧"], boss: "Anemone", bossEmoji: "🪸🐉🪄", bg: "linear-gradient(to top, #18dcff, #00d2d3)" }
+    };
+
+    const quizQuestions = [
+        { q: "When facing a crisis across Pyrrhia, your top trait is:", a: [{t:"Calculating schemes & tactical leverage", f:"qibli"}, {t:"Pragmatic safety and careful reservation", f:"winter"}, {t:"Protecting loyal companions at any risk", f:"moon"}, {t:"Using dynamic overwhelming force directly", f:"peril"}] },
+        { q: "Choose your ideal natural habitat layout:", a: [{t:"Warm hidden desert oases", f:"qibli"}, {t:"Glacial tundra walls", f:"winter"}, {t:"Submerged underwater neon coral kingdoms", f:"turtle"}, {t:"Deep starry night cloud ranges", f:"moon"}] }
+    ];
+    let currentQuizIdx = 0;
+    let quizScores = { qibli:0, moon:0, winter:0, peril:0, turtle:0 };
+
+    let unitTemplates = [
+        { id: 1, name: "Macho Shield", cost: 50, cd: 2, hp: 120, dmg: 4, speed: 1.4, isMacho: true, icon: "🛡️" },
+        { id: 2, name: "Scout Runner", cost: 90, cd: 4, hp: 80, dmg: 14, speed: 2.8, icon: "🏃" },
+        { id: 3, name: "Lane Disrupter", cost: 160, cd: 7, hp: 200, dmg: 18, speed: 1.1, icon: "🌀" },
+        { id: 4, name: "Tribe Vanguard", cost: 250, cd: 10, hp: 450, dmg: 28, speed: 0.9, icon: "🐉" },
+        { id: 5, name: "Elite Guard", cost: 400, cd: 15, hp: 800, dmg: 55, speed: 0.7, icon: "⚔️" },
+        { id: 6, name: "Backline Sniper", cost: 550, cd: 18, hp: 300, dmg: 90, speed: 0.6, icon: "🏹" },
+        { id: 7, name: "Animus Catalyst", cost: 700, cd: 22, hp: 600, dmg: 130, speed: 0.8, icon: "✨" },
+        { id: 8, name: "Heavy Crusher", cost: 900, cd: 28, hp: 1400, dmg: 220, speed: 0.5, icon: "🔨" },
+        { id: 9, name: "Draconic Sage", cost: 1100, cd: 32, hp: 1100, dmg: 190, speed: 1.0, icon: "🔮" },
+        { id: 10, name: "Apex Champion", cost: 1400, cd: 40, hp: 2200, dmg: 350, speed: 1.2, icon: "👑" },
+        { id: 11, name: "Mythic Legend", cost: 1800, cd: 50, hp: 3500, dmg: 500, speed: 0.9, icon: "🌟" },
+        { id: 12, name: "Ultimate Form", cost: 2300, cd: 60, hp: 5000, dmg: 800, speed: 1.1, icon: "🪐" }
+    ];
+    let unitCooldowns = {};
+
+    window.onload = () => {
+        loadQuizQuestion();
+    };
+
+    function loadQuizQuestion() {
+        if (currentQuizIdx >= quizQuestions.length) {
+            determineFaction();
+            return;
+        }
+        const current = quizQuestions[currentQuizIdx];
+        document.getElementById("quiz-question").innerText = current.q;
+        const optContainer = document.getElementById("quiz-options");
+        optContainer.innerHTML = "";
+        
+        current.a.forEach(ans => {
+            let btn = document.createElement("button");
+            btn.className = "quiz-option";
+            btn.innerText = ans.t;
+            btn.onclick = () => {
+                quizScores[ans.f] += 2;
+                currentQuizIdx++;
+                loadQuizQuestion();
             };
+            optContainer.appendChild(btn);
+        });
+    }
 
-            quizWindow.innerHTML = `
-                <div class="result-box">
-                    <p style="text-transform: uppercase; font-size: 0.9rem; letter-spacing: 2px; color: var(--text-muted);">Your Dynamic Match Result:</p>
-                    <h4 class="result-title">You are ${winner}!</h4>
-                    <p style="margin-top: 1rem; color: var(--text-main); font-size: 1.1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                        ${descriptions[winner]}
-                    </p>
-                    <button class="restart-btn" onclick="resetQuiz()">Take Quiz Again</button>
-                </div>
+    function determineFaction() {
+        let topFaction = "qibli";
+        let maxScore = -1;
+        for (let f in quizScores) {
+            if (quizScores[f] > maxScore) {
+                maxScore = quizScores[f];
+                topFaction = f;
+            }
+        }
+        playerFaction = factions[topFaction];
+        document.getElementById("quiz-screen").style.display = "none";
+        initAudio();
+        setupBattlefield();
+        startGameLoop();
+    }
+
+    function setupBattlefield() {
+        const field = document.getElementById("battlefield");
+        field.style.background = playerFaction.bg;
+        
+        const existingDecor = field.querySelectorAll('.decor-item');
+        existingDecor.forEach(d => d.remove());
+        
+        for (let i = 0; i < 10; i++) {
+            let decor = document.createElement("div");
+            decor.className = "decor-item";
+            decor.innerText = playerFaction.decor[i % playerFaction.decor.length];
+            decor.style.left = Math.random() * 90 + "vw";
+            decor.style.top = Math.random() * 50 + "vh";
+            decor.style.animationDelay = Math.random() * 3 + "s";
+            field.appendChild(decor);
+        }
+
+        let currentTowerEmoji = playerFaction.tower;
+        if (activeTowerSkin === "diamond") currentTowerEmoji = "💎";
+        if (activeTowerSkin === "cosmic") currentTowerEmoji = "🪐";
+
+        document.getElementById("player-tower").innerHTML = `${currentTowerEmoji}<span class="tower-hp" id="player-hp-txt">3500/3500</span>`;
+        
+        playerHp = baseMaxHp;
+        enemyHp = Math.floor(1000 * Math.pow(1.8, stage - 1));
+        enemyMaxHp = enemyHp;
+        bossSpawned = false;
+        allies = [];
+        enemies = [];
+        
+        document.getElementById("boss-ui").classList.remove("active");
+        updateHudElements();
+        buildUnitButtons();
+    }
+
+    function buildUnitButtons() {
+        const grid = document.getElementById("unit-grid");
+        grid.innerHTML = "";
+        unitTemplates.forEach(ut => {
+            let btn = document.createElement("div");
+            btn.className = "unit-btn disabled";
+            btn.id = `unit-card-${ut.id}`;
+            btn.onclick = () => trySpawnAlly(ut);
+            
+            btn.innerHTML = `
+                <span class="icon">${ut.icon}</span>
+                <span style="font-size:11px; font-weight:bold; white-space:nowrap;">${ut.name}</span>
+                <span class="cost">🪙${ut.cost}</span>
+                <div class="cooldown-overlay" id="cd-overlay-${ut.id}">0s</div>
             `;
+            grid.appendChild(btn);
+            unitCooldowns[ut.id] = 0;
+        });
+    }
+
+    function startGameLoop() {
+        if (loopInterval) clearInterval(loopInterval);
+        let framesCounter = 0;
+
+        loopInterval = setInterval(() => {
+            framesCounter++;
+            
+            if (walletMoney < maxWallet) {
+                walletMoney += (1 + (stage * 0.5));
+                if (walletMoney > maxWallet) walletMoney = maxWallet;
+            }
+
+            let spawnRate = Math.max(30, Math.floor(120 / Math.pow(1.4, stage - 1)));
+            if (framesCounter % spawnRate === 0 && !bossSpawned) {
+                spawnRegularEnemy();
+            }
+
+            if (enemyHp < (enemyMaxHp * 0.75) && !bossSpawned) {
+                spawnGiantBoss();
+            }
+
+            updateCombatPositions();
+            handleCooldownTracks();
+            renderFrames();
+        }, 30);
+    }
+
+    function spawnRegularEnemy() {
+        let hpMultiplier = Math.pow(1.8, stage - 1);
+        enemies.push({
+            x: 90,
+            hp: Math.floor(80 * hpMultiplier),
+            maxHp: Math.floor(80 * hpMultiplier),
+            dmg: Math.floor(5 * hpMultiplier),
+            speed: 0.6 + (Math.random() * 0.4) + (stage * 0.1),
+            emoji: "🐾",
+            isBoss: false
+        });
+    }
+
+    function spawnGiantBoss() {
+        bossSpawned = true;
+        playSoundEffect('magic');
+
+        let bossMultiplier = Math.pow(1.8, stage - 1);
+        currentBoss = {
+            x: 85,
+            hp: Math.floor(800 * bossMultiplier),
+            maxHp: Math.floor(800 * bossMultiplier),
+            dmg: Math.floor(45 * Math.pow(1.2, stage - 1)),
+            speed: 0.3 + (stage * 0.05),
+            emoji: playerFaction.bossEmoji,
+            isBoss: true,
+            name: playerFaction.boss,
+            abilityCooldown: Math.max(40, 120 - (stage * 10))
+        };
+        enemies.push(currentBoss);
+
+        document.getElementById("boss-name").innerText = `⚠️ ANTAGONIST RISING: ${playerFaction.boss.toUpperCase()}`;
+        document.getElementById("boss-ui").classList.add("active");
+    }
+
+    function trySpawnAlly(template) {
+        if (walletMoney >= template.cost && unitCooldowns[template.id] <= 0) {
+            walletMoney -= template.cost;
+            unitCooldowns[template.id] = template.cd * 30;
+            playSoundEffect('spawn');
+
+            // Select exact emoji skin based on current skin configuration tracker state
+            let currentEmoji = playerFaction.emoji;
+            if (activeDragonSkin === "cyber") currentEmoji = playerFaction.cyberEmoji;
+            if (activeDragonSkin === "ghost") currentEmoji = playerFaction.ghostEmoji;
+
+            allies.push({
+                x: 10,
+                hp: template.hp,
+                maxHp: template.hp,
+                dmg: template.dmg,
+                speed: template.speed,
+                emoji: currentEmoji,
+                isMacho: template.isMacho || false,
+                hitCount: 0
+            });
+        } else if (walletMoney < template.cost) {
+            triggerAlert();
+        }
+    }
+
+    function upgradeWorker() {
+        if (walletMoney >= walletUpgradeCost) {
+            walletMoney -= walletUpgradeCost;
+            maxWallet = Math.floor(maxWallet * 1.5);
+            walletUpgradeCost = Math.floor(walletUpgradeCost * 1.6);
+            document.getElementById("max-wallet-txt").innerText = maxWallet;
+            document.getElementById("worker-cost-txt").innerText = walletUpgradeCost;
+        }
+    }
+
+    function triggerAlert() {
+        const msg = document.getElementById("alert-msg");
+        msg.style.display = "block";
+        setTimeout(() => msg.style.display = "none", 1000);
+    }
+
+    function handleCooldownTracks() {
+        unitTemplates.forEach(ut => {
+            const overlay = document.getElementById(`cd-overlay-${ut.id}`);
+            const card = document.getElementById(`unit-card-${ut.id}`);
+
+            if (unitCooldowns[ut.id] > 0) {
+                unitCooldowns[ut.id]--;
+                overlay.style.display = "flex";
+                overlay.innerText = Math.ceil(unitCooldowns[ut.id] / 30) + "s";
+            } else {
+                overlay.style.display = "none";
+            }
+
+            if (walletMoney >= ut.cost && unitCooldowns[ut.id] <= 0) {
+                card.classList.remove("disabled");
+            } else {
+                card.classList.add("disabled");
+            }
+        });
+    }
+
+    function updateCombatPositions() {
+        allies.forEach(ally => {
+            let blocked = false;
+            enemies.forEach(ene => {
+                if (Math.abs(ally.x - ene.x) < 4) blocked = true;
+            });
+            if (ally.x >= 85) blocked = true;
+            if (!blocked) ally.x += ally.speed * 0.4;
+        });
+
+        enemies.forEach(ene => {
+            let blocked = false;
+            allies.forEach(ally => {
+                if (Math.abs(ene.x - ally.x) < 4) blocked = true;
+            });
+            if (ene.x <= 15) blocked = true;
+            if (!blocked) ene.x -= ene.speed * 0.4;
+        });
+
+        allies.forEach(ally => {
+            enemies.forEach(ene => {
+                if (Math.abs(ally.x - ene.x) < 5) {
+                    if (Math.random() < 0.15) {
+                        if (ene.isBoss && ally.isMacho) {
+                            ally.hitCount++;
+                            ene.hp -= ally.dmg;
+                            if (ally.hitCount >= 5) ally.hp = 0;
+                        } else {
+                            ally.hp -= ene.dmg * 0.1;
+                            ene.hp -= ally.dmg;
+                        }
+                        playSoundEffect('hit');
+                    }
+                }
+            });
+
+            if (ally.x >= 84 && Math.random() < 0.1) {
+                enemyHp -= ally.dmg;
+                playSoundEffect('hit');
+            }
+        });
+
+        enemies.forEach(ene => {
+            if (ene.x <= 16 && Math.random() < 0.1) {
+                playerHp -= ene.dmg;
+                playSoundEffect('hit');
+            }
+        });
+
+        if (bossSpawned && currentBoss && currentBoss.hp > 0) {
+            currentBoss.abilityCooldown--;
+            if (currentBoss.abilityCooldown <= 0) {
+                executeBossSpecialAbility();
+                currentBoss.abilityCooldown = Math.max(40, 240 - (stage * 15));
+            }
         }
 
-        function resetQuiz() {
-            currentQuestionIndex = 0;
-            scores = { Moon: 0, Winter: 0, Peril: 0, Turtle: 0, Qibli: 0 };
-            renderQuestion();
+        allies = allies.filter(a => a.hp > 0);
+        enemies = enemies.filter(e => e.hp > 0);
+
+        if (playerHp <= 0) {
+            alert("Your Base Fortress Fell! Returning to Academy Calibration.");
+            clearInterval(loopInterval);
+            location.reload();
+        }
+        if (enemyHp <= 0) {
+            handleVictoryTrigger();
+        }
+    }
+
+    function executeBossSpecialAbility() {
+        if (allies.length === 0) return;
+        playSoundEffect('magic');
+        const randomAlly = allies[Math.floor(Math.random() * allies.length)];
+
+        switch (playerFaction.boss) {
+            case "Vulture":
+                randomAlly.hp -= 80;
+                magicEffects.push({ x: randomAlly.x, y: 70, txt: "🦅" });
+                break;
+            case "Darkstalker":
+                randomAlly.hp = 0;
+                magicEffects.push({ x: randomAlly.x, y: 60, txt: "🔮" });
+                break;
+            case "Anemone":
+                enemies.push({ x: currentBoss.x - 5, hp: 50, maxHp: 50, dmg: 8, speed: 1.2, emoji: "🦈", isBoss: false });
+                magicEffects.push({ x: currentBoss.x, y: 60, txt: "🌊" });
+                break;
+            case "Queen Scarlet":
+                allies.forEach(a => { if (Math.abs(a.x - currentBoss.x) < 25) a.hp -= 40; });
+                magicEffects.push({ x: currentBoss.x - 10, y: 60, txt: "🔥" });
+                break;
+            case "Chameleon":
+                randomAlly.hp = 0;
+                enemies.push({ x: randomAlly.x, hp: 60, maxHp: 60, dmg: 10, speed: 0.8, emoji: "🎭", isBoss: false });
+                magicEffects.push({ x: randomAlly.x, y: 60, txt: "🟣" });
+                break;
+        }
+    }
+
+    function handleVictoryTrigger() {
+        clearInterval(loopInterval);
+        playSoundEffect('win');
+
+        let wonCoins = Math.floor(150 * Math.pow(1.5, stage - 1));
+        let wonXp = 100 + (stage * 30);
+        coins += wonCoins;
+        xp += wonXp;
+
+        document.getElementById("shop-coin-txt").innerText = coins;
+        document.getElementById("shop-screen").style.display = "flex";
+    }
+
+    function buyShopItem(type, cost) {
+        if (coins >= cost) {
+            coins -= cost;
+            document.getElementById("shop-coin-txt").innerText = coins;
+
+            if (type === 'cyber') {
+                activeDragonSkin = "cyber";
+                unitTemplates.forEach(t => t.dmg += 25);
+                document.getElementById("skin-status").innerText = "Skin: Cyber Neon";
+                alert("Cyber Dragon Mod Activated! ALL defender forms transformed into Neon Cyborgs (+25 DMG)!");
+            } else if (type === 'ghost') {
+                activeDragonSkin = "ghost";
+                unitTemplates.forEach(t => t.dmg += 25);
+                document.getElementById("skin-status").innerText = "Skin: Ghost Cosmic";
+                alert("Ghost Dragon Mod Activated! ALL defender forms transformed into Translucent Cosmic Phantoms (+25 DMG)!");
+            } else if (type === 'skin_diamond') {
+                activeTowerSkin = "diamond";
+                baseMaxHp += 2500;
+                playerHp = baseMaxHp;
+                alert("Diamond Citadel Skin equipped! Base health permanently boosted.");
+            } else if (type === 'skin_cosmic') {
+                activeTowerSkin = "cosmic";
+                baseMaxHp += 6000;
+                playerHp = baseMaxHp;
+                alert("Cosmic Matrix Skin equipped! Base health reaches legendary limits.");
+            }
+            updateHudElements();
+        } else {
+            alert("Insufficient Dragon Coins!");
+        }
+    }
+
+    function closeShopAndProgress() {
+        document.getElementById("shop-screen").style.display = "none";
+        stage++;
+        setupBattlefield();
+        startGameLoop();
+    }
+
+    function updateHudElements() {
+        document.getElementById("coin-txt").innerText = Math.floor(coins);
+        document.getElementById("xp-txt").innerText = Math.floor(xp);
+        document.getElementById("stage-txt").innerText = stage;
+        document.getElementById("wallet-txt").innerText = Math.floor(walletMoney);
+        document.getElementById("player-hp-txt").innerText = `${Math.max(0, Math.floor(playerHp))}/${baseMaxHp}`;
+        document.getElementById("enemy-hp-txt").innerText = `${Math.max(0, Math.floor(enemyHp))}/${enemyMaxHp}`;
+    }
+
+    function renderFrames() {
+        updateHudElements();
+        const field = document.getElementById("battlefield");
+
+        const elements = field.querySelectorAll('.sprite, .magic-fx, .mini-spawn');
+        elements.forEach(el => el.remove());
+
+        let currentTowerEmoji = playerFaction.tower;
+        if (activeTowerSkin === "diamond") currentTowerEmoji = "💎";
+        if (activeTowerSkin === "cosmic") currentTowerEmoji = "🪐";
+
+        document.getElementById("player-tower").innerHTML = `${currentTowerEmoji}<span class="tower-hp" id="player-hp-txt">${Math.max(0, Math.floor(playerHp))}/${baseMaxHp}</span>`;
+
+        if (bossSpawned && currentBoss && currentBoss.hp > 0) {
+            let pct = (currentBoss.hp / currentBoss.maxHp) * 100;
+            document.getElementById("boss-bar-fill").style.width = `${pct}%`;
         }
 
-        renderQuestion();
-    </script>
+        allies.forEach(ally => {
+            let div = document.createElement("div");
+            div.className = "sprite";
+            div.style.left = ally.x + "vw";
+            
+            // Re-apply current active cosmetic layout directly to real-time unit frames
+            let dynamicEmoji = playerFaction.emoji;
+            if (activeDragonSkin === "cyber") dynamicEmoji = playerFaction.cyberEmoji;
+            if (activeDragonSkin === "ghost") dynamicEmoji = playerFaction.ghostEmoji;
+            div.innerText = dynamicEmoji;
+
+            let hpBar = document.createElement("div");
+            hpBar.className = "sprite-hp";
+            let hpFill = document.createElement("div");
+            hpFill.className = "sprite-hp-fill";
+            hpFill.style.width = (ally.hp / ally.maxHp) * 100 + "%";
+            hpBar.appendChild(hpFill);
+            div.appendChild(hpBar);
+
+            field.appendChild(div);
+        });
+
+        enemies.forEach(ene => {
+            let div = document.createElement("div");
+            div.className = "sprite enemy mesh-flip " + (ene.isBoss ? "boss-dragon" : "");
+            div.style.left = ene.x + "vw";
+            div.innerText = ene.emoji;
+
+            let hpBar = document.createElement("div");
+            hpBar.className = "sprite-hp";
+            let hpFill = document.createElement("div");
+            hpFill.className = "sprite-hp-fill";
+            hpFill.style.width = (ene.hp / ene.maxHp) * 100 + "%";
+            hpBar.appendChild(hpFill);
+            div.appendChild(hpBar);
+
+            field.appendChild(div);
+        });
+
+        magicEffects.forEach((fx, idx) => {
+            let div = document.createElement("div");
+            div.className = "magic-fx";
+            div.style.left = fx.x + "vw";
+            div.style.top = fx.y + "vh";
+            div.innerText = fx.txt;
+            field.appendChild(div);
+            magicEffects.splice(idx, 1);
+        });
+    }
+</script>
 </body>
 </html>
