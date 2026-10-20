@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dopamine Trap: Reclaiming Human Potential</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-gradient: linear-gradient(135deg, #f43f5e, #818cf8);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px solid var(--bg-secondary);
+            padding-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            text-align: left;
+            width: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .card h3 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .card .click-prompt {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Slide Overlay Details */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: flex-end;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .slide-panel {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--bg-secondary);
+            height: 100%;
+            padding: 3rem 2rem;
+            overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .overlay.active .slide-panel {
+            transform: translateX(0);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+
+        .panel-img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            background-color: #334155;
+        }
+
+        .panel-content h3 {
+            font-size: 1.8rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+        }
+
+        .panel-content p {
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        /* Simulator Styling */
+        .simulator-box {
+            background-color: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2.5rem;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-container {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .slider-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .slider-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #f43f5e;
+            margin-bottom: 1rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            max-width: 500px;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #334155;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f43f5e;
+            cursor: pointer;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .metric-title {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-status {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .status-good { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .status-warn { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .status-danger { background-color: rgba(239, 68, 110, 0.15); color: var(--danger); }
+
+        @media (max-width: 768px) {
+            .slide-panel { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>The Dopamine Trap</h1>
+            <p>Reclaiming Human Potential in a Digital World</p>
+        </header>
+
+        <main>
+            <section>
+                <h2>Why We Must Change Habits</h2>
+                <p class="section-subtitle">Click on any card below to explore deeper insights and visual breakdowns.</p>
+                
+                <div class="sections-grid">
+                    <!-- Card 1 -->
+                    <button class="card" onclick="openPanel('cognitive')">
+                        <h3>🧠 Cognitive Restructuring</h3>
+                        <p>Constant rapid-fire interaction fragments focus and diminishes deep thinking capabilities over time.</p>
+                        <div class="click-prompt">Read Deep Dive →</div>
+                    </button>
+
+                    <!-- Card 2 -->
+                    <button class="card" onclick="openPanel('circadian')">
+                        <h3>🌙 Circadian Disruption</h3>
+                        <p>Late-night blue light emission tricks the brain into suppressing natural melatonin rhythms.</p>
+                        <div class="click-prompt">Read Deep Dive →</div>
+                    </button>
+
+                    <!-- Card 3 -->
+                    <button class="card" onclick="openPanel('dopamine')">
+                        <h3>⚡ Dopamine Desensitization</h3>
+                        <p>Continuous artificial feedback loops reset biological expectations for normal reward loops.</p>
+                        <div class="click-prompt">Read Deep Dive →</div>
+                    </button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Interactive Impact Simulator</h2>
+                <div class="simulator-box">
+                    <div class="slider-container">
+                        <label for="screenTime" class="slider-label">Daily Recreational Screen Time</label>
+                        <div class="slider-value"><span id="hoursDisplay">2</span> Hours</div>
+                        <input type="range" id="screenTime" min="0" max="12" value="2" step="0.5">
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-title">Sleep Duration</div>
+                            <div class="metric-value" id="sleepValue">8.0 hrs</div>
