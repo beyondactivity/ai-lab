@@ -32,10 +32,13 @@ import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, se
 
 // Replace these values with your Firebase project's web app config.
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD9GeFgQwYvDo8cSzOr5wekEOkIhonVHik",
+  authDomain: "test-project-for-user-login.firebaseapp.com",
+  projectId: "test-project-for-user-login",
+  storageBucket: "test-project-for-user-login.firebasestorage.app",
+  messagingSenderId: "385070622300",
+  appId: "1:385070622300:web:32a0890a372b7342e92899",
+  measurementId: "G-92FHP1EV9V"
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
