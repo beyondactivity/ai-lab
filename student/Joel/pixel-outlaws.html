@@ -235,7 +235,7 @@ kbd { font-family: var(--font-body); font-size: 11px; background: var(--panel-2)
       <button id="btn-garage" class="btn violet">Garage</button>
       <button id="btn-minigames" class="btn hot">Arcade</button>
       <button id="btn-leaderboard" class="btn cyan">Ranks</button>
-      <a id="btn-reviews" class="btn blue" href="https://claude.ai/artifact/JapVuwzCe2djt51PPGeera" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">Reviews</a>
+      <a id="btn-reviews" class="btn blue" href="reviews.html" style="text-decoration:none;display:inline-flex;align-items:center">Reviews</a>
       <button id="btn-audio" class="btn">Sound on</button>
       <button id="btn-auth-modal" class="btn go"><span id="auth-btn-label">Login</span></button>
     </nav>
@@ -354,11 +354,16 @@ kbd { font-family: var(--font-body); font-size: 11px; background: var(--panel-2)
       <button id="btn-logout" class="btn hot" style="width:100%">Log out</button>
     </div>
     <form id="auth-form">
-      <p class="small" style="margin:0 0 14px">Log in to keep your coins, cars, upgrades and medals under your own name. Profiles are saved in this browser only. A new driver keeps the guest progress.</p>
-      <label class="field"><span>DRIVER ALIAS</span><input type="text" id="auth-username" required maxlength="12" autocomplete="off" placeholder="ApexPredator"></label>
-      <label class="field"><span>ACCESS PIN (4 TO 6 CHARACTERS)</span><input type="password" id="auth-pin" required minlength="4" maxlength="6" autocomplete="off" placeholder="****"></label>
+      <p class="small" style="margin:0 0 12px">Sign in to save your coins, cars, upgrades and medals to your account and show up on the global ranks.</p>
+      <p id="auth-offline" class="msg" hidden>Online accounts could not load. You can still play as a guest.</p>
+      <div class="tabs" style="margin-bottom:12px"><button type="button" id="auth-tab-in" class="btn on">Sign in</button> <button type="button" id="auth-tab-up" class="btn">Create account</button></div>
+      <label class="field" id="auth-name-row" hidden><span>DRIVER NAME</span><input type="text" id="auth-username" maxlength="14" autocomplete="nickname" placeholder="ApexPredator"></label>
+      <label class="field"><span>EMAIL</span><input type="email" id="auth-email" required autocomplete="email" placeholder="you@example.com"></label>
+      <label class="field"><span>PASSWORD (6 OR MORE CHARACTERS)</span><input type="password" id="auth-pin" required minlength="6" autocomplete="current-password" placeholder="******"></label>
       <p id="auth-msg" class="msg" role="alert"></p>
-      <button type="submit" class="btn go big" style="width:100%">Log in / sign up</button>
+      <button type="submit" id="auth-submit" class="btn go big" style="width:100%">Sign in</button>
+      <button type="button" id="auth-google" class="btn big" style="width:100%;margin-top:10px">Continue with Google</button>
+      <button type="button" id="auth-reset" class="btn" style="width:100%;margin-top:10px;font-size:11px">Forgot password?</button>
     </form>
   </div>
 </div>
@@ -840,7 +845,7 @@ const hashPin = p => { let h = 5381; for (const ch of 'pxo:' + p) h = ((h << 5) 
 
 let user = readProfile(store.get(ACTIVE_KEY) || GUEST);
 const loggedIn = () => user.username !== GUEST;
-function save() { store.set(skey(user.username), JSON.stringify(user)); store.set(ACTIVE_KEY, user.username); refreshProfileUI(); }
+function save() { store.set(skey(user.username), JSON.stringify(user)); store.set(ACTIVE_KEY, user.username); refreshProfileUI(); if (typeof cloudSave === 'function') cloudSave(); }
 
 let track = TRACKS.find(t => t.id === user.selectedTrackId) || TRACKS[0];
 
@@ -1323,50 +1328,162 @@ $('tab-btn-upgrades').addEventListener('click', () => setGarageTab('upgrades'));
 function openGarage() { renderGarage(); setGarageTab('cars'); openModal('modal-garage'); }
 
 /* login */
+/* ----- Firebase accounts + cloud save (Auth + Firestore) ----- */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBEgvxCHN108XRUONeLai-Vq-l9oRfys0Q",
+  authDomain: "pixel-outlaws.firebaseapp.com",
+  projectId: "pixel-outlaws",
+  storageBucket: "pixel-outlaws.firebasestorage.app",
+  messagingSenderId: "536793461722",
+  appId: "1:536793461722:web:7c785f6e6b01fb442a06e3",
+  measurementId: "G-D8LC73HLVY"
+};
+const FB_VER = '10.14.1', FB_BASE = 'https://www.gstatic.com/firebasejs/' + FB_VER + '/';
+var cloud = { ready: false, failed: false, auth: null, fs: null, uid: null, rows: [], timer: 0, mode: 'in', busy: false };
+
+function fbScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load ' + src)); document.head.appendChild(s); });
+}
+function fbLoad() {
+  if (window.firebase && firebase.auth && firebase.firestore) return Promise.resolve();
+  return fbScript(FB_BASE + 'firebase-app-compat.js').then(() => Promise.all([fbScript(FB_BASE + 'firebase-auth-compat.js'), fbScript(FB_BASE + 'firebase-firestore-compat.js')]));
+}
+function cloudInit() {
+  fbLoad().then(() => {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    cloud.auth = firebase.auth(); cloud.fs = firebase.firestore(); cloud.ready = true;
+    cloud.auth.onAuthStateChanged(onAuthChange);
+    authUI();
+  }).catch(() => { cloud.failed = true; authUI(); });
+}
+const cleanName = n => String(n || '').replace(/[^\w .\-]/g, '').trim().slice(0, 14);
+function plainProfile() {
+  const o = JSON.parse(JSON.stringify(user)); delete o.username; delete o.pinHash; delete o.uid; return o;
+}
+async function onAuthChange(u) {
+  if (!u) {
+    if (cloud.uid) { cloud.uid = null; user = readProfile(GUEST); store.set(ACTIVE_KEY, GUEST); spec = carSpec(user.selectedCarId, user.upgrades); setTrack(user.selectedTrackId, false); }
+    authUI(); return;
+  }
+  if (cloud.signingUp && !u.displayName) return;   // wait for the chosen name
+  cloud.uid = u.uid;
+  let name = cleanName(u.displayName || (u.email || '').split('@')[0]) || 'Driver';
+  if (name.toUpperCase() === GUEST) name = 'Driver';
+  let p = null;
+  try {
+    const snap = await cloud.fs.collection('players').doc(u.uid).get();
+    if (snap.exists) p = normalize(snap.data());
+  } catch (e) { setAuthMsg('Could not load your cloud save. Check the Firestore rules.'); }
+  if (!p) {
+    // first sign-in: the guest progress becomes the account's progress
+    p = normalize(plainProfile());
+    store.set(skey(GUEST), JSON.stringify(blank()));
+  }
+  p.username = name; p.uid = u.uid; p.pinHash = null; user = p;
+  spec = carSpec(user.selectedCarId, user.upgrades);
+  setTrack(user.selectedTrackId, true); renderTrackGrid();
+  save(); cloudSave(true); authUI();
+}
+function cloudSave(now) {
+  if (!cloud || !cloud.ready || !cloud.uid) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(() => {
+    const uid = cloud.uid; if (!uid) return;
+    cloud.fs.collection('players').doc(uid).set(plainProfile()).catch(() => {});
+    cloud.fs.collection('leaderboard').doc(uid).set({ name: user.username, car: user.selectedCarId, bestLaps: JSON.parse(JSON.stringify(user.bestLaps || {})), vsWins: user.vsWins | 0 }).catch(() => {});
+  }, now ? 0 : 1500);
+}
+function loadRanks() {
+  if (!cloud.ready) return;
+  cloud.fs.collection('leaderboard').limit(300).get().then(s => { cloud.rows = s.docs.map(d => Object.assign({ uid: d.id }, d.data())); if (!$('modal-leaderboard').hidden) renderLeaderboard(); }).catch(() => {});
+}
+
+/* login modal */
+function setAuthMsg(t, ok) { const m = $('auth-msg'); m.textContent = t || ''; m.className = 'msg' + (ok ? ' ok' : ''); }
+function authErr(e) {
+  const c = (e && e.code) || '';
+  return ({
+    'auth/invalid-credential': 'Wrong email or password.', 'auth/wrong-password': 'Wrong email or password.', 'auth/user-not-found': 'Wrong email or password.',
+    'auth/email-already-in-use': 'That email already has an account. Use Sign in.', 'auth/weak-password': 'Use a password with at least 6 characters.',
+    'auth/invalid-email': 'That email address does not look right.', 'auth/popup-closed-by-user': 'The Google window was closed.',
+    'auth/popup-blocked': 'Your browser blocked the Google window. Allow pop-ups and try again.',
+    'auth/unauthorized-domain': 'This website address is not authorized in Firebase. Add it under Authentication, Settings, Authorized domains.',
+    'auth/operation-not-allowed': 'That sign-in method is not turned on in the Firebase console.', 'auth/too-many-requests': 'Too many tries. Wait a moment and try again.',
+    'auth/network-request-failed': 'Network problem. Check your connection.'
+  })[c] || ((e && e.message) || 'Something went wrong.');
+}
+function authUI() {
+  const inn = loggedIn() && !!cloud.uid;
+  $('auth-profile-view').hidden = !inn; $('auth-form').hidden = inn;
+  $('auth-name-row').hidden = cloud.mode !== 'up';
+  $('auth-tab-in').classList.toggle('on', cloud.mode === 'in'); $('auth-tab-up').classList.toggle('on', cloud.mode === 'up');
+  $('auth-submit').textContent = cloud.mode === 'up' ? 'Create account' : 'Sign in';
+  $('auth-reset').hidden = cloud.mode === 'up';
+  const off = cloud.failed || !cloud.ready;
+  $('auth-submit').disabled = off || cloud.busy; $('auth-google').disabled = off || cloud.busy;
+  $('auth-offline').hidden = !cloud.failed;
+  $('auth-btn-label').textContent = inn ? 'Account' : 'Login';
+}
 function openAuth() {
-  $('auth-msg').textContent = ''; $('auth-msg').className = 'msg';
-  $('auth-profile-view').hidden = !loggedIn(); $('auth-form').hidden = loggedIn();
-  if (loggedIn()) {
+  setAuthMsg('');
+  if (loggedIn() && cloud.uid) {
     $('profile-display-name').textContent = user.username; $('profile-coins').textContent = user.coins;
     const bl = Object.values(user.bestLaps).filter(Boolean); $('profile-best-lap').textContent = fmt(bl.length ? Math.min.apply(null, bl) : null);
   }
-  openModal('modal-auth');
+  authUI(); openModal('modal-auth');
 }
-$('auth-form').addEventListener('submit', e => {
-  e.preventDefault();
-  const name = $('auth-username').value.trim(), pin = $('auth-pin').value, msg = $('auth-msg');
-  msg.className = 'msg';
-  if (!name) { msg.textContent = 'Enter a driver alias.'; return; }
-  if (name.toUpperCase() === GUEST) { msg.textContent = 'That alias is reserved for guests.'; return; }
-  if (pin.length < 4) { msg.textContent = 'The PIN needs 4 to 6 characters.'; return; }
-  const h = hashPin(pin);
-  if (store.get(skey(name))) {
-    const p = readProfile(name);
-    if (p.pinHash && p.pinHash !== h) { msg.textContent = 'Wrong PIN for that driver.'; return; }
-    p.pinHash = h; user = p;
-  } else {
-    user = Object.assign(readProfile(GUEST), { username: name, pinHash: h });
-    store.set(skey(GUEST), JSON.stringify(blank()));
+function authDone() { cloud.busy = false; authUI(); }
+$('auth-tab-in').addEventListener('click', () => { cloud.mode = 'in'; setAuthMsg(''); authUI(); });
+$('auth-tab-up').addEventListener('click', () => { cloud.mode = 'up'; setAuthMsg(''); authUI(); });
+$('auth-form').addEventListener('submit', async e => {
+  e.preventDefault(); if (!cloud.ready || cloud.busy) return;
+  const email = $('auth-email').value.trim(), pw = $('auth-pin').value, name = cleanName($('auth-username').value);
+  if (cloud.mode === 'up') {
+    if (!name) { setAuthMsg('Pick a driver name.'); return; }
+    if (name.toUpperCase() === GUEST) { setAuthMsg('That name is reserved for guests.'); return; }
   }
-  spec = carSpec(user.selectedCarId, user.upgrades);
-  $('auth-username').value = ''; $('auth-pin').value = '';
-  setTrack(user.selectedTrackId, true); closeModals(); renderTrackGrid();
+  if (pw.length < 6) { setAuthMsg('The password needs at least 6 characters.'); return; }
+  cloud.busy = true; setAuthMsg(''); authUI();
+  try {
+    if (cloud.mode === 'up') {
+      cloud.signingUp = true;
+      const cr = await cloud.auth.createUserWithEmailAndPassword(email, pw);
+      await cr.user.updateProfile({ displayName: name });
+      cloud.signingUp = false;
+      await onAuthChange(cloud.auth.currentUser);   // pick up the new display name
+    } else await cloud.auth.signInWithEmailAndPassword(email, pw);
+    $('auth-pin').value = ''; closeModals();
+  } catch (err) { cloud.signingUp = false; setAuthMsg(authErr(err)); }
+  authDone();
+});
+$('auth-google').addEventListener('click', async () => {
+  if (!cloud.ready || cloud.busy) return;
+  cloud.busy = true; setAuthMsg(''); authUI();
+  try { await cloud.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); closeModals(); } catch (err) { setAuthMsg(authErr(err)); }
+  authDone();
+});
+$('auth-reset').addEventListener('click', async () => {
+  const email = $('auth-email').value.trim();
+  if (!email) { setAuthMsg('Type your email above first.'); return; }
+  try { await cloud.auth.sendPasswordResetEmail(email); setAuthMsg('Password reset email sent.', true); } catch (err) { setAuthMsg(authErr(err)); }
 });
 $('btn-logout').addEventListener('click', () => {
-  save(); user = readProfile(GUEST); store.set(ACTIVE_KEY, GUEST);
-  spec = carSpec(user.selectedCarId, user.upgrades);
-  setTrack(user.selectedTrackId, false); closeModals();
+  cloudSave(true);
+  const done = () => closeModals();
+  if (cloud.ready && cloud.auth) cloud.auth.signOut().then(done, done); else done();
 });
+cloudInit();
 
 /* rankings */
 let lbTrack = null;
-function openLeaderboard() { lbTrack = lbTrack || track.id; renderLeaderboard(); openModal('modal-leaderboard'); }
+function openLeaderboard() { lbTrack = lbTrack || track.id; renderLeaderboard(); openModal('modal-leaderboard'); loadRanks(); }
 function renderLeaderboard() {
   lbTrack = lbTrack || track.id;
   $('lb-tabs').innerHTML = TRACKS.map(t => '<button class="btn' + (t.id === lbTrack ? ' on' : '') + '" data-id="' + t.id + '" style="font-size:11px;padding:6px 8px">' + esc(t.name.split(' ')[0]) + '</button>').join('');
   $('lb-tabs').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { lbTrack = b.getAttribute('data-id'); renderLeaderboard(); }));
   const t = TRACKS.find(x => x.id === lbTrack), rows = [];
-  store.keys().filter(k => k.indexOf(PREFIX) === 0).forEach(k => {
+  if (cloud.rows.length) cloud.rows.forEach(d => { const ms = d.bestLaps && d.bestLaps[t.id]; if (ms) rows.push({ name: d.name || 'Driver', ms, car: d.car, me: d.uid === cloud.uid }); });
+  else store.keys().filter(k => k.indexOf(PREFIX) === 0).forEach(k => {
     try { const d = normalize(JSON.parse(store.get(k))); const ms = d.bestLaps[t.id]; if (ms) rows.push({ name: d.username, ms, car: d.selectedCarId, me: d.username === user.username }); } catch (e) {}
   });
   if (!rows.some(r => r.me) && user.bestLaps[t.id]) rows.push({ name: user.username, ms: user.bestLaps[t.id], car: user.selectedCarId, me: true });
