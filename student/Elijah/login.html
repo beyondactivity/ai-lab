@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Firebase Comments</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    #comments-list { border: 1px solid #ccc; padding: 10px; min-height: 100px; margin: 15px 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Login Section -->
+  <div id="auth-section">
+    <h3>Login / Register</h3>
+    <input type="email" id="email" placeholder="Email" /><br>
+    <input type="password" id="password" placeholder="Password" /><br>
+    <button id="login-btn">Sign In / Sign Up</button>
+  </div>
+
+  <!-- Commenting Section -->
+  <div id="comment-section" style="display: none;">
+    <button id="logout-btn" style="background-color: #f44336; color: white;">Logout</button>
+    <h3>Comments</h3>
+    <div id="comments-list"></div>
+    <input type="text" id="comment-input" placeholder="Write a comment..." />
+    <button id="post-btn" style="background-color: #4CAF50; color: white;">Post Comment</button>
+  </div>
+
+  <script type="module">
+    // NOTE: If testing directly in a browser without a bundler,
+    // swap the module paths below with your preferred JS CDN library paths.
+    import { initializeApp } from "firebase/app";
+    import { 
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged 
+    } from "firebase/auth";
+    import { 
+      getFirestore, collection, addDoc, query, orderBy, onSnapshot 
+    } from "firebase/firestore";
+
+    // Your exact Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDXRNWlLLbDiA8ZNKQZOGqH22CarVkz8s8",
+      authDomain: "ba-ai-lab-project-elijah.firebaseapp.com",
+      projectId: "ba-ai-lab-project-elijah",
+      storageBucket: "ba-ai-lab-project-elijah.firebasestorage.app",
+      messagingSenderId: "1086559882135",
+      appId: "1:1086559882135:web:a3be4e98f6f4b001e412d2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const commentsList = document.getElementById("comments-list");
+
+    // Login/Register Logic
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      try {
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+      } catch (err) {
+        if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
+          try {
+            await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+          } catch (createErr) {
+            alert("Error registering: " + createErr.message);
+          }
+        } else {
+          alert("Error logging in: " + err.message);
+        }
+      }
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
+
+    // UI state sync with Auth status
+    onAuthStateChanged(auth, (user) => {
+      const isLogged = !!user;
+      document.getElementById("auth-section").style.display = isLogged ? "none" : "block";
+      document.getElementById("comment-section").style.display = isLogged ? "block" : "none";
+      if (isLogged) subscribeToComments();
+    });
+
+    // Post to Firestore
+    document.getElementById("post-btn").addEventListener("click", async () => {
+      const input = document.getElementById("comment-input");
+      if (input.value.trim() !== "") {
+        await addDoc(collection(db, "comments"), {
+          text: input.value,
+          uid: auth.currentUser.uid,
+          createdAt: Date.now()
+        });
+        input.value = "";
+      }
+    });
+
+    // Real-time synchronization
+    function subscribeToComments() {
+      const q = query(collection(db, "comments"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+        commentsList.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const p = document.createElement("p");
+          p.style.borderBottom = "1px solid #eee";
+          p.style.padding = "5px 0";
+          p.textContent = doc.data().text;
+          commentsList.appendChild(p);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
