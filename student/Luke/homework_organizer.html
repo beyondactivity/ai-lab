@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework Organizer</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --background: #f9fafb;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+            color: #111827;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .form-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        input, select, button {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .filters select {
+            background: white;
+        }
+
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .task-item.completed {
+            background: #f9fafb;
+            opacity: 0.6;
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+
+        .task-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .task-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .task-title {
+            font-weight: 500;
+        }
+
+        .task-meta {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 4px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.high { background: #fee2e2; color: #991b1b; }
+        .badge.medium { background: #fef3c7; color: #92400e; }
+        .badge.low { background: #d1fae5; color: #065f46; }
+
+        .btn-delete {
+            background: none;
+            color: #ef4444;
+            border: none;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-light);
+            padding: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📚 Homework Organizer</h1>
+    
+    <!-- Add Task Form -->
+    <div class="form-group">
+        <input type="text" id="taskInput" placeholder="Assignment name...">
+        <input type="text" id="subjectInput" placeholder="Subject (e.g. Math)">
+        <input type="date" id="dateInput">
+        <select id="priorityInput">
+            <option value="low">Low Priority</option>
+            <option value="medium" selected>Medium Priority</option>
+            <option value="high">High Priority</option>
+        </select>
+        <button onclick="addTask()">Add Task</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+        <select id="filterSubject" onchange="renderTasks()">
+            <option value="all">All Subjects</option>
+        </select>
+        <select id="filterStatus" onchange="renderTasks()">
+            <option value="all">All Statuses</option>
+            <option value="active">Active Only</option>
+            <option value="completed">Completed Only</option>
+        </select>
+    </div>
+
+    <!-- Tasks List -->
+    <ul id="taskList" class="task-list"></ul>
+</div>
+
+<script>
+    let tasks = JSON.parse(localStorage.getItem('homework_tasks')) || [];
+
+    function saveTasks() {
+        localStorage.setItem('homework_tasks', JSON.stringify(tasks));
+        updateSubjectFilters();
+    }
+
+    function addTask() {
+        const title = document.getElementById('taskInput').value.trim();
+        const subject = document.getElementById('subjectInput').value.trim() || 'General';
+        const dueDate = document.getElementById('dateInput').value;
+        const priority = document.getElementById('priorityInput').value;
+
+        if (!title) {
+            alert('Please enter an assignment name.');
+            return;
+        }
+
+        const newTask = {
+            id: Date.now(),
+            title,
+            subject,
+            dueDate: dueDate || 'No due date',
+            priority,
+            completed: false
+        };
+
+        tasks.push(newTask);
+        saveTasks();
+        renderTasks();
+
+        document.getElementById('taskInput').value = '';
+        document.getElementById('subjectInput').value = '';
+        document.getElementById('dateInput').value = '';
+    }
+
+    function toggleTask(id) {
+        tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+        saveTasks();
+        renderTasks();
+    }
+
+    function deleteTask(id) {
+        tasks = tasks.filter(task => task.id !== id);
+        saveTasks();
+        renderTasks();
+    }
+
+    function updateSubjectFilters() {
+        const filterSelect = document.getElementById('filterSubject');
+        const currentSelection = filterSelect.value;
+        
+        const subjects = ['all', ...new Set(tasks.map(t => t.subject))];
+        
+        filterSelect.innerHTML = '';
+        subjects.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub === 'all' ? 'All Subjects' : sub;
+            filterSelect.appendChild(opt);
+        });
+
+        if (subjects.includes(currentSelection)) {
+            filterSelect.value = currentSelection;
+        }
+    }
+
+    function renderTasks() {
+        const list = document.getElementById('taskList');
+        const subjectFilter = document.getElementById('filterSubject').value;
+        const statusFilter = document.getElementById('filterStatus').value;
+
+        list.innerHTML = '';
+
+        let filteredTasks = tasks.filter(task => {
+            const matchesSubject = subjectFilter === 'all' || task.subject === subjectFilter;
+            const matchesStatus = statusFilter === 'all' || 
+                                 (statusFilter === 'active' && !task.completed) || 
+                                 (statusFilter === 'completed' && task.completed);
+            return matchesSubject && matchesStatus;
+        });
+
+        const priorityOrder = { high: 1, medium: 2, low: 3 };
+        filteredTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+        if (filteredTasks.length === 0) {
+            list.innerHTML = '<li class="empty-state">No assignments found.</li>';
+            return;
+        }
+
+        filteredTasks.forEach(task => {
+            const li = document.createElement('li');
+            li.className = `task-item \${task.completed ? 'completed' : ''}`;
+
+            li.innerHTML = `
+                <div class="task-left">
+                    <input type="checkbox" class="task-checkbox" \${task.completed ? 'checked' : ''} onchange="toggleTask(\${task.id})">
+                    <div class="task-details">
+                        <span class="task-title">\${task.title}</span>
+                        <div class="task-meta">
+                            <span>📂 \${task.subject}</span>
+                            <span>📅 Due: \${task.dueDate}</span>
+                            <span class="badge \${task.priority}">\${task.priority}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-delete" onclick="deleteTask(\${task.id})">Delete</button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    updateSubjectFilters();
+    renderTasks();
+</script>
+
+</body>
+</html>
