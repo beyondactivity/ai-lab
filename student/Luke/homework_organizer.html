@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homework Organizer</title>
+    <title>Homework Organizer (Cloud-Synced)</title>
     <!-- Font Awesome for modern icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -20,6 +20,7 @@
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --danger: #ef4444;
             --danger-hover: #dc2626;
+            --success: #10b981;
         }
 
         body.dark-theme {
@@ -67,12 +68,12 @@
             align-items: center;
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 16px;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         h1 {
             margin: 0;
-            font-size: 26px;
+            font-size: 24px;
             color: var(--text-main);
             display: flex;
             align-items: center;
@@ -101,6 +102,39 @@
         .icon-btn:hover {
             border-color: var(--primary);
             color: var(--primary);
+        }
+
+        /* Sync Status Bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--accent-bg);
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+        }
+
+        .status-dot.online {
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
         }
 
         /* Form Controls */
@@ -421,6 +455,15 @@
             </button>
         </div>
     </div>
+
+    <!-- Live Cloud Status Bar -->
+    <div class="status-bar">
+        <div class="status-badge" id="statusBadge">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Connecting to Firebase...</span>
+        </div>
+        <div id="userInfo">User ID: <span id="userIdLabel">--</span></div>
+    </div>
     
     <!-- Add Task Form -->
     <div class="form-grid">
@@ -521,22 +564,55 @@
 <!-- Custom Toast Notification -->
 <div class="notification" id="notification"></div>
 
-<script>
-    // Default subject list fallback
-    const DEFAULT_SUBJECTS = ['Math', 'Science', 'English', 'History', 'Art', 'General'];
+<!-- Firebase SDK Imports & Application Logic -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // App State initialized from LocalStorage
-    let tasks = JSON.parse(localStorage.getItem('hw_organizer_tasks')) || [];
-    let subjects = JSON.parse(localStorage.getItem('hw_organizer_subjects')) || DEFAULT_SUBJECTS;
+    // User-provided Firebase Configuration
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+        apiKey: "AIzaSyDdaRPIMZ58CypohrALR_-vCTZn58GVZ9c",
+        authDomain: "flight-sim-thingy.firebaseapp.com",
+        projectId: "flight-sim-thingy",
+        storageBucket: "flight-sim-thingy.firebasestorage.app",
+        messagingSenderId: "1025625782125",
+        appId: "1:1025625782125:web:d36586ac3e0192a4590c64",
+        measurementId: "G-BJ3EW7S2MP"
+    };
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'homework-organizer-app';
+
+    // Initialize Firebase Services
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Global App State
+    let currentUser = null;
+    let tasks = [];
+    let subjects = ['Math', 'Science', 'English', 'History', 'Art', 'General'];
     let isDarkMode = JSON.parse(localStorage.getItem('hw_organizer_theme')) || false;
+    let unsubscribeTasks = null;
+    let unsubscribeSubjects = null;
 
-    // Save functions
-    function saveTasks() {
-        localStorage.setItem('hw_organizer_tasks', JSON.stringify(tasks));
+    // UI & Notification Helpers
+    function showNotification(msg) {
+        const toast = document.getElementById('notification');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    function saveSubjects() {
-        localStorage.setItem('hw_organizer_subjects', JSON.stringify(subjects));
+    function updateSyncStatus(status, isOnline = true) {
+        const text = document.getElementById('statusText');
+        const dot = document.getElementById('statusDot');
+        text.textContent = status;
+        if (isOnline) {
+            dot.classList.add('online');
+        } else {
+            dot.classList.remove('online');
+        }
     }
 
     // Theme Management
@@ -550,18 +626,76 @@
         }
     }
 
-    function toggleTheme() {
+    window.toggleTheme = function() {
         isDarkMode = !isDarkMode;
         localStorage.setItem('hw_organizer_theme', JSON.stringify(isDarkMode));
         initTheme();
+    };
+
+    // Authentication Setup
+    async function initAuth() {
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch (err) {
+            console.error("Auth initialization error:", err);
+            updateSyncStatus("Authentication failed", false);
+        }
     }
 
-    // Notification Helper
-    function showNotification(msg) {
-        const toast = document.getElementById('notification');
-        toast.textContent = msg;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('userIdLabel').textContent = user.uid.substring(0, 10) + '...';
+            updateSyncStatus("Cloud Synced", true);
+            setupFirestoreRealtimeListeners(user.uid);
+        } else {
+            currentUser = null;
+            document.getElementById('userIdLabel').textContent = '--';
+            updateSyncStatus("Disconnected", false);
+        }
+    });
+
+    // Firestore Realtime Synchronization
+    function setupFirestoreRealtimeListeners(userId) {
+        if (unsubscribeTasks) unsubscribeTasks();
+        if (unsubscribeSubjects) unsubscribeSubjects();
+
+        // Path for user private data: /artifacts/{appId}/users/{userId}/{collectionName}
+        const tasksCol = collection(db, 'artifacts', appId, 'users', userId, 'tasks');
+        const subjectsCol = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
+
+        // Listen to Tasks Collection
+        unsubscribeTasks = onSnapshot(tasksCol, (snapshot) => {
+            tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderTasks();
+        }, (err) => {
+            console.error("Error subscribing to tasks:", err);
+            showNotification("Failed to sync tasks with cloud.");
+        });
+
+        // Listen to Subjects Collection
+        unsubscribeSubjects = onSnapshot(subjectsCol, (snapshot) => {
+            if (!snapshot.empty) {
+                const subDocs = snapshot.docs.map(d => d.data().name);
+                // Ensure unique subjects list including defaults
+                subjects = Array.from(new Set(['General', ...subDocs]));
+            } else {
+                // Initialize default subjects in Firestore for first-time user
+                const defaultSubs = ['Math', 'Science', 'English', 'History', 'Art', 'General'];
+                defaultSubs.forEach(s => {
+                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', s);
+                    setDoc(docRef, { name: s }).catch(console.error);
+                });
+                subjects = defaultSubs;
+            }
+            syncSubjectDropdowns();
+        }, (err) => {
+            console.error("Error subscribing to subjects:", err);
+        });
     }
 
     // Subject Dropdowns Update
@@ -583,7 +717,6 @@
         // Populate Edit Select
         editSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
 
-        // Preserve current selections if valid
         if (subjects.includes(currentForm)) formSelect.value = currentForm;
         if (subjects.includes(currentFilter) || currentFilter === 'all') filterSelect.value = currentFilter;
 
@@ -591,7 +724,8 @@
     }
 
     // Subject Management Methods
-    function addCustomSubject() {
+    window.addCustomSubject = async function() {
+        if (!currentUser) return;
         const input = document.getElementById('newSubjectModalInput');
         const name = input.value.trim();
 
@@ -605,14 +739,19 @@
             return;
         }
 
-        subjects.push(name);
-        saveSubjects();
-        syncSubjectDropdowns();
-        input.value = '';
-        showNotification(`Added subject "${name}"`);
-    }
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', name);
+            await setDoc(docRef, { name });
+            input.value = '';
+            showNotification(`Added subject "${name}"`);
+        } catch (e) {
+            console.error(e);
+            showNotification('Error adding subject.');
+        }
+    };
 
-    function renameSubject(oldName) {
+    window.renameSubject = async function(oldName) {
+        if (!currentUser) return;
         const newName = prompt(`Rename subject "${oldName}" to:`, oldName);
         if (!newName || newName.trim() === '' || newName === oldName) return;
         
@@ -622,48 +761,55 @@
             return;
         }
 
-        const index = subjects.indexOf(oldName);
-        if (index !== -1) {
-            subjects[index] = cleanName;
-            // Update all corresponding tasks
-            tasks.forEach(t => {
-                if (t.subject === oldName) t.subject = cleanName;
-            });
-            saveSubjects();
-            saveTasks();
-            syncSubjectDropdowns();
-            renderTasks();
-            showNotification(`Renamed "${oldName}" to "${cleanName}"`);
-        }
-    }
+        try {
+            // Delete old subject doc and add new one
+            const oldDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', oldName);
+            const newDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', cleanName);
+            
+            await deleteDoc(oldDocRef);
+            await setDoc(newDocRef, { name: cleanName });
 
-    function deleteSubject(subName) {
+            // Update tasks using this subject
+            const affectedTasks = tasks.filter(t => t.subject === oldName);
+            for (const task of affectedTasks) {
+                const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', task.id);
+                await updateDoc(taskRef, { subject: cleanName });
+            }
+
+            showNotification(`Renamed "${oldName}" to "${cleanName}"`);
+        } catch (e) {
+            console.error(e);
+            showNotification('Failed to rename subject.');
+        }
+    };
+
+    window.deleteSubject = async function(subName) {
+        if (!currentUser) return;
         if (subjects.length <= 1) {
             showNotification('You must keep at least one subject.');
             return;
         }
 
         if (confirm(`Are you sure you want to delete "${subName}"? Tasks under this subject will be moved to "General".`)) {
-            // Remove subject from array
-            subjects = subjects.filter(s => s !== subName);
-            
-            // Ensure General subject exists if tasks are migrated
-            if (!subjects.includes('General')) {
-                subjects.push('General');
+            try {
+                // Remove subject doc
+                const subDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', subName);
+                await deleteDoc(subDocRef);
+
+                // Reassign tasks to 'General'
+                const affectedTasks = tasks.filter(t => t.subject === subName);
+                for (const task of affectedTasks) {
+                    const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', task.id);
+                    await updateDoc(taskRef, { subject: 'General' });
+                }
+
+                showNotification(`Deleted subject "${subName}"`);
+            } catch (e) {
+                console.error(e);
+                showNotification('Failed to delete subject.');
             }
-
-            // Reassign tasks
-            tasks.forEach(t => {
-                if (t.subject === subName) t.subject = 'General';
-            });
-
-            saveSubjects();
-            saveTasks();
-            syncSubjectDropdowns();
-            renderTasks();
-            showNotification(`Deleted subject "${subName}"`);
         }
-    }
+    };
 
     function renderSubjectManager() {
         const list = document.getElementById('subjectManagerList');
@@ -678,16 +824,16 @@
         `).join('');
     }
 
-    // Modal Visibility Helpers
-    function openSubjectModal() {
+    // Modal Controls
+    window.openSubjectModal = function() {
         document.getElementById('subjectModal').classList.add('active');
-    }
+    };
 
-    function closeSubjectModal() {
+    window.closeSubjectModal = function() {
         document.getElementById('subjectModal').classList.remove('active');
-    }
+    };
 
-    function openEditModal(taskId) {
+    window.openEditModal = function(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
 
@@ -698,14 +844,15 @@
         document.getElementById('editTaskPriority').value = task.priority;
 
         document.getElementById('editTaskModal').classList.add('active');
-    }
+    };
 
-    function closeEditModal() {
+    window.closeEditModal = function() {
         document.getElementById('editTaskModal').classList.remove('active');
-    }
+    };
 
-    function saveTaskEdit() {
-        const id = Number(document.getElementById('editTaskId').value);
+    window.saveTaskEdit = async function() {
+        if (!currentUser) return;
+        const id = document.getElementById('editTaskId').value;
         const title = document.getElementById('editTaskTitle').value.trim();
         const subject = document.getElementById('editTaskSubject').value;
         const dueDate = document.getElementById('editTaskDate').value;
@@ -716,22 +863,29 @@
             return;
         }
 
-        tasks = tasks.map(t => t.id === id ? {
-            ...t,
-            title,
-            subject,
-            dueDate: dueDate || 'No due date',
-            priority
-        } : t);
-
-        saveTasks();
-        renderTasks();
-        closeEditModal();
-        showNotification('Task updated successfully.');
-    }
+        try {
+            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id);
+            await updateDoc(taskRef, {
+                title,
+                subject,
+                dueDate: dueDate || 'No due date',
+                priority
+            });
+            closeEditModal();
+            showNotification('Task updated successfully.');
+        } catch (e) {
+            console.error(e);
+            showNotification('Error updating task.');
+        }
+    };
 
     // Task CRUD Functions
-    function addTask() {
+    window.addTask = async function() {
+        if (!currentUser) {
+            showNotification('Authenticating... please wait.');
+            return;
+        }
+
         const titleInput = document.getElementById('taskInput');
         const subjectInput = document.getElementById('subjectInput');
         const dateInput = document.getElementById('dateInput');
@@ -747,39 +901,55 @@
             return;
         }
 
-        const newTask = {
-            id: Date.now(),
-            title,
-            subject,
-            dueDate: dueDate || 'No due date',
-            priority,
-            completed: false
-        };
+        try {
+            const tasksCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks');
+            await addDoc(tasksCol, {
+                title,
+                subject,
+                dueDate: dueDate || 'No due date',
+                priority,
+                completed: false,
+                createdAt: Date.now()
+            });
 
-        tasks.push(newTask);
-        saveTasks();
-        renderTasks();
+            titleInput.value = '';
+            dateInput.value = '';
+            showNotification('Assignment saved to cloud!');
+        } catch (e) {
+            console.error(e);
+            showNotification('Failed to add assignment.');
+        }
+    };
 
-        titleInput.value = '';
-        dateInput.value = '';
-        showNotification('Assignment added!');
-    }
+    window.toggleTask = async function(id) {
+        if (!currentUser) return;
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
 
-    function toggleTask(id) {
-        tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-        saveTasks();
-        renderTasks();
-    }
+        try {
+            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id);
+            await updateDoc(taskRef, { completed: !task.completed });
+        } catch (e) {
+            console.error(e);
+            showNotification('Failed to update task.');
+        }
+    };
 
-    function deleteTask(id) {
-        tasks = tasks.filter(t => t.id !== id);
-        saveTasks();
-        renderTasks();
-        showNotification('Task removed.');
-    }
+    window.deleteTask = async function(id) {
+        if (!currentUser) return;
+
+        try {
+            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id);
+            await deleteDoc(taskRef);
+            showNotification('Task removed.');
+        } catch (e) {
+            console.error(e);
+            showNotification('Failed to delete task.');
+        }
+    };
 
     // Render & Filtering Logic
-    function renderTasks() {
+    window.renderTasks = function() {
         const list = document.getElementById('taskList');
         const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
         const subjectFilter = document.getElementById('filterSubject').value;
@@ -790,7 +960,7 @@
 
         // Filter Tasks
         let filteredTasks = tasks.filter(task => {
-            const matchesSearch = task.title.toLowerCase().includes(searchVal);
+            const matchesSearch = (task.title || '').toLowerCase().includes(searchVal);
             const matchesSubject = subjectFilter === 'all' || task.subject === subjectFilter;
             const matchesStatus = statusFilter === 'all' || 
                                  (statusFilter === 'active' && !task.completed) || 
@@ -808,7 +978,7 @@
                 if (b.dueDate === 'No due date') return -1;
                 return new Date(a.dueDate) - new Date(b.dueDate);
             } else if (sortBy === 'title') {
-                return a.title.localeCompare(b.title);
+                return (a.title || '').localeCompare(b.title || '');
             }
         });
 
@@ -823,38 +993,37 @@
 
             li.innerHTML = `
                 <div class="task-left">
-                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
                     <div class="task-details">
-                        <span class="task-title">${escapeHtml(task.title)}</span>
+                        <span class="task-title">${escapeHtml(task.title || '')}</span>
                         <div class="task-meta">
-                            <span class="badge subject-badge">📂 ${escapeHtml(task.subject)}</span>
-                            <span>📅 Due: ${task.dueDate}</span>
+                            <span class="badge subject-badge">📂 ${escapeHtml(task.subject || 'General')}</span>
+                            <span>📅 Due: ${escapeHtml(task.dueDate || 'No due date')}</span>
                             <span class="badge ${task.priority}">${task.priority}</span>
                         </div>
                     </div>
                 </div>
                 <div class="task-actions">
-                    <button class="btn-action" onclick="openEditModal(${task.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action delete" onclick="deleteTask(${task.id})" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-action" onclick="openEditModal('${task.id}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteTask('${task.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
             list.appendChild(li);
         });
-    }
+    };
 
     // Helper for safe strings
     function escapeHtml(text) {
-        return text.replace(/&/g, "&amp;")
+        return String(text).replace(/&/g, "&amp;")
                    .replace(/</g, "&lt;")
                    .replace(/>/g, "&gt;")
                    .replace(/"/g, "&quot;")
                    .replace(/'/g, "&#039;");
     }
 
-    // Initialize Application
+    // App Startup
     initTheme();
-    syncSubjectDropdowns();
-    renderTasks();
+    initAuth();
 </script>
 </body>
 </html>
