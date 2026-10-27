@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Time & Sanity: Find Your Focus</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-gradient: linear-gradient(135deg, #38bdf8, #818cf8);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border-bottom: 2px solid var(--bg-secondary);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.2rem;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .nav-btn {
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
+            border: none;
+            padding: 0.75rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active-view {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--bg-secondary);
+            padding-bottom: 0.5rem;
+        }
+
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            padding: 1.8rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .card h3 {
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+            font-size: 1.25rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .card .highlight {
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.85rem;
+            background-color: rgba(56, 189, 248, 0.1);
+            padding: 0.5rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .expandable-content {
+            display: none;
+            margin-top: 1rem;
+            border-top: 1px solid #334155;
+            padding-top: 1rem;
+        }
+
+        .card.active .expandable-content {
+            display: block;
+        }
+
+        .expandable-content img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+        }
+
+        .click-hint {
+            font-size: 0.8rem;
+            color: var(--accent);
+            text-align: right;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .simulator-box {
+            background-color: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid #334155;
+        }
+
+        .slider-container {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .slider-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            max-width: 450px;
+            height: 8px;
+            border-radius: 5px;
+            background: #334155;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-card {
+            background: var(--bg-primary);
+            padding: 1.2rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .metric-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+        }
+
+        .metric-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .metric-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .status-good { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .status-warn { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .status-danger { background-color: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+        .tools-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .tools-layout { grid-template-columns: 1fr; }
+        }
+
+        .panel-box {
+            background-color: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1.8rem;
+            border: 1px solid #334155;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            background: var(--bg-primary);
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            border: 1px solid #334155;
+            cursor: pointer;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+            margin-top: 2px;
+        }
+
+        .checklist-text h4 {
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .checklist-text p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .timer-display {
+            font-size: 3.2rem;
+            font-weight: 800;
+            color: var(--accent);
+            text-align: center;
+            margin: 1rem 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-mode {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--warning);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-primary { background-color: var(--accent); color: var(--bg-primary); }
+        .btn-secondary { background-color: #334155; color: var(--text-main); }
+        .btn-danger { background-color: var(--danger); color: white; }
+
+        /* Corner Squirrel Holding Paper with 2 Hands (No Acorn) */
+        #squirrelCorner {
+            position: fixed;
+            bottom: -150px;
+            right: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        #squirrelCorner.show {
+            bottom: 0;
+        }
+
+        .paper-sign {
+            background: #ffffff;
+            color: #0f172a;
+            padding: 0.2rem 0.7rem;
+            border-radius: 4px;
+            font-weight: 900;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 2px solid #0284c7;
+            margin-bottom: -12px;
+            z-index: 2;
+        }
+
+        .squirrel-group {
+            position: relative;
+            font-size: 5rem;
+            line-height: 1;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
+        }
+
+        .squirrel-group::before, .squirrel-group::after {
+            content: "🐾";
+            position: absolute;
+            font-size: 1.5rem;
+            bottom: 25px;
+        }
+
+        .squirrel-group::before {
+            left: 8px;
+            transform: rotate(-15deg);
+        }
+
+        .squirrel-group::after {
+            right: 8px;
+            transform: rotate(15deg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="header-title">
+                <h1>Screen Time & Sanity</h1>
+                <p>Find Your Focus</p>
+            </div>
+            <div>
+                <button class="nav-btn" id="navBtn" onclick="toggleView()">💡 Daily Checklist & Timer</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- DASHBOARD VIEW -->
+            <div id="mainView" class="view-section active-view">
+                <section>
+                    <h2>Why We Must Change Habits <span style="font-size: 0.9rem; color: var(--accent); float: right; font-weight: normal;">(Click cards to explore)</span></h2>
+                    <div class="sections-grid">
+                        <div class="card" onclick="toggleCard(this)">
+                            <h3>🧠 Cognitive Restructuring</h3>
+                            <p>Constant short-form media exposure fragments your baseline attention span and erodes deep-focus capabilities.</p>
+                            <div class="highlight">Trade-off: Weakens patience, critical thinking, and working memory performance.</div>
+                            <div class="expandable-content">
+                                <img src="https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=600&q=80" alt="Brain focus concept">
+                                <p style="font-size:0.85rem;"><strong>Deep Dive:</strong> Switching tasks every few seconds conditions your brain to crave constant novelty. Rebuilding focus requires intentional blocks of offline time.</p>
+                            </div>
+                            <div class="click-hint">Click to expand ▾</div>
+                        </div>
+
+                        <div class="card" onclick="toggleCard(this)">
+                            <h3>🌙 Circadian Disruption</h3>
+                            <p>Blue light emissions from digital displays suppress your brain's natural melatonin production late into the evening.</p>
+                            <div class="highlight">Trade-off: Delays sleep onset and blocks critical recovery phases.</div>
+                            <div class="expandable-content">
+                                <img src="https://images.unsplash.com/photo-1511295742362-92c96b1fc485?auto=format&fit=crop&w=600&q=80" alt="Night sky sleep concept">
+                                <p style="font-size:0.85rem;"><strong>Deep Dive:</strong> Poor sleep directly affects memory consolidation and physical energy. Set a 1-hour digital curfew before bed.</p>
+                            </div>
+                            <div class="click-hint">Click to expand ▾</div>
+                        </div>
+
+                        <div class="card" onclick="toggleCard(this)">
+                            <h3>⚡ Dopamine Desensitization</h3>
+                            <p>Endless algorithmic scrolling forces rapid, artificial dopamine spikes that hijack your biological reward circuitry.</p>
+                            <div class="highlight">Trade-off: Lowers baseline focus, leaving real-life tasks feeling boring.</div>
+                            <div class="expandable-content">
+                                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=600&q=80" alt="Digital connection">
+                                <p style="font-size:0.85rem;"><strong>Deep Dive:</strong> Overstimulated reward pathways make everyday tasks feel boring. Periodic detoxes help restore normal sensitivity.</p>
+                            </div>
+                            <div class="click-hint">Click to expand ▾</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Interactive Impact Simulator</h2>
+                    <div class="simulator-box">
+                        <div class="slider-container">
+                            <label for="screenTime" style="font-weight:600; display:block; margin-bottom:0.5rem;">Daily Recreational Screen Time</label>
+                            <div class="slider-value"><span id="hoursDisplay">2</span> Hours</div>
+                            <input type="range" id="screenTime" min="0" max="12" value="2" step="0.5" oninput="updateMetrics()">
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-title">Sleep Duration</div>
+                                <div class="metric-value" id="sleepValue">8.0 hrs</div>
+                                <div class="metric-status status-good" id="sleepStatus">Optimal</div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-title">Energy Level</div>
+                                <div class="metric-value" id="energyValue">95%</div>
+                                <div class="metric-status status-good" id="energyStatus">Vibrant</div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-title">Dopamine Spike</div>
+                                <div class="metric-value" id="dopamineValue">Baseline</div>
+                                <div class="metric-status status-good" id="dopamineStatus">Balanced</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- CHECKLIST & TIMER VIEW -->
+            <div id="toolsView" class="view-section">
+                <h2>Focus Tools & Healthy Screen Limits</h2>
+                <div class="tools-layout">
+                    <div class="panel-box">
+                        <h3 style="color: var(--accent); margin-bottom: 1rem;">📋 Healthy Screen Limits Checklist</h3>
+                        
+                        <label class="checklist-item">
+                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
+                            <div class="checklist-text">
+                               <h4>No Screens During Meals</h4>
+                               <p>Unplug during breakfast, lunch, and dinner to practice mindful eating.</p>
+                            </div>
+                        </label>
+
+                        <label class="checklist-item">
+                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
+                            <div class="checklist-text">
+                               <h4>1 Hour Before Bed Curfew</h4>
+                               <p>Shut down phones and laptops 60 minutes prior to sleep.</p>
+                            </div>
+                        </label>
+
+                        <label class="checklist-item">
+                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
+                            <div class="checklist-text">
+                               <h4>First 30 Mins After Waking Offline</h4>
+                               <p>Avoid checking notifications immediately upon waking up.</p>
+                            </div>
+                        </label>
+
+                        <label class="checklist-item">
+                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
+                            <div class="checklist-text">
+                               <h4>Dedicated Study / Focus Blocks</h4>
+                               <p>Keep devices out of reach during deep work sessions.</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="panel-box">
+                        <h3 style="color: var(--accent); margin-bottom: 0.3rem;">⏱️ Pure Focus Timer</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">30m focus, 3s "Stop, Breathe, Relax", 5m break.</p>
+                        
+                        <div class="timer-mode" id="timerMode">Focus Session</div>
+                        <div class="timer-display" id="timerDisplay">30:00</div>
+
+                        <div class="timer-controls">
+                            <button class="btn btn-primary" onclick="startTimer()">Start</button>
+                            <button class="btn btn-secondary" onclick="pauseTimer()">Pause</button>
+                            <button class="btn btn-danger" onclick="resetTimer()">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Corner Squirrel Holding Paper with 2 Hands -->
+    <div id="squirrelCorner">
+        <div class="paper-sign">A+</div>
+        <div class="squirrel-group">🐿️</div>
+    </div>
+
+    <script>
+        function toggleView() {
+            const mainView = document.getElementById('mainView');
+            const toolsView = document.getElementById('toolsView');
+            const navBtn = document.getElementById('navBtn');
+
+            if (mainView.classList.contains('active-view')) {
+                mainView.classList.remove('active-view');
+                toolsView.classList.add('active-view');
+                navBtn.textContent = '← Back to Dashboard';
+            } else {
+                toolsView.classList.remove('active-view');
+                mainView.classList.add('active-view');
+                navBtn.textContent = '💡 Daily Checklist & Timer';
+            }
+        }
+
+        function toggleCard(card) {
+            card.classList.toggle('active');
+            const hint = card.querySelector('.click-hint');
+            if (card.classList.contains('active')) {
+                hint.textContent = 'Click to collapse ▴';
+            } else {
+                hint.textContent = 'Click to expand ▾';
+            }
+        }
+
+        function updateMetrics() {
+            const slider = document.getElementById('screenTime');
+            const hours = parseFloat(slider.value);
+            document.getElementById('hoursDisplay').textContent = hours;
+
+            let sleep = 8.5 - (hours * 0.35);
+            if (hours > 6) sleep -= (hours - 6) * 0.2;
+            sleep = Math.max(4.5, sleep);
+            document.getElementById('sleepValue').textContent = sleep.toFixed(1) + ' hrs';
+
+            const sleepStatus = document.getElementById('sleepStatus');
+            if (sleep >= 7.5) {
+                sleepStatus.textContent = 'Optimal';
+                sleepStatus.className = 'metric-status status-good';
+            } else if (sleep >= 6.0) {
+                sleepStatus.textContent = 'Restricted';
+                sleepStatus.className = 'metric-status status-warn';
+            } else {
+                sleepStatus.textContent = 'Deprived';
+                sleepStatus.className = 'metric-status status-danger';
+            }
+
+            let energy = 100 - (hours * 4) - ((8.5 - sleep) * 12);
+            energy = Math.max(15, Math.min(100, Math.round(energy)));
+            document.getElementById('energyValue').textContent = energy + '%';
+
+            const energyStatus = document.getElementById('energyStatus');
+            if (energy >= 80) {
+                energyStatus.textContent = 'Vibrant';
+                energyStatus.className = 'metric-status status-good';
+            } else if (energy >= 50) {
+                energyStatus.textContent = 'Sluggish';
+                energyStatus.className = 'metric-status status-warn';
+            } else {
+                energyStatus.textContent = 'Exhausted';
+                energyStatus.className = 'metric-status status-danger';
+            }
+
+            const dopamineValue = document.getElementById('dopamineValue');
+            const dopamineStatus = document.getElementById('dopamineStatus');
+            if (hours <= 2) {
+                dopamineValue.textContent = 'Normal';
+                dopamineStatus.textContent = 'Balanced Baseline';
+                dopamineStatus.className = 'metric-status status-good';
+            } else if (hours <= 6) {
+                dopamineValue.textContent = 'Elevated';
+                dopamineStatus.textContent = 'Overstimulated';
+                dopamineStatus.className = 'metric-status status-warn';
+            } else {
+                dopamineValue.textContent = 'Extreme Spike';
+                dopamineStatus.className = 'metric-status status-danger';
+            }
+        }
+
+        function checkCompletion() {
+            const checkboxes = document.querySelectorAll('.habit-check');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            const corner = document.getElementById('squirrelCorner');
+
+            if (allChecked) {
+                corner.classList.add('show');
+            } else {
+                corner.classList.remove('show');
+            }
+        }
+
+        let timerSeconds = 30 * 60;
+        let timerInterval = null;
+        let isFocusMode = true;
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                if (timerSeconds > 0) {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+
+                    if (isFocusMode) {
+                        const display = document.getElementById('timerDisplay');
+                        const mode = document.getElementById('timerMode');
+                        
+                        display.textContent = "STOP";
+                        mode.textContent = "Stop, Breathe, Relax";
+                        mode.style.color = "var(--danger)";
+
+                        let transitionSeconds = 3;
+                        let transitionInterval = setInterval(() => {
+                            transitionSeconds--;
+                            if (transitionSeconds > 0) {
+                                display.textContent = `0:0${transitionSeconds}`;
+                            } else {
+                                clearInterval(transitionInterval);
+                                isFocusMode = false;
+                                timerSeconds = 5 * 60;
+                                mode.textContent = "Break Time";
+                                mode.style.color = "var(--success)";
+                                updateTimerDisplay();
+                                startTimer();
+                            }
+                        }, 1000);
+
+                    } else {
+                        const mode = document.getElementById('timerMode');
+                        mode.textContent = "Focus Session";
+                        mode.style.color = "var(--warning)";
+                        isFocusMode = true;
+                        timerSeconds = 30 * 60;
+                        updateTimerDisplay();
+                    }
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isFocusMode = true;
+            timerSeconds = 30 * 60;
+            document.getElementById('timerMode').textContent = 'Focus Session';
+            document.getElementById('timerMode').style.color = 'var(--warning)';
+            updateTimerDisplay();
+        }
+
+        updateMetrics();
+    </script>
+</body>
+</html>
