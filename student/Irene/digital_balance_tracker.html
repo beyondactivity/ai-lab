@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disconnect to Reconnect: The Digital Balance Tracker</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-gradient: linear-gradient(135deg, #38bdf8, #818cf8);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--bg-secondary);
+            padding-bottom: 0.5rem;
+        }
+
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card h3 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .card .highlight {
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.9rem;
+            background-color: rgba(56, 189, 248, 0.1);
+            padding: 0.5rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .simulator-box {
+            background-color: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 2.5rem;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-container {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .slider-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .slider-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            max-width: 500px;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #334155;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .metric-title {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-status {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        /* Status Colors */
+        .status-good { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .status-warn { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .status-danger { background-color: rgba(239, 68, 110, 0.15); color: var(--danger); }
+
+        @media (max-width: 768px) {
+            body { padding: 1rem 0.5rem; }
+            h1 { font-size: 2rem; }
+            .simulator-box { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Disconnect to Reconnect</h1>
+            <p>The Digital Balance Tracker</p>
+        </header>
+
+        <main>
+            <section>
+                <h2>Why We Must Change Habits</h2>
+                <div class="sections-grid">
+                    <div class="card">
+                        <h3>🧠 Cognitive Restructuring</h3>
+                        <p>Constant short-form media exposure fragments your baseline attention span and erodes deep-focus capabilities.</p>
+                        <div class="highlight">Trade-off: Weakens patience, critical thinking, and working memory performance.</div>
+                    </div>
+
+                    <div class="card">
+                        <h3>🌙 Circadian Disruption</h3>
+                        <p>Blue light emissions from digital displays suppress your brain's natural melatonin production late into the evening.</p>
+                        <div class="highlight">Trade-off: Delays sleep onset and blocks critical recovery phases.</div>
+                    </div>
+
+                    <div class="card">
+                        <h3>⚡ Dopamine Desensitization</h3>
+                        <p>Endless algorithmic scrolling forces rapid, artificial dopamine spikes that hijack your brain’s biological reward circuitry.</p>
+                        <div class="highlight">Trade-off: Lowers baseline focus, leaving real-life tasks feeling boring.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Interactive Impact Simulator</h2>
+                <div class="simulator-box">
+                    <div class="slider-container">
+                        <label for="screenTime" class="slider-label">Daily Recreational Screen Time</label>
+                        <div class="slider-value"><span id="hoursDisplay">2</span> Hours</div>
+                        <input type="range" id="screenTime" min="0" max="12" value="2" step="0.5">
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-title">Sleep Duration</div>
+                            <div class="metric-value" id="sleepValue">8.0 hrs</div>
+                            <div class="metric-status status-good" id="sleepStatus">Optimal</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-title">Energy Level</div>
+                            <div class="metric-value" id="energyValue">95%</div>
+                            <div class="metric-status status-good" id="energyStatus">Vibrant</div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-title">Dopamine Spike</div>
+                            <div class="metric-value" id="dopamineValue">Baseline</div>
+                            <div class="metric-status status-good" id="dopamineStatus">Balanced</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const slider = document.getElementById('screenTime');
+        const hoursDisplay = document.getElementById('hoursDisplay');
+        const sleepValue = document.getElementById('sleepValue');
+        const sleepStatus = document.getElementById('sleepStatus');
+        const energyValue = document.getElementById('energyValue');
+        const energyStatus = document.getElementById('energyStatus');
+        const dopamineValue = document.getElementById('dopamineValue');
+        const dopamineStatus = document.getElementById('dopamineStatus');
+
+        function updateMetrics() {
+            const hours = parseFloat(slider.value);
+            hoursDisplay.textContent = hours;
+
+            let sleep = 8.5 - (hours * 0.35);
+            if (hours > 6) sleep -= (hours - 6) * 0.2;
+            sleep = Math.max(4.5, sleep);
+            sleepValue.textContent = sleep.toFixed(1) + ' hrs';
+
+            if (sleep >= 7.5) {
+                sleepStatus.textContent = 'Optimal';
+                sleepStatus.className = 'metric-status status-good';
+            } else if (sleep >= 6.0) {
+                sleepStatus.textContent = 'Restricted';
+                sleepStatus.className = 'metric-status status-warn';
+            } else {
+                sleepStatus.textContent = 'Deprived';
+                sleepStatus.className = 'metric-status status-danger';
+            }
+
+            let energy = 100 - (hours * 4) - ((8.5 - sleep) * 12);
+            energy = Math.max(15, Math.min(100, Math.round(energy)));
+            energyValue.textContent = energy + '%';
+
+            if (energy >= 80) {
+                energyStatus.textContent = 'Vibrant';
+                energyStatus.className = 'metric-status status-good';
+            } else if (energy >= 50) {
+                energyStatus.textContent = 'Sluggish';
+                energyStatus.className = 'metric-status status-warn';
+            } else {
+                energyStatus.textContent = 'Exhausted';
+                energyStatus.className = 'metric-status status-danger';
+            }
+
+            if (hours <= 2) {
+                dopamineValue.textContent = 'Normal';
+                dopamineStatus.textContent = 'Balanced Baseline';
+                dopamineStatus.className = 'metric-status status-good';
+            } else if (hours <= 6) {
+                dopamineValue.textContent = 'Elevated';
+                dopamineStatus.textContent = 'Overstimulated';
+                dopamineStatus.className = 'metric-status status-warn';
+            } else {
+                dopamineValue.textContent = 'Extreme Spike';
+                dopamineStatus.textContent = 'Desensitized';
+                dopamineStatus.className = 'metric-status status-danger';
+            }
+        }
+
+        slider.addEventListener('input', updateMetrics);
+        updateMetrics();
+    </script>
+</body>
+</html>
