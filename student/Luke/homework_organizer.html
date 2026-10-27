@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homework Organizer (Cloud-Synced)</title>
-    <!-- Font Awesome for modern icons -->
+    <title>Homework Organizer</title>
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -21,6 +21,7 @@
             --danger: #ef4444;
             --danger-hover: #dc2626;
             --success: #10b981;
+            --warning: #f59e0b;
         }
 
         body.dark-theme {
@@ -69,6 +70,8 @@
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 16px;
             margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         h1 {
@@ -83,6 +86,7 @@
         .header-actions {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
 
         .icon-btn {
@@ -104,18 +108,20 @@
             color: var(--primary);
         }
 
-        /* Sync Status Bar */
+        /* Status Bar */
         .status-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: var(--accent-bg);
-            padding: 8px 14px;
+            padding: 10px 14px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
             margin-bottom: 20px;
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .status-badge {
@@ -129,12 +135,34 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background-color: var(--text-muted);
+            background-color: var(--warning);
         }
 
         .status-dot.online {
             background-color: var(--success);
             box-shadow: 0 0 8px var(--success);
+        }
+
+        .status-dot.offline {
+            background-color: var(--warning);
+            box-shadow: 0 0 8px var(--warning);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+            font-size: 13px;
+            text-decoration: underline;
         }
 
         /* Form Controls */
@@ -178,13 +206,16 @@
             background-color: var(--primary-hover);
         }
 
-        .subject-select-container {
-            display: flex;
-            gap: 6px;
+        .btn-secondary {
+            background-color: var(--accent-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-weight: 600;
+            cursor: pointer;
         }
 
-        .subject-select-container select {
-            flex: 1;
+        .btn-secondary:hover {
+            border-color: var(--primary);
         }
 
         /* Toolbar / Filters */
@@ -361,7 +392,7 @@
         .modal {
             background: var(--card-bg);
             width: 90%;
-            max-width: 500px;
+            max-width: 460px;
             border-radius: 14px;
             padding: 24px;
             box-shadow: var(--shadow);
@@ -418,6 +449,61 @@
             border-bottom: none;
         }
 
+        /* Auth Form Tabs */
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .auth-divider {
+            text-align: center;
+            margin: 15px 0;
+            position: relative;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .auth-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--border-color);
+            z-index: 1;
+        }
+
+        .auth-divider span {
+            background: var(--card-bg);
+            padding: 0 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-google {
+            background: white;
+            color: #333;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .btn-google:hover {
+            background: #f8fafc;
+        }
+
+        body.dark-theme .btn-google {
+            background: #374151;
+            color: white;
+            border-color: #4b5563;
+        }
+
         .notification {
             position: fixed;
             bottom: 20px;
@@ -438,6 +524,21 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        .error-banner {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        body.dark-theme .error-banner {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
     </style>
 </head>
 <body>
@@ -450,19 +551,25 @@
             <button class="icon-btn" onclick="openSubjectModal()" title="Manage Subjects">
                 <i class="fa-solid fa-folder-gear"></i> Subjects
             </button>
+            <button class="icon-btn" id="authBtn" onclick="openAuthModal()">
+                <i class="fa-solid fa-user"></i> <span id="authBtnText">Sign In</span>
+            </button>
             <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">
                 <i class="fa-solid fa-moon"></i>
             </button>
         </div>
     </div>
 
-    <!-- Live Cloud Status Bar -->
+    <!-- Status Bar -->
     <div class="status-bar">
-        <div class="status-badge" id="statusBadge">
+        <div class="status-badge">
             <span class="status-dot" id="statusDot"></span>
-            <span id="statusText">Connecting to Firebase...</span>
+            <span id="statusText">Mode: Local Storage (Offline)</span>
         </div>
-        <div id="userInfo">User ID: <span id="userIdLabel">--</span></div>
+        <div class="user-pill">
+            <span id="userIdLabel">Using Local Mode</span>
+            <button class="btn-link" id="authActionLink" onclick="openAuthModal()">Sign in to Sync</button>
+        </div>
     </div>
     
     <!-- Add Task Form -->
@@ -470,9 +577,7 @@
         <input type="text" id="taskInput" placeholder="Assignment name..." required>
         
         <div class="subject-select-container">
-            <select id="subjectInput" required>
-                <!-- Populated dynamically -->
-            </select>
+            <select id="subjectInput" required></select>
         </div>
 
         <input type="date" id="dateInput">
@@ -492,7 +597,6 @@
         
         <select id="filterSubject" onchange="renderTasks()">
             <option value="all">All Subjects</option>
-            <!-- Populated dynamically -->
         </select>
         
         <select id="filterStatus" onchange="renderTasks()">
@@ -525,9 +629,7 @@
             <button class="btn-primary" onclick="addCustomSubject()">Add</button>
         </div>
 
-        <ul class="subject-list" id="subjectManagerList">
-            <!-- Populated dynamically -->
-        </ul>
+        <ul class="subject-list" id="subjectManagerList"></ul>
     </div>
 </div>
 
@@ -561,16 +663,77 @@
     </div>
 </div>
 
-<!-- Custom Toast Notification -->
+<!-- Account / Sign-In Modal -->
+<div class="modal-overlay" id="authModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="authModalTitle">Sign In to Cloud</h2>
+            <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+        </div>
+
+        <div class="error-banner" id="authErrorBanner"></div>
+
+        <div id="accountActiveView" style="display: none; text-align: center; padding: 10px 0;">
+            <p>You are signed in as:</p>
+            <h3 id="accountEmailText" style="margin: 8px 0; word-break: break-all;"></h3>
+            <button class="btn-primary" style="width: 100%; margin-top: 15px; background: var(--danger);" onclick="handleSignOut()">Sign Out</button>
+        </div>
+
+        <div id="accountLoginForm">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="email" id="authEmail" placeholder="Email address">
+                <input type="password" id="authPassword" placeholder="Password">
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-primary" style="flex: 1;" onclick="handleEmailSignIn()">Sign In</button>
+                    <button class="btn-secondary" style="flex: 1;" onclick="handleEmailSignUp()">Sign Up</button>
+                </div>
+            </div>
+
+            <div class="auth-divider"><span>OR</span></div>
+
+            <div class="auth-buttons">
+                <button class="btn-google" onclick="handleGoogleSignIn()">
+                    <i class="fa-brands fa-google"></i> Continue with Google
+                </button>
+                <button class="btn-secondary" onclick="handleAnonymousSignIn()">
+                    <i class="fa-solid fa-user-secret"></i> Continue as Guest (Anonymous)
+                </button>
+                <button class="btn-secondary" style="margin-top: 10px;" onclick="useOfflineMode()">
+                    <i class="fa-solid fa-hard-drive"></i> Use Offline / Local Storage
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
 <div class="notification" id="notification"></div>
 
-<!-- Firebase SDK Imports & Application Logic -->
+<!-- Firebase SDK & Application Script -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { 
+        getAuth, 
+        signInAnonymously, 
+        signInWithEmailAndPassword, 
+        createUserWithEmailAndPassword,
+        signInWithPopup,
+        GoogleAuthProvider,
+        signOut,
+        onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+        getFirestore, 
+        collection, 
+        doc, 
+        setDoc, 
+        addDoc, 
+        updateDoc, 
+        deleteDoc, 
+        onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // User-provided Firebase Configuration
+    // Firebase Config
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
         apiKey: "AIzaSyDdaRPIMZ58CypohrALR_-vCTZn58GVZ9c",
         authDomain: "flight-sim-thingy.firebaseapp.com",
@@ -583,20 +746,26 @@
 
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'homework-organizer-app';
 
-    // Initialize Firebase Services
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // Global App State
+    // App State
+    let app, auth, db;
     let currentUser = null;
-    let tasks = [];
-    let subjects = ['Math', 'Science', 'English', 'History', 'Art', 'General'];
+    let isLocalMode = true;
+    let tasks = JSON.parse(localStorage.getItem('hw_organizer_tasks')) || [];
+    let subjects = JSON.parse(localStorage.getItem('hw_organizer_subjects')) || ['Math', 'Science', 'English', 'History', 'Art', 'General'];
     let isDarkMode = JSON.parse(localStorage.getItem('hw_organizer_theme')) || false;
     let unsubscribeTasks = null;
     let unsubscribeSubjects = null;
 
-    // UI & Notification Helpers
+    // Initialize Firebase
+    try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+    } catch (e) {
+        console.warn("Firebase initialization failed. Falling back to Local Mode.", e);
+    }
+
+    // UI Helpers
     function showNotification(msg) {
         const toast = document.getElementById('notification');
         toast.textContent = msg;
@@ -604,18 +773,48 @@
         setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    function updateSyncStatus(status, isOnline = true) {
+    function showAuthError(msg) {
+        const banner = document.getElementById('authErrorBanner');
+        banner.textContent = msg;
+        banner.style.display = 'block';
+    }
+
+    function clearAuthError() {
+        const banner = document.getElementById('authErrorBanner');
+        banner.style.display = 'none';
+        banner.textContent = '';
+    }
+
+    function updateSyncStatus(status, isOnline = true, userLabel = "Local Storage") {
         const text = document.getElementById('statusText');
         const dot = document.getElementById('statusDot');
+        const label = document.getElementById('userIdLabel');
+        const authBtnText = document.getElementById('authBtnText');
+        const authActionLink = document.getElementById('authActionLink');
+
         text.textContent = status;
+        label.textContent = userLabel;
+
         if (isOnline) {
-            dot.classList.add('online');
+            dot.className = "status-dot online";
+            authBtnText.textContent = "Account";
+            authActionLink.textContent = "Manage Account";
         } else {
-            dot.classList.remove('online');
+            dot.className = "status-dot offline";
+            authBtnText.textContent = "Sign In";
+            authActionLink.textContent = "Sign in to Sync";
         }
     }
 
-    // Theme Management
+    // Save Local Storage
+    function saveLocal() {
+        if (isLocalMode) {
+            localStorage.setItem('hw_organizer_tasks', JSON.stringify(tasks));
+            localStorage.setItem('hw_organizer_subjects', JSON.stringify(subjects));
+        }
+    }
+
+    // Theme Switch
     function initTheme() {
         if (isDarkMode) {
             document.body.classList.add('dark-theme');
@@ -632,199 +831,184 @@
         initTheme();
     };
 
-    // Authentication Setup
-    async function initAuth() {
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
+    // Firebase Auth State Listener
+    if (auth) {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                isLocalMode = false;
+                const emailOrId = user.email || `Guest (${user.uid.substring(0, 6)}...)`;
+                updateSyncStatus("Cloud Synced", true, emailOrId);
+                setupFirestoreRealtimeListeners(user.uid);
             } else {
-                await signInAnonymously(auth);
+                switchToLocalMode();
             }
-        } catch (err) {
-            console.error("Auth initialization error:", err);
-            updateSyncStatus("Authentication failed", false);
-        }
+        });
+    } else {
+        switchToLocalMode();
     }
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('userIdLabel').textContent = user.uid.substring(0, 10) + '...';
-            updateSyncStatus("Cloud Synced", true);
-            setupFirestoreRealtimeListeners(user.uid);
-        } else {
-            currentUser = null;
-            document.getElementById('userIdLabel').textContent = '--';
-            updateSyncStatus("Disconnected", false);
-        }
-    });
+    function switchToLocalMode() {
+        currentUser = null;
+        isLocalMode = true;
+        if (unsubscribeTasks) unsubscribeTasks();
+        if (unsubscribeSubjects) unsubscribeSubjects();
+        updateSyncStatus("Mode: Local Storage (Offline)", false, "Local Storage");
+        tasks = JSON.parse(localStorage.getItem('hw_organizer_tasks')) || tasks;
+        subjects = JSON.parse(localStorage.getItem('hw_organizer_subjects')) || subjects;
+        syncSubjectDropdowns();
+        renderTasks();
+    }
 
-    // Firestore Realtime Synchronization
+    window.useOfflineMode = function() {
+        closeAuthModal();
+        switchToLocalMode();
+        showNotification("Switched to Offline Mode.");
+    };
+
+    // Firestore Sync
     function setupFirestoreRealtimeListeners(userId) {
         if (unsubscribeTasks) unsubscribeTasks();
         if (unsubscribeSubjects) unsubscribeSubjects();
 
-        // Path for user private data: /artifacts/{appId}/users/{userId}/{collectionName}
         const tasksCol = collection(db, 'artifacts', appId, 'users', userId, 'tasks');
         const subjectsCol = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
 
-        // Listen to Tasks Collection
         unsubscribeTasks = onSnapshot(tasksCol, (snapshot) => {
             tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderTasks();
         }, (err) => {
-            console.error("Error subscribing to tasks:", err);
-            showNotification("Failed to sync tasks with cloud.");
+            console.error("Firestore Tasks sync error:", err);
+            showNotification("Cloud sync error. Using local view.");
         });
 
-        // Listen to Subjects Collection
         unsubscribeSubjects = onSnapshot(subjectsCol, (snapshot) => {
             if (!snapshot.empty) {
                 const subDocs = snapshot.docs.map(d => d.data().name);
-                // Ensure unique subjects list including defaults
                 subjects = Array.from(new Set(['General', ...subDocs]));
             } else {
-                // Initialize default subjects in Firestore for first-time user
                 const defaultSubs = ['Math', 'Science', 'English', 'History', 'Art', 'General'];
                 defaultSubs.forEach(s => {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', s);
-                    setDoc(docRef, { name: s }).catch(console.error);
+                    setDoc(doc(db, 'artifacts', appId, 'users', userId, 'subjects', s), { name: s }).catch(console.error);
                 });
                 subjects = defaultSubs;
             }
             syncSubjectDropdowns();
         }, (err) => {
-            console.error("Error subscribing to subjects:", err);
+            console.error("Firestore Subjects sync error:", err);
         });
     }
 
-    // Subject Dropdowns Update
-    function syncSubjectDropdowns() {
-        const formSelect = document.getElementById('subjectInput');
-        const filterSelect = document.getElementById('filterSubject');
-        const editSelect = document.getElementById('editTaskSubject');
-
-        const currentFilter = filterSelect.value;
-        const currentForm = formSelect.value;
-
-        // Populate Form Select
-        formSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
-
-        // Populate Filter Select
-        filterSelect.innerHTML = '<option value="all">All Subjects</option>' +
-            subjects.map(s => `<option value="${s}">${s}</option>`).join('');
-
-        // Populate Edit Select
-        editSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
-
-        if (subjects.includes(currentForm)) formSelect.value = currentForm;
-        if (subjects.includes(currentFilter) || currentFilter === 'all') filterSelect.value = currentFilter;
-
-        renderSubjectManager();
-    }
-
-    // Subject Management Methods
-    window.addCustomSubject = async function() {
-        if (!currentUser) return;
-        const input = document.getElementById('newSubjectModalInput');
-        const name = input.value.trim();
-
-        if (!name) {
-            showNotification('Please enter a subject name.');
-            return;
-        }
-
-        if (subjects.some(s => s.toLowerCase() === name.toLowerCase())) {
-            showNotification('Subject already exists.');
-            return;
-        }
-
+    // Auth Actions
+    window.handleGoogleSignIn = async function() {
+        clearAuthError();
         try {
-            const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', name);
-            await setDoc(docRef, { name });
-            input.value = '';
-            showNotification(`Added subject "${name}"`);
-        } catch (e) {
-            console.error(e);
-            showNotification('Error adding subject.');
-        }
-    };
-
-    window.renameSubject = async function(oldName) {
-        if (!currentUser) return;
-        const newName = prompt(`Rename subject "${oldName}" to:`, oldName);
-        if (!newName || newName.trim() === '' || newName === oldName) return;
-        
-        const cleanName = newName.trim();
-        if (subjects.some(s => s.toLowerCase() === cleanName.toLowerCase())) {
-            showNotification('A subject with that name already exists.');
-            return;
-        }
-
-        try {
-            // Delete old subject doc and add new one
-            const oldDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', oldName);
-            const newDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', cleanName);
-            
-            await deleteDoc(oldDocRef);
-            await setDoc(newDocRef, { name: cleanName });
-
-            // Update tasks using this subject
-            const affectedTasks = tasks.filter(t => t.subject === oldName);
-            for (const task of affectedTasks) {
-                const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', task.id);
-                await updateDoc(taskRef, { subject: cleanName });
-            }
-
-            showNotification(`Renamed "${oldName}" to "${cleanName}"`);
-        } catch (e) {
-            console.error(e);
-            showNotification('Failed to rename subject.');
-        }
-    };
-
-    window.deleteSubject = async function(subName) {
-        if (!currentUser) return;
-        if (subjects.length <= 1) {
-            showNotification('You must keep at least one subject.');
-            return;
-        }
-
-        if (confirm(`Are you sure you want to delete "${subName}"? Tasks under this subject will be moved to "General".`)) {
-            try {
-                // Remove subject doc
-                const subDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', subName);
-                await deleteDoc(subDocRef);
-
-                // Reassign tasks to 'General'
-                const affectedTasks = tasks.filter(t => t.subject === subName);
-                for (const task of affectedTasks) {
-                    const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', task.id);
-                    await updateDoc(taskRef, { subject: 'General' });
-                }
-
-                showNotification(`Deleted subject "${subName}"`);
-            } catch (e) {
-                console.error(e);
-                showNotification('Failed to delete subject.');
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+            closeAuthModal();
+            showNotification("Signed in with Google!");
+        } catch (err) {
+            console.error(err);
+            if (err.code === 'auth/admin-restricted-operation' || err.code === 'auth/operation-not-allowed') {
+                showAuthError("Google Sign-In is not enabled in your Firebase Console. Try Email or Offline mode.");
+            } else {
+                showAuthError(err.message || "Failed to sign in with Google.");
             }
         }
     };
 
-    function renderSubjectManager() {
-        const list = document.getElementById('subjectManagerList');
-        list.innerHTML = subjects.map(sub => `
-            <li class="subject-item">
-                <span>📚 ${sub}</span>
-                <div>
-                    <button class="btn-action" onclick="renameSubject('${sub}')" title="Rename"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action delete" onclick="deleteSubject('${sub}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </li>
-        `).join('');
-    }
+    window.handleAnonymousSignIn = async function() {
+        clearAuthError();
+        try {
+            await signInAnonymously(auth);
+            closeAuthModal();
+            showNotification("Signed in as Guest!");
+        } catch (err) {
+            console.error(err);
+            if (err.code === 'auth/admin-restricted-operation' || err.code === 'auth/operation-not-allowed') {
+                showAuthError("Anonymous Auth is disabled in Firebase Console. Click 'Use Offline Mode' below to continue!");
+            } else {
+                showAuthError(err.message || "Guest sign in failed.");
+            }
+        }
+    };
 
-    // Modal Controls
+    window.handleEmailSignIn = async function() {
+        clearAuthError();
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+
+        if (!email || !password) {
+            showAuthError("Please enter both email and password.");
+            return;
+        }
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            closeAuthModal();
+            showNotification("Welcome back!");
+        } catch (err) {
+            console.error(err);
+            showAuthError(err.message || "Sign in failed.");
+        }
+    };
+
+    window.handleEmailSignUp = async function() {
+        clearAuthError();
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+
+        if (!email || password.length < 6) {
+            showAuthError("Password must be at least 6 characters long.");
+            return;
+        }
+
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            closeAuthModal();
+            showNotification("Account created!");
+        } catch (err) {
+            console.error(err);
+            showAuthError(err.message || "Failed to create account.");
+        }
+    };
+
+    window.handleSignOut = async function() {
+        try {
+            await signOut(auth);
+            closeAuthModal();
+            showNotification("Signed out.");
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Modal Control
+    window.openAuthModal = function() {
+        clearAuthError();
+        const modal = document.getElementById('authModal');
+        const activeView = document.getElementById('accountActiveView');
+        const loginForm = document.getElementById('accountLoginForm');
+        const title = document.getElementById('authModalTitle');
+
+        if (currentUser) {
+            title.textContent = "Account Details";
+            activeView.style.display = 'block';
+            loginForm.style.display = 'none';
+            document.getElementById('accountEmailText').textContent = currentUser.email || `Guest ID: ${currentUser.uid}`;
+        } else {
+            title.textContent = "Sign In to Cloud Sync";
+            activeView.style.display = 'none';
+            loginForm.style.display = 'block';
+        }
+
+        modal.classList.add('active');
+    };
+
+    window.closeAuthModal = function() {
+        document.getElementById('authModal').classList.remove('active');
+    };
+
     window.openSubjectModal = function() {
         document.getElementById('subjectModal').classList.add('active');
     };
@@ -850,42 +1034,137 @@
         document.getElementById('editTaskModal').classList.remove('active');
     };
 
-    window.saveTaskEdit = async function() {
-        if (!currentUser) return;
-        const id = document.getElementById('editTaskId').value;
-        const title = document.getElementById('editTaskTitle').value.trim();
-        const subject = document.getElementById('editTaskSubject').value;
-        const dueDate = document.getElementById('editTaskDate').value;
-        const priority = document.getElementById('editTaskPriority').value;
+    // Subject Dropdowns Update
+    function syncSubjectDropdowns() {
+        const formSelect = document.getElementById('subjectInput');
+        const filterSelect = document.getElementById('filterSubject');
+        const editSelect = document.getElementById('editTaskSubject');
 
-        if (!title) {
-            showNotification('Assignment name cannot be empty.');
+        const currentFilter = filterSelect.value;
+        const currentForm = formSelect.value;
+
+        formSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        filterSelect.innerHTML = '<option value="all">All Subjects</option>' + subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        editSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+
+        if (subjects.includes(currentForm)) formSelect.value = currentForm;
+        if (subjects.includes(currentFilter) || currentFilter === 'all') filterSelect.value = currentFilter;
+
+        renderSubjectManager();
+    }
+
+    // Subject Management
+    window.addCustomSubject = async function() {
+        const input = document.getElementById('newSubjectModalInput');
+        const name = input.value.trim();
+
+        if (!name) {
+            showNotification('Please enter a subject name.');
             return;
         }
 
-        try {
-            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id);
-            await updateDoc(taskRef, {
-                title,
-                subject,
-                dueDate: dueDate || 'No due date',
-                priority
-            });
-            closeEditModal();
-            showNotification('Task updated successfully.');
-        } catch (e) {
-            console.error(e);
-            showNotification('Error updating task.');
+        if (subjects.some(s => s.toLowerCase() === name.toLowerCase())) {
+            showNotification('Subject already exists.');
+            return;
+        }
+
+        if (isLocalMode) {
+            subjects.push(name);
+            saveLocal();
+            syncSubjectDropdowns();
+            input.value = '';
+            showNotification(`Added subject "${name}"`);
+        } else {
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', name), { name });
+                input.value = '';
+                showNotification(`Added subject "${name}"`);
+            } catch (e) {
+                console.error(e);
+                showNotification('Error adding subject.');
+            }
         }
     };
 
-    // Task CRUD Functions
-    window.addTask = async function() {
-        if (!currentUser) {
-            showNotification('Authenticating... please wait.');
+    window.renameSubject = async function(oldName) {
+        const newName = prompt(`Rename subject "${oldName}" to:`, oldName);
+        if (!newName || newName.trim() === '' || newName === oldName) return;
+        
+        const cleanName = newName.trim();
+        if (subjects.some(s => s.toLowerCase() === cleanName.toLowerCase())) {
+            showNotification('A subject with that name already exists.');
             return;
         }
 
+        if (isLocalMode) {
+            subjects = subjects.map(s => s === oldName ? cleanName : s);
+            tasks = tasks.map(t => t.subject === oldName ? { ...t, subject: cleanName } : t);
+            saveLocal();
+            syncSubjectDropdowns();
+            renderTasks();
+            showNotification(`Renamed to "${cleanName}"`);
+        } else {
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', oldName));
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', cleanName), { name: cleanName });
+
+                const affectedTasks = tasks.filter(t => t.subject === oldName);
+                for (const task of affectedTasks) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', task.id), { subject: cleanName });
+                }
+                showNotification(`Renamed to "${cleanName}"`);
+            } catch (e) {
+                console.error(e);
+                showNotification('Failed to rename subject.');
+            }
+        }
+    };
+
+    window.deleteSubject = async function(subName) {
+        if (subjects.length <= 1) {
+            showNotification('You must keep at least one subject.');
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete "${subName}"? Tasks will move to "General".`)) {
+            if (isLocalMode) {
+                subjects = subjects.filter(s => s !== subName);
+                tasks = tasks.map(t => t.subject === subName ? { ...t, subject: 'General' } : t);
+                saveLocal();
+                syncSubjectDropdowns();
+                renderTasks();
+                showNotification(`Deleted subject "${subName}"`);
+            } else {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'subjects', subName));
+                    const affectedTasks = tasks.filter(t => t.subject === subName);
+                    for (const task of affectedTasks) {
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', task.id), { subject: 'General' });
+                    }
+                    showNotification(`Deleted subject "${subName}"`);
+                } catch (e) {
+                    console.error(e);
+                    showNotification('Failed to delete subject.');
+                }
+            }
+        }
+    };
+
+    function renderSubjectManager() {
+        const list = document.getElementById('subjectManagerList');
+        list.innerHTML = subjects.map(sub => `
+            <li class="subject-item">
+                <span>📚 ${sub}</span>
+                <div>
+                    <button class="btn-action" onclick="renameSubject('${sub}')" title="Rename"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteSubject('${sub}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </li>
+        `).join('');
+    }
+
+    // Task CRUD Operations
+    window.addTask = async function() {
         const titleInput = document.getElementById('taskInput');
         const subjectInput = document.getElementById('subjectInput');
         const dateInput = document.getElementById('dateInput');
@@ -901,54 +1180,107 @@
             return;
         }
 
-        try {
-            const tasksCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks');
-            await addDoc(tasksCol, {
-                title,
-                subject,
-                dueDate: dueDate || 'No due date',
-                priority,
-                completed: false,
-                createdAt: Date.now()
-            });
+        const newTaskData = {
+            title,
+            subject,
+            dueDate: dueDate || 'No due date',
+            priority,
+            completed: false,
+            createdAt: Date.now()
+        };
 
+        if (isLocalMode) {
+            tasks.push({ id: 'loc_' + Date.now(), ...newTaskData });
+            saveLocal();
+            renderTasks();
             titleInput.value = '';
             dateInput.value = '';
-            showNotification('Assignment saved to cloud!');
-        } catch (e) {
-            console.error(e);
-            showNotification('Failed to add assignment.');
+            showNotification('Assignment saved locally!');
+        } else {
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks'), newTaskData);
+                titleInput.value = '';
+                dateInput.value = '';
+                showNotification('Assignment saved to cloud!');
+            } catch (e) {
+                console.error(e);
+                showNotification('Failed to add assignment.');
+            }
         }
     };
 
     window.toggleTask = async function(id) {
-        if (!currentUser) return;
-        const task = tasks.find(t => t.id === id);
-        if (!task) return;
+        if (isLocalMode) {
+            tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+            saveLocal();
+            renderTasks();
+        } else {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id), { completed: !task.completed });
+            } catch (e) {
+                console.error(e);
+                showNotification('Failed to update task.');
+            }
+        }
+    };
 
-        try {
-            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id);
-            await updateDoc(taskRef, { completed: !task.completed });
-        } catch (e) {
-            console.error(e);
-            showNotification('Failed to update task.');
+    window.saveTaskEdit = async function() {
+        const id = document.getElementById('editTaskId').value;
+        const title = document.getElementById('editTaskTitle').value.trim();
+        const subject = document.getElementById('editTaskSubject').value;
+        const dueDate = document.getElementById('editTaskDate').value;
+        const priority = document.getElementById('editTaskPriority').value;
+
+        if (!title) {
+            showNotification('Assignment name cannot be empty.');
+            return;
+        }
+
+        const updatedData = {
+            title,
+            subject,
+            dueDate: dueDate || 'No due date',
+            priority
+        };
+
+        if (isLocalMode) {
+            tasks = tasks.map(t => t.id === id ? { ...t, ...updatedData } : t);
+            saveLocal();
+            renderTasks();
+            closeEditModal();
+            showNotification('Task updated.');
+        } else {
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id), updatedData);
+                closeEditModal();
+                showNotification('Task updated.');
+            } catch (e) {
+                console.error(e);
+                showNotification('Error updating task.');
+            }
         }
     };
 
     window.deleteTask = async function(id) {
-        if (!currentUser) return;
-
-        try {
-            const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id);
-            await deleteDoc(taskRef);
+        if (isLocalMode) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveLocal();
+            renderTasks();
             showNotification('Task removed.');
-        } catch (e) {
-            console.error(e);
-            showNotification('Failed to delete task.');
+        } else {
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id));
+                showNotification('Task removed.');
+            } catch (e) {
+                console.error(e);
+                showNotification('Failed to delete task.');
+            }
         }
     };
 
-    // Render & Filtering Logic
+    // Render Logic
     window.renderTasks = function() {
         const list = document.getElementById('taskList');
         const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -958,7 +1290,6 @@
 
         list.innerHTML = '';
 
-        // Filter Tasks
         let filteredTasks = tasks.filter(task => {
             const matchesSearch = (task.title || '').toLowerCase().includes(searchVal);
             const matchesSubject = subjectFilter === 'all' || task.subject === subjectFilter;
@@ -968,7 +1299,6 @@
             return matchesSearch && matchesSubject && matchesStatus;
         });
 
-        // Sort Tasks
         filteredTasks.sort((a, b) => {
             if (sortBy === 'priority') {
                 const order = { high: 1, medium: 2, low: 3 };
@@ -1012,18 +1342,14 @@
         });
     };
 
-    // Helper for safe strings
     function escapeHtml(text) {
-        return String(text).replace(/&/g, "&amp;")
-                   .replace(/</g, "&lt;")
-                   .replace(/>/g, "&gt;")
-                   .replace(/"/g, "&quot;")
-                   .replace(/'/g, "&#039;");
+        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // App Startup
+    // Startup Initialization
     initTheme();
-    initAuth();
+    syncSubjectDropdowns();
+    renderTasks();
 </script>
 </body>
 </html>
