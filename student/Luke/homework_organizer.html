@@ -4,96 +4,178 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Homework Organizer</title>
+    <!-- Font Awesome for modern icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --background: #f9fafb;
+            --bg-color: #f3f4f6;
             --card-bg: #ffffff;
-            --text: #1f2937;
-            --text-light: #6b7280;
-            --border: #e5e7eb;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --input-bg: #ffffff;
+            --accent-bg: #f9fafb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+        }
+
+        body.dark-theme {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-color: #111827;
+            --card-bg: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --input-bg: #111827;
+            --accent-bg: #111827;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background);
-            color: var(--text);
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
+            min-height: 100vh;
         }
 
         .container {
             width: 100%;
-            max-width: 800px;
+            max-width: 850px;
             background: var(--card-bg);
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            height: fit-content;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
         }
 
         h1 {
-            margin-top: 0;
-            font-size: 24px;
-            color: #111827;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 10px;
-        }
-
-        .form-group {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            margin: 0;
+            font-size: 26px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
             gap: 10px;
-            margin-bottom: 20px;
         }
 
-        @media (max-width: 600px) {
-            .form-group {
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: var(--accent-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Form Controls */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1fr 1fr auto;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
                 grid-template-columns: 1fr;
             }
         }
 
         input, select, button {
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
+            padding: 11px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             font-size: 14px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
             outline: none;
         }
 
         input:focus, select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
         }
 
-        button {
+        .btn-primary {
             background-color: var(--primary);
             color: white;
             font-weight: 600;
             cursor: pointer;
             border: none;
-            transition: background-color 0.2s;
         }
 
-        button:hover {
+        .btn-primary:hover {
             background-color: var(--primary-hover);
         }
 
-        .filters {
+        .subject-select-container {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: #f3f4f6;
-            padding: 10px;
-            border-radius: 8px;
+            gap: 6px;
         }
 
-        .filters select {
-            background: white;
+        .subject-select-container select {
+            flex: 1;
         }
 
+        /* Toolbar / Filters */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: var(--accent-bg);
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .toolbar input[type="search"] {
+            flex: 2;
+            min-width: 180px;
+        }
+
+        .toolbar select {
+            flex: 1;
+            min-width: 130px;
+        }
+
+        /* Task List */
         .task-list {
             list-style: none;
             padding: 0;
@@ -104,114 +186,282 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 15px;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            margin-bottom: 10px;
-            transition: all 0.2s;
+            padding: 14px 18px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .task-item:hover {
+            border-color: var(--primary);
         }
 
         .task-item.completed {
-            background: #f9fafb;
             opacity: 0.6;
+            background: var(--accent-bg);
         }
 
         .task-item.completed .task-title {
             text-decoration: line-through;
-            color: var(--text-light);
+            color: var(--text-muted);
         }
 
         .task-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
             flex: 1;
         }
 
         .task-checkbox {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
+            accent-color: var(--primary);
         }
 
         .task-details {
             display: flex;
             flex-direction: column;
+            gap: 4px;
         }
 
         .task-title {
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 15px;
+            word-break: break-word;
         }
 
         .task-meta {
             font-size: 12px;
-            color: var(--text-light);
-            margin-top: 4px;
+            color: var(--text-muted);
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
         }
 
         .badge {
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
+        }
+
+        .badge.subject-badge {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(79, 70, 229, 0.2);
         }
 
         .badge.high { background: #fee2e2; color: #991b1b; }
         .badge.medium { background: #fef3c7; color: #92400e; }
         .badge.low { background: #d1fae5; color: #065f46; }
 
-        .btn-delete {
-            background: none;
-            color: #ef4444;
-            border: none;
-            padding: 5px 10px;
-            font-size: 12px;
+        body.dark-theme .badge.high { background: #7f1d1d; color: #fecaca; }
+        body.dark-theme .badge.medium { background: #78350f; color: #fef3c7; }
+        body.dark-theme .badge.low { background: #064e3b; color: #a7f3d0; }
+
+        .task-actions {
+            display: flex;
+            gap: 6px;
         }
 
-        .btn-delete:hover {
+        .btn-action {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .btn-action:hover {
+            background: var(--accent-bg);
+            color: var(--text-main);
+        }
+
+        .btn-action.delete:hover {
             background: #fee2e2;
-            color: #b91c1c;
+            color: var(--danger);
+        }
+
+        body.dark-theme .btn-action.delete:hover {
+            background: #7f1d1d;
+            color: #fecaca;
         }
 
         .empty-state {
             text-align: center;
-            color: var(--text-light);
-            padding: 20px;
+            color: var(--text-muted);
+            padding: 40px 20px;
             font-style: italic;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .subject-add-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .subject-add-group input {
+            flex: 1;
+        }
+
+        .subject-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .subject-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .subject-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--text-main);
+            color: var(--card-bg);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 2000;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📚 Homework Organizer</h1>
+    <!-- Header -->
+    <div class="header-bar">
+        <h1>📚 Homework Organizer</h1>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="openSubjectModal()" title="Manage Subjects">
+                <i class="fa-solid fa-folder-gear"></i> Subjects
+            </button>
+            <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </div>
     
     <!-- Add Task Form -->
-    <div class="form-group">
-        <input type="text" id="taskInput" placeholder="Assignment name...">
-        <input type="text" id="subjectInput" placeholder="Subject (e.g. Math)">
+    <div class="form-grid">
+        <input type="text" id="taskInput" placeholder="Assignment name..." required>
+        
+        <div class="subject-select-container">
+            <select id="subjectInput" required>
+                <!-- Populated dynamically -->
+            </select>
+        </div>
+
         <input type="date" id="dateInput">
+        
         <select id="priorityInput">
             <option value="low">Low Priority</option>
             <option value="medium" selected>Medium Priority</option>
             <option value="high">High Priority</option>
         </select>
-        <button onclick="addTask()">Add Task</button>
+        
+        <button class="btn-primary" onclick="addTask()">Add Task</button>
     </div>
 
-    <!-- Filters -->
-    <div class="filters">
+    <!-- Toolbar Filters -->
+    <div class="toolbar">
+        <input type="search" id="searchInput" placeholder="🔍 Search assignments..." oninput="renderTasks()">
+        
         <select id="filterSubject" onchange="renderTasks()">
             <option value="all">All Subjects</option>
+            <!-- Populated dynamically -->
         </select>
+        
         <select id="filterStatus" onchange="renderTasks()">
             <option value="all">All Statuses</option>
             <option value="active">Active Only</option>
             <option value="completed">Completed Only</option>
+        </select>
+
+        <select id="sortBy" onchange="renderTasks()">
+            <option value="priority">Sort by Priority</option>
+            <option value="date">Sort by Due Date</option>
+            <option value="title">Sort Alphabetically</option>
         </select>
     </div>
 
@@ -219,22 +469,281 @@
     <ul id="taskList" class="task-list"></ul>
 </div>
 
-<script>
-    let tasks = JSON.parse(localStorage.getItem('homework_tasks')) || [];
+<!-- Subject Manager Modal -->
+<div class="modal-overlay" id="subjectModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Manage Subjects</h2>
+            <button class="modal-close" onclick="closeSubjectModal()">&times;</button>
+        </div>
+        
+        <div class="subject-add-group">
+            <input type="text" id="newSubjectModalInput" placeholder="New subject name...">
+            <button class="btn-primary" onclick="addCustomSubject()">Add</button>
+        </div>
 
+        <ul class="subject-list" id="subjectManagerList">
+            <!-- Populated dynamically -->
+        </ul>
+    </div>
+</div>
+
+<!-- Task Edit Modal -->
+<div class="modal-overlay" id="editTaskModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Edit Assignment</h2>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <input type="hidden" id="editTaskId">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <label style="font-size: 12px; color: var(--text-muted);">Title</label>
+            <input type="text" id="editTaskTitle">
+
+            <label style="font-size: 12px; color: var(--text-muted);">Subject</label>
+            <select id="editTaskSubject"></select>
+
+            <label style="font-size: 12px; color: var(--text-muted);">Due Date</label>
+            <input type="date" id="editTaskDate">
+
+            <label style="font-size: 12px; color: var(--text-muted);">Priority</label>
+            <select id="editTaskPriority">
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+            </select>
+
+            <button class="btn-primary" style="margin-top: 10px;" onclick="saveTaskEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Toast Notification -->
+<div class="notification" id="notification"></div>
+
+<script>
+    // Default subject list fallback
+    const DEFAULT_SUBJECTS = ['Math', 'Science', 'English', 'History', 'Art', 'General'];
+
+    // App State initialized from LocalStorage
+    let tasks = JSON.parse(localStorage.getItem('hw_organizer_tasks')) || [];
+    let subjects = JSON.parse(localStorage.getItem('hw_organizer_subjects')) || DEFAULT_SUBJECTS;
+    let isDarkMode = JSON.parse(localStorage.getItem('hw_organizer_theme')) || false;
+
+    // Save functions
     function saveTasks() {
-        localStorage.setItem('homework_tasks', JSON.stringify(tasks));
-        updateSubjectFilters();
+        localStorage.setItem('hw_organizer_tasks', JSON.stringify(tasks));
     }
 
-    function addTask() {
-        const title = document.getElementById('taskInput').value.trim();
-        const subject = document.getElementById('subjectInput').value.trim() || 'General';
-        const dueDate = document.getElementById('dateInput').value;
-        const priority = document.getElementById('priorityInput').value;
+    function saveSubjects() {
+        localStorage.setItem('hw_organizer_subjects', JSON.stringify(subjects));
+    }
+
+    // Theme Management
+    function initTheme() {
+        if (isDarkMode) {
+            document.body.classList.add('dark-theme');
+            document.getElementById('themeToggleBtn').innerHTML = '<i class="fa-solid fa-sun"></i>';
+        } else {
+            document.body.classList.remove('dark-theme');
+            document.getElementById('themeToggleBtn').innerHTML = '<i class="fa-solid fa-moon"></i>';
+        }
+    }
+
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        localStorage.setItem('hw_organizer_theme', JSON.stringify(isDarkMode));
+        initTheme();
+    }
+
+    // Notification Helper
+    function showNotification(msg) {
+        const toast = document.getElementById('notification');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Subject Dropdowns Update
+    function syncSubjectDropdowns() {
+        const formSelect = document.getElementById('subjectInput');
+        const filterSelect = document.getElementById('filterSubject');
+        const editSelect = document.getElementById('editTaskSubject');
+
+        const currentFilter = filterSelect.value;
+        const currentForm = formSelect.value;
+
+        // Populate Form Select
+        formSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+
+        // Populate Filter Select
+        filterSelect.innerHTML = '<option value="all">All Subjects</option>' +
+            subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+
+        // Populate Edit Select
+        editSelect.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+
+        // Preserve current selections if valid
+        if (subjects.includes(currentForm)) formSelect.value = currentForm;
+        if (subjects.includes(currentFilter) || currentFilter === 'all') filterSelect.value = currentFilter;
+
+        renderSubjectManager();
+    }
+
+    // Subject Management Methods
+    function addCustomSubject() {
+        const input = document.getElementById('newSubjectModalInput');
+        const name = input.value.trim();
+
+        if (!name) {
+            showNotification('Please enter a subject name.');
+            return;
+        }
+
+        if (subjects.some(s => s.toLowerCase() === name.toLowerCase())) {
+            showNotification('Subject already exists.');
+            return;
+        }
+
+        subjects.push(name);
+        saveSubjects();
+        syncSubjectDropdowns();
+        input.value = '';
+        showNotification(`Added subject "${name}"`);
+    }
+
+    function renameSubject(oldName) {
+        const newName = prompt(`Rename subject "${oldName}" to:`, oldName);
+        if (!newName || newName.trim() === '' || newName === oldName) return;
+        
+        const cleanName = newName.trim();
+        if (subjects.some(s => s.toLowerCase() === cleanName.toLowerCase())) {
+            showNotification('A subject with that name already exists.');
+            return;
+        }
+
+        const index = subjects.indexOf(oldName);
+        if (index !== -1) {
+            subjects[index] = cleanName;
+            // Update all corresponding tasks
+            tasks.forEach(t => {
+                if (t.subject === oldName) t.subject = cleanName;
+            });
+            saveSubjects();
+            saveTasks();
+            syncSubjectDropdowns();
+            renderTasks();
+            showNotification(`Renamed "${oldName}" to "${cleanName}"`);
+        }
+    }
+
+    function deleteSubject(subName) {
+        if (subjects.length <= 1) {
+            showNotification('You must keep at least one subject.');
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete "${subName}"? Tasks under this subject will be moved to "General".`)) {
+            // Remove subject from array
+            subjects = subjects.filter(s => s !== subName);
+            
+            // Ensure General subject exists if tasks are migrated
+            if (!subjects.includes('General')) {
+                subjects.push('General');
+            }
+
+            // Reassign tasks
+            tasks.forEach(t => {
+                if (t.subject === subName) t.subject = 'General';
+            });
+
+            saveSubjects();
+            saveTasks();
+            syncSubjectDropdowns();
+            renderTasks();
+            showNotification(`Deleted subject "${subName}"`);
+        }
+    }
+
+    function renderSubjectManager() {
+        const list = document.getElementById('subjectManagerList');
+        list.innerHTML = subjects.map(sub => `
+            <li class="subject-item">
+                <span>📚 ${sub}</span>
+                <div>
+                    <button class="btn-action" onclick="renameSubject('${sub}')" title="Rename"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteSubject('${sub}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </li>
+        `).join('');
+    }
+
+    // Modal Visibility Helpers
+    function openSubjectModal() {
+        document.getElementById('subjectModal').classList.add('active');
+    }
+
+    function closeSubjectModal() {
+        document.getElementById('subjectModal').classList.remove('active');
+    }
+
+    function openEditModal(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        document.getElementById('editTaskId').value = task.id;
+        document.getElementById('editTaskTitle').value = task.title;
+        document.getElementById('editTaskSubject').value = task.subject;
+        document.getElementById('editTaskDate').value = task.dueDate !== 'No due date' ? task.dueDate : '';
+        document.getElementById('editTaskPriority').value = task.priority;
+
+        document.getElementById('editTaskModal').classList.add('active');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editTaskModal').classList.remove('active');
+    }
+
+    function saveTaskEdit() {
+        const id = Number(document.getElementById('editTaskId').value);
+        const title = document.getElementById('editTaskTitle').value.trim();
+        const subject = document.getElementById('editTaskSubject').value;
+        const dueDate = document.getElementById('editTaskDate').value;
+        const priority = document.getElementById('editTaskPriority').value;
 
         if (!title) {
-            alert('Please enter an assignment name.');
+            showNotification('Assignment name cannot be empty.');
+            return;
+        }
+
+        tasks = tasks.map(t => t.id === id ? {
+            ...t,
+            title,
+            subject,
+            dueDate: dueDate || 'No due date',
+            priority
+        } : t);
+
+        saveTasks();
+        renderTasks();
+        closeEditModal();
+        showNotification('Task updated successfully.');
+    }
+
+    // Task CRUD Functions
+    function addTask() {
+        const titleInput = document.getElementById('taskInput');
+        const subjectInput = document.getElementById('subjectInput');
+        const dateInput = document.getElementById('dateInput');
+        const priorityInput = document.getElementById('priorityInput');
+
+        const title = titleInput.value.trim();
+        const subject = subjectInput.value || 'General';
+        const dueDate = dateInput.value;
+        const priority = priorityInput.value;
+
+        if (!title) {
+            showNotification('Please enter an assignment name.');
             return;
         }
 
@@ -251,90 +760,101 @@
         saveTasks();
         renderTasks();
 
-        document.getElementById('taskInput').value = '';
-        document.getElementById('subjectInput').value = '';
-        document.getElementById('dateInput').value = '';
+        titleInput.value = '';
+        dateInput.value = '';
+        showNotification('Assignment added!');
     }
 
     function toggleTask(id) {
-        tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+        tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
         saveTasks();
         renderTasks();
     }
 
     function deleteTask(id) {
-        tasks = tasks.filter(task => task.id !== id);
+        tasks = tasks.filter(t => t.id !== id);
         saveTasks();
         renderTasks();
+        showNotification('Task removed.');
     }
 
-    function updateSubjectFilters() {
-        const filterSelect = document.getElementById('filterSubject');
-        const currentSelection = filterSelect.value;
-        
-        const subjects = ['all', ...new Set(tasks.map(t => t.subject))];
-        
-        filterSelect.innerHTML = '';
-        subjects.forEach(sub => {
-            const opt = document.createElement('option');
-            opt.value = sub;
-            opt.textContent = sub === 'all' ? 'All Subjects' : sub;
-            filterSelect.appendChild(opt);
-        });
-
-        if (subjects.includes(currentSelection)) {
-            filterSelect.value = currentSelection;
-        }
-    }
-
+    // Render & Filtering Logic
     function renderTasks() {
         const list = document.getElementById('taskList');
+        const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
         const subjectFilter = document.getElementById('filterSubject').value;
         const statusFilter = document.getElementById('filterStatus').value;
+        const sortBy = document.getElementById('sortBy').value;
 
         list.innerHTML = '';
 
+        // Filter Tasks
         let filteredTasks = tasks.filter(task => {
+            const matchesSearch = task.title.toLowerCase().includes(searchVal);
             const matchesSubject = subjectFilter === 'all' || task.subject === subjectFilter;
             const matchesStatus = statusFilter === 'all' || 
                                  (statusFilter === 'active' && !task.completed) || 
                                  (statusFilter === 'completed' && task.completed);
-            return matchesSubject && matchesStatus;
+            return matchesSearch && matchesSubject && matchesStatus;
         });
 
-        const priorityOrder = { high: 1, medium: 2, low: 3 };
-        filteredTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        // Sort Tasks
+        filteredTasks.sort((a, b) => {
+            if (sortBy === 'priority') {
+                const order = { high: 1, medium: 2, low: 3 };
+                return order[a.priority] - order[b.priority];
+            } else if (sortBy === 'date') {
+                if (a.dueDate === 'No due date') return 1;
+                if (b.dueDate === 'No due date') return -1;
+                return new Date(a.dueDate) - new Date(b.dueDate);
+            } else if (sortBy === 'title') {
+                return a.title.localeCompare(b.title);
+            }
+        });
 
         if (filteredTasks.length === 0) {
-            list.innerHTML = '<li class="empty-state">No assignments found.</li>';
+            list.innerHTML = '<li class="empty-state">No homework assignments found.</li>';
             return;
         }
 
         filteredTasks.forEach(task => {
             const li = document.createElement('li');
-            li.className = `task-item \${task.completed ? 'completed' : ''}`;
+            li.className = `task-item ${task.completed ? 'completed' : ''}`;
 
             li.innerHTML = `
                 <div class="task-left">
-                    <input type="checkbox" class="task-checkbox" \${task.completed ? 'checked' : ''} onchange="toggleTask(\${task.id})">
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
                     <div class="task-details">
-                        <span class="task-title">\${task.title}</span>
+                        <span class="task-title">${escapeHtml(task.title)}</span>
                         <div class="task-meta">
-                            <span>📂 \${task.subject}</span>
-                            <span>📅 Due: \${task.dueDate}</span>
-                            <span class="badge \${task.priority}">\${task.priority}</span>
+                            <span class="badge subject-badge">📂 ${escapeHtml(task.subject)}</span>
+                            <span>📅 Due: ${task.dueDate}</span>
+                            <span class="badge ${task.priority}">${task.priority}</span>
                         </div>
                     </div>
                 </div>
-                <button class="btn-delete" onclick="deleteTask(\${task.id})">Delete</button>
+                <div class="task-actions">
+                    <button class="btn-action" onclick="openEditModal(${task.id})" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action delete" onclick="deleteTask(${task.id})" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
             `;
             list.appendChild(li);
         });
     }
 
-    updateSubjectFilters();
+    // Helper for safe strings
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;")
+                   .replace(/</g, "&lt;")
+                   .replace(/>/g, "&gt;")
+                   .replace(/"/g, "&quot;")
+                   .replace(/'/g, "&#039;");
+    }
+
+    // Initialize Application
+    initTheme();
+    syncSubjectDropdowns();
     renderTasks();
 </script>
-
 </body>
 </html>
