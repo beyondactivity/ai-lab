@@ -251,136 +251,136 @@
         }
 
         @media (max-width: 768px) {
-            .tools-layout { grid-template-columns: 1fr; }
+            body { padding: 1rem 0.5rem; }
+            h1 { font-size: 2rem; }
+            .simulator-box { padding: 1.5rem; }
         }
 
-        .panel-box {
-            background-color: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 1.8rem;
-            border: 1px solid #334155;
-        }
-
-        .checklist-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.8rem;
-            background: var(--bg-primary);
-            padding: 0.8rem;
-            border-radius: 8px;
-            margin-bottom: 0.8rem;
-            border: 1px solid #334155;
-            cursor: pointer;
-        }
-
-        .checklist-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--accent);
-            cursor: pointer;
-            margin-top: 2px;
-        }
-
-        .checklist-text h4 {
-            font-size: 0.95rem;
-            color: var(--text-main);
-        }
-
-        .checklist-text p {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-
-        .timer-display {
-            font-size: 3.2rem;
-            font-weight: 800;
-            color: var(--accent);
-            text-align: center;
-            margin: 1rem 0;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .timer-mode {
-            text-align: center;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--warning);
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-        }
-
-        .timer-controls {
+        /* Squirrel A+ Modal Animation */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
             display: flex;
             justify-content: center;
-            gap: 0.8rem;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 9999;
         }
 
-        .btn {
-            padding: 0.6rem 1.2rem;
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .squirrel-modal {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transform: scale(0.7) translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .modal-overlay.active .squirrel-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .squirrel-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .squirrel-emoji {
+            font-size: 5rem;
+            line-height: 1;
+            display: block;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
+            animation: floatSquirrel 3s ease-in-out infinite;
+        }
+
+        /* A+ Sign held in 2 hands */
+        .aplus-sign {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #0f172a;
+            border: 3px solid #38bdf8;
+            font-weight: 900;
+            font-size: 1.8rem;
+            padding: 0.1rem 0.8rem;
             border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.5);
+            z-index: 3;
+            letter-spacing: -0.05em;
+        }
+
+        /* Hands holding sign */
+        .squirrel-wrapper::before, .squirrel-wrapper::after {
+            content: "🐾";
+            position: absolute;
+            font-size: 1.4rem;
+            top: 15px;
+            z-index: 4;
+        }
+
+        .squirrel-wrapper::before {
+            left: 5px;
+            transform: rotate(-25deg);
+        }
+
+        .squirrel-wrapper::after {
+            right: 5px;
+            transform: rotate(25deg);
+        }
+
+        @keyframes floatSquirrel {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .close-btn {
+            background: var(--accent-gradient);
+            color: var(--bg-primary);
             font-weight: 700;
-            cursor: pointer;
+            padding: 0.75rem 1.75rem;
             border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
             transition: opacity 0.2s, transform 0.1s;
         }
 
-        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
-        .btn-primary { background-color: var(--accent); color: var(--bg-primary); }
-        .btn-secondary { background-color: #334155; color: var(--text-main); }
-        .btn-danger { background-color: var(--danger); color: white; }
-
-        /* Corner Squirrel Holding Paper with 2 Hands (No Acorn) */
-        #squirrelCorner {
-            position: fixed;
-            bottom: -150px;
-            right: 25px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        #squirrelCorner.show {
-            bottom: 0;
-        }
-
-        .paper-sign {
-            background: #ffffff;
-            color: #0f172a;
-            padding: 0.2rem 0.7rem;
-            border-radius: 4px;
-            font-weight: 900;
-            font-size: 1.3rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border: 2px solid #0284c7;
-            margin-bottom: -12px;
-            z-index: 2;
-        }
-
-        .squirrel-group {
-            position: relative;
-            font-size: 5rem;
-            line-height: 1;
-            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
-        }
-
-        .squirrel-group::before, .squirrel-group::after {
-            content: "🐾";
-            position: absolute;
-            font-size: 1.5rem;
-            bottom: 25px;
-        }
-
-        .squirrel-group::before {
-            left: 8px;
-            transform: rotate(-15deg);
-        }
-
-        .squirrel-group::after {
-            right: 8px;
-            transform: rotate(15deg);
+        .close-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.03);
         }
     </style>
 </head>
@@ -448,79 +448,47 @@
                         </div>
 
                         <div class="metrics-grid">
-                            <div class="metric-card">
-                                <div class="metric-title">Sleep Duration</div>
-                                <div class="metric-value" id="sleepValue">8.0 hrs</div>
-                                <div class="metric-status status-good" id="sleepStatus">Optimal</div>
-                            </div>
+                        <div class="metric-card">
+                            <div class="metric-title">Sleep Duration</div>
+                            <div class="metric-value" id="sleepValue">8.0 hrs</div>
+                            <div class="metric-status status-good" id="sleepStatus">Optimal</div>
+                        </div>
 
-                            <div class="metric-card">
-                                <div class="metric-title">Energy Level</div>
-                                <div class="metric-value" id="energyValue">95%</div>
-                                <div class="metric-status status-good" id="energyStatus">Vibrant</div>
-                            </div>
+                        <div class="metric-card">
+                            <div class="metric-title">Energy Level</div>
+                            <div class="metric-value" id="energyValue">95%</div>
+                            <div class="metric-status status-good" id="energyStatus">Vibrant</div>
+                        </div>
 
-                            <div class="metric-card">
-                                <div class="metric-title">Dopamine Spike</div>
-                                <div class="metric-value" id="dopamineValue">Baseline</div>
-                                <div class="metric-status status-good" id="dopamineStatus">Balanced</div>
-                            </div>
+                        <div class="metric-card">
+                            <div class="metric-title">Dopamine Spike</div>
+                            <div class="metric-value" id="dopamineValue">Baseline</div>
+                            <div class="metric-status status-good" id="dopamineStatus">Balanced</div>
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
             </div>
 
-            <!-- CHECKLIST & TIMER VIEW -->
+            <!-- TOOLS VIEW (Checklist & Timer) -->
             <div id="toolsView" class="view-section">
-                <h2>Focus Tools & Healthy Screen Limits</h2>
                 <div class="tools-layout">
-                    <div class="panel-box">
-                        <h3 style="color: var(--accent); margin-bottom: 1rem;">📋 Healthy Screen Limits Checklist</h3>
-                        
-                        <label class="checklist-item">
-                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
-                            <div class="checklist-text">
-                               <h4>No Screens During Meals</h4>
-                               <p>Unplug during breakfast, lunch, and dinner to practice mindful eating.</p>
-                            </div>
-                        </label>
-
-                        <label class="checklist-item">
-                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
-                            <div class="checklist-text">
-                               <h4>1 Hour Before Bed Curfew</h4>
-                               <p>Shut down phones and laptops 60 minutes prior to sleep.</p>
-                            </div>
-                        </label>
-
-                        <label class="checklist-item">
-                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
-                            <div class="checklist-text">
-                               <h4>First 30 Mins After Waking Offline</h4>
-                               <p>Avoid checking notifications immediately upon waking up.</p>
-                            </div>
-                        </label>
-
-                        <label class="checklist-item">
-                            <input type="checkbox" class="habit-check" onchange="checkCompletion()">
-                            <div class="checklist-text">
-                               <h4>Dedicated Study / Focus Blocks</h4>
-                               <p>Keep devices out of reach during deep work sessions.</p>
-                            </div>
-                        </label>
+                    <div class="simulator-box">
+                        <h2 style="border:none; margin-bottom: 1rem;">Daily Focus Habits</h2>
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <li><label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" class="habit-checkbox" onchange="checkAllHabits()"> 1-hour digital curfew before sleep</label></li>
+                            <li><label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" class="habit-checkbox" onchange="checkAllHabits()"> Phone out of bedroom overnight</label></li>
+                            <li><label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" class="habit-checkbox" onchange="checkAllHabits()"> 25-min uninterrupted focus session</label></li>
+                            <li><label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="checkbox" class="habit-checkbox" onchange="checkAllHabits()"> Morning sunlight exposure before screens</label></li>
+                        </ul>
                     </div>
 
-                    <div class="panel-box">
-                        <h3 style="color: var(--accent); margin-bottom: 0.3rem;">⏱️ Pure Focus Timer</h3>
-                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">30m focus, 3s "Stop, Breathe, Relax", 5m break.</p>
-                        
-                        <div class="timer-mode" id="timerMode">Focus Session</div>
-                        <div class="timer-display" id="timerDisplay">30:00</div>
-
-                        <div class="timer-controls">
-                            <button class="btn btn-primary" onclick="startTimer()">Start</button>
-                            <button class="btn btn-secondary" onclick="pauseTimer()">Pause</button>
-                            <button class="btn btn-danger" onclick="resetTimer()">Reset</button>
+                    <div class="simulator-box" style="text-align: center;">
+                        <h2 style="border:none; margin-bottom: 0.5rem;">Focus Timer</h2>
+                        <div style="font-size: 3rem; font-weight: 800; color: var(--accent); margin: 1rem 0;" id="timerDisplay">25:00</div>
+                        <div style="display: flex; justify-content: center; gap: 1rem;">
+                            <button class="nav-btn" onclick="toggleTimer()" id="timerBtn">Start Session</button>
+                            <button class="nav-btn" style="background: #334155; color: var(--text-main);" onclick="resetTimer()">Reset</button>
                         </div>
                     </div>
                 </div>
@@ -528,29 +496,20 @@
         </main>
     </div>
 
-    <!-- Corner Squirrel Holding Paper with 2 Hands -->
-    <div id="squirrelCorner">
-        <div class="paper-sign">A+</div>
-        <div class="squirrel-group">🐿️</div>
+    <!-- Squirrel A+ Modal Pop-up -->
+    <div class="modal-overlay" id="squirrelModal">
+        <div class="squirrel-modal">
+            <div class="squirrel-wrapper">
+                <div class="aplus-sign">A+</div>
+                <span class="squirrel-emoji">🐿️</span>
+            </div>
+            <h3 class="modal-title">Optimal Focus Mastered!</h3>
+            <p class="modal-desc">You completed all your daily focus habits! Your dedication earns a top score!</p>
+            <button class="close-btn" onclick="closeSquirrelModal()">Keep It Up!</button>
+        </div>
     </div>
 
     <script>
-        function toggleView() {
-            const mainView = document.getElementById('mainView');
-            const toolsView = document.getElementById('toolsView');
-            const navBtn = document.getElementById('navBtn');
-
-            if (mainView.classList.contains('active-view')) {
-                mainView.classList.remove('active-view');
-                toolsView.classList.add('active-view');
-                navBtn.textContent = '← Back to Dashboard';
-            } else {
-                toolsView.classList.remove('active-view');
-                mainView.classList.add('active-view');
-                navBtn.textContent = '💡 Daily Checklist & Timer';
-            }
-        }
-
         function toggleCard(card) {
             card.classList.toggle('active');
             const hint = card.querySelector('.click-hint');
@@ -561,17 +520,95 @@
             }
         }
 
+        // View toggle function
+        let currentView = 'main';
+        function toggleView() {
+            const mainView = document.getElementById('mainView');
+            const toolsView = document.getElementById('toolsView');
+            const navBtn = document.getElementById('navBtn');
+
+            if (currentView === 'main') {
+                mainView.classList.remove('active-view');
+                toolsView.classList.add('active-view');
+                navBtn.textContent = '📊 Back to Dashboard';
+                currentView = 'tools';
+            } else {
+                toolsView.classList.remove('active-view');
+                mainView.classList.add('active-view');
+                navBtn.textContent = '💡 Daily Checklist & Timer';
+                currentView = 'main';
+            }
+        }
+
+        // Checklist completion detection
+        function checkAllHabits() {
+            const checkboxes = document.querySelectorAll('.habit-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            if (allChecked && checkboxes.length > 0) {
+                showSquirrelModal();
+            }
+        }
+
+        // Timer functionality
+        let timerInterval = null;
+        let timerSeconds = 25 * 60;
+        let isTimerRunning = false;
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSeconds / 60);
+            const secs = timerSeconds % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const timerBtn = document.getElementById('timerBtn');
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                timerBtn.textContent = 'Resume Session';
+                isTimerRunning = false;
+            } else {
+                timerInterval = setInterval(() => {
+                    if (timerSeconds > 0) {
+                        timerSeconds--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        timerBtn.textContent = 'Start Session';
+                    }
+                }, 1000);
+                timerBtn.textContent = 'Pause';
+                isTimerRunning = true;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timerSeconds = 25 * 60;
+            updateTimerDisplay();
+            document.getElementById('timerBtn').textContent = 'Start Session';
+        }
+
+        const slider = document.getElementById('screenTime');
+        const hoursDisplay = document.getElementById('hoursDisplay');
+        const sleepValue = document.getElementById('sleepValue');
+        const sleepStatus = document.getElementById('sleepStatus');
+        const energyValue = document.getElementById('energyValue');
+        const energyStatus = document.getElementById('energyStatus');
+        const dopamineValue = document.getElementById('dopamineValue');
+        const dopamineStatus = document.getElementById('dopamineStatus');
+
         function updateMetrics() {
-            const slider = document.getElementById('screenTime');
             const hours = parseFloat(slider.value);
-            document.getElementById('hoursDisplay').textContent = hours;
+            hoursDisplay.textContent = hours;
 
             let sleep = 8.5 - (hours * 0.35);
             if (hours > 6) sleep -= (hours - 6) * 0.2;
             sleep = Math.max(4.5, sleep);
-            document.getElementById('sleepValue').textContent = sleep.toFixed(1) + ' hrs';
+            sleepValue.textContent = sleep.toFixed(1) + ' hrs';
 
-            const sleepStatus = document.getElementById('sleepStatus');
             if (sleep >= 7.5) {
                 sleepStatus.textContent = 'Optimal';
                 sleepStatus.className = 'metric-status status-good';
@@ -585,9 +622,8 @@
 
             let energy = 100 - (hours * 4) - ((8.5 - sleep) * 12);
             energy = Math.max(15, Math.min(100, Math.round(energy)));
-            document.getElementById('energyValue').textContent = energy + '%';
+            energyValue.textContent = energy + '%';
 
-            const energyStatus = document.getElementById('energyStatus');
             if (energy >= 80) {
                 energyStatus.textContent = 'Vibrant';
                 energyStatus.className = 'metric-status status-good';
@@ -599,8 +635,6 @@
                 energyStatus.className = 'metric-status status-danger';
             }
 
-            const dopamineValue = document.getElementById('dopamineValue');
-            const dopamineStatus = document.getElementById('dopamineStatus');
             if (hours <= 2) {
                 dopamineValue.textContent = 'Normal';
                 dopamineStatus.textContent = 'Balanced Baseline';
@@ -611,94 +645,26 @@
                 dopamineStatus.className = 'metric-status status-warn';
             } else {
                 dopamineValue.textContent = 'Extreme Spike';
+                dopamineStatus.textContent = 'Desensitized';
                 dopamineStatus.className = 'metric-status status-danger';
             }
         }
 
-        function checkCompletion() {
-            const checkboxes = document.querySelectorAll('.habit-check');
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            const corner = document.getElementById('squirrelCorner');
-
-            if (allChecked) {
-                corner.classList.add('show');
-            } else {
-                corner.classList.remove('show');
+        function showSquirrelModal() {
+            const modal = document.getElementById('squirrelModal');
+            if (modal) {
+                modal.classList.add('active');
             }
         }
 
-        let timerSeconds = 30 * 60;
-        let timerInterval = null;
-        let isFocusMode = true;
-
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timerSeconds / 60);
-            const seconds = timerSeconds % 60;
-            document.getElementById('timerDisplay').textContent = 
-                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        function closeSquirrelModal() {
+            const modal = document.getElementById('squirrelModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
         }
 
-        function startTimer() {
-            if (timerInterval) return;
-            timerInterval = setInterval(() => {
-                if (timerSeconds > 0) {
-                    timerSeconds--;
-                    updateTimerDisplay();
-                } else {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-
-                    if (isFocusMode) {
-                        const display = document.getElementById('timerDisplay');
-                        const mode = document.getElementById('timerMode');
-                        
-                        display.textContent = "STOP";
-                        mode.textContent = "Stop, Breathe, Relax";
-                        mode.style.color = "var(--danger)";
-
-                        let transitionSeconds = 3;
-                        let transitionInterval = setInterval(() => {
-                            transitionSeconds--;
-                            if (transitionSeconds > 0) {
-                                display.textContent = `0:0${transitionSeconds}`;
-                            } else {
-                                clearInterval(transitionInterval);
-                                isFocusMode = false;
-                                timerSeconds = 5 * 60;
-                                mode.textContent = "Break Time";
-                                mode.style.color = "var(--success)";
-                                updateTimerDisplay();
-                                startTimer();
-                            }
-                        }, 1000);
-
-                    } else {
-                        const mode = document.getElementById('timerMode');
-                        mode.textContent = "Focus Session";
-                        mode.style.color = "var(--warning)";
-                        isFocusMode = true;
-                        timerSeconds = 30 * 60;
-                        updateTimerDisplay();
-                    }
-                }
-            }, 1000);
-        }
-
-        function pauseTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
-        function resetTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            isFocusMode = true;
-            timerSeconds = 30 * 60;
-            document.getElementById('timerMode').textContent = 'Focus Session';
-            document.getElementById('timerMode').style.color = 'var(--warning)';
-            updateTimerDisplay();
-        }
-
+        slider.addEventListener('input', updateMetrics);
         updateMetrics();
     </script>
 </body>
