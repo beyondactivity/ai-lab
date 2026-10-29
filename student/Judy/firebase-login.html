@@ -1,173 +1,60 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Student Community — Firebase Login</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Community — Math Sprint</title>
 <style>
-:root{--ink:#192b40;--muted:#718096;--paper:#f5f7fb;--blue:#435bea;--blue-light:#eef0ff;--line:#e7ebf2;--white:#fff}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,sans-serif}.top{height:70px;padding:0 max(calc((100vw - 960px)/2),6vw);display:flex;align-items:center;justify-content:space-between;background:white;border-bottom:1px solid var(--line)}.brand{font-size:19px;font-weight:800}.logo{display:inline-grid;place-items:center;background:var(--blue);color:white;width:34px;height:34px;border-radius:11px;margin-right:9px}.muted{color:var(--muted);font-size:13px}main{max-width:960px;margin:45px auto;padding:0 22px}.intro{margin:0 0 24px}.intro h1{font-size:36px;margin:0 0 9px;letter-spacing:-1px}.intro p{color:var(--muted);line-height:1.55;margin:0}.grid{display:grid;grid-template-columns:minmax(260px,.8fr) 1.2fr;gap:20px}.card{background:white;border:1px solid var(--line);border-radius:19px;padding:24px;box-shadow:0 8px 28px #283c5b08}.card h2{font-size:19px;margin:0 0 8px}.help{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 17px}.tabs{display:flex;gap:8px;margin-bottom:14px}.tab,.secondary{border:1px solid var(--line);background:white;border-radius:9px;padding:9px 12px;font-weight:700;color:var(--muted);cursor:pointer}.tab.active{background:var(--blue-light);border-color:#c5cbff;color:var(--blue)}input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;margin:0 0 10px;color:var(--ink)}textarea{min-height:100px;resize:vertical}.primary{background:var(--blue);color:white;border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}.auth-submit{width:100%}.compose{display:flex;flex-direction:column;align-items:flex-end}.feed{margin-top:18px;max-height:480px;overflow:auto}.comment{border-top:1px solid var(--line);padding:14px 0}.comment-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;font-size:12px}.comment-head span{color:var(--muted)}.comment-text{font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.status{min-height:20px;font-size:12px;color:var(--muted);margin:9px 0 0}.error{color:#b84b3d}.notice{font-size:12px;color:#806023;background:#fff8e6;padding:11px;border-radius:9px;line-height:1.45;margin-top:13px}.signed-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.signed-name{font-size:14px;font-weight:700;overflow-wrap:anywhere}[hidden]{display:none!important}button:disabled,textarea:disabled{opacity:.55;cursor:not-allowed}@media(max-width:700px){main{margin:28px auto}.grid{grid-template-columns:1fr}.card{padding:20px}.intro h1{font-size:30px}.top{padding:0 20px}}
-.back-to-sprint{display:inline-block;background:var(--blue-light);border:1px solid #d9deff;border-radius:10px;padding:10px 14px;color:var(--blue);font-weight:700;text-decoration:none}.back-to-sprint:hover{background:#e3e7ff}</style>
+:root{--ink:#192b40;--muted:#718096;--paper:#f5f7fb;--blue:#435bea;--blue-light:#eef0ff;--line:#e7ebf2;--white:#fff}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,sans-serif}.top{height:70px;padding:0 max(calc((100vw - 1000px)/2),6vw);display:flex;align-items:center;justify-content:space-between;background:white;border-bottom:1px solid var(--line)}.brand{font-size:19px;font-weight:800}.logo{display:inline-grid;place-items:center;background:var(--blue);color:white;width:34px;height:34px;border-radius:11px;margin-right:9px}.top a{color:var(--blue);font-weight:700;text-decoration:none;font-size:14px}.top .back-to-sprint{display:inline-block;background:var(--blue-light);border:1px solid #d9deff;border-radius:10px;padding:10px 14px}.top .back-to-sprint:hover{background:#e3e7ff}main{max-width:1000px;margin:40px auto;padding:0 22px}.intro{margin-bottom:24px}.intro h1{font-size:36px;margin:0 0 9px;letter-spacing:-1px}.intro p{color:var(--muted);line-height:1.55;margin:0}.grid{display:grid;grid-template-columns:minmax(280px,.8fr) 1.2fr;gap:20px;align-items:start}.card{background:white;border:1px solid var(--line);border-radius:19px;padding:24px;box-shadow:0 8px 28px #283c5b08}.card h2{font-size:19px;margin:0 0 8px}.help{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 17px}.tabs{display:flex;gap:8px;margin-bottom:14px}.tab,.secondary{border:1px solid var(--line);background:white;border-radius:9px;padding:9px 12px;font-weight:700;color:var(--muted);cursor:pointer}.tab.active{background:var(--blue-light);border-color:#c5cbff;color:var(--blue)}input,textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;margin:0 0 10px;color:var(--ink);background:white}textarea{min-height:90px;resize:vertical}.primary{background:var(--blue);color:white;border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}.auth-submit{width:100%}.compose{display:flex;flex-direction:column;align-items:flex-end}.feed{margin-top:18px}.comment{border-top:1px solid var(--line);padding:15px 0}.comment-head{display:flex;align-items:center;gap:9px;margin-bottom:7px;font-size:13px}.avatar{width:29px;height:29px;border-radius:10px;background:var(--blue-light);display:inline-grid;place-items:center;font-size:17px;flex:none}.comment-meta{margin-left:auto;color:var(--muted);font-size:11px}.comment-text{font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.comment-actions{margin-top:8px}.reply-button{border:0;background:none;padding:5px 0;color:var(--blue);font-size:12px;font-weight:700;cursor:pointer}.replies{margin:12px 0 0 16px;padding-left:13px;border-left:2px solid var(--line)}.reply-form{margin-top:10px}.reply-form textarea{min-height:65px}.reply-tools{display:flex;justify-content:flex-end;gap:8px}.reply-tools button{font-size:12px;padding:8px 11px}.status{min-height:20px;font-size:12px;color:var(--muted);margin:9px 0 0}.error{color:#b84b3d}.notice{font-size:12px;color:#806023;background:#fff8e6;padding:11px;border-radius:9px;line-height:1.5;margin-top:13px}.signed-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.signed-name{font-size:14px;font-weight:700;overflow-wrap:anywhere}.profile-box{margin-top:17px;padding-top:14px;border-top:1px solid var(--line)}.profile-box h3{font-size:14px;margin:0 0 9px}.field-label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin:3px 0 6px}.profile-preview{display:flex;align-items:center;gap:9px;margin-bottom:11px;font-size:13px;color:var(--muted)}[hidden]{display:none!important}button:disabled,textarea:disabled{opacity:.55;cursor:not-allowed}@media(max-width:700px){main{margin:26px auto}.grid{grid-template-columns:1fr}.card{padding:20px}.intro h1{font-size:30px}.top{padding:0 20px}}
+.chat-card{grid-column:1/-1}.chat-tools{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}.chat-tool{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fbfcff}.chat-tool h3{margin:0 0 8px;font-size:15px}.chat-list{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.chat-list-item{border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 12px;color:var(--ink);font-weight:700;cursor:pointer}.chat-list-item.active{background:var(--blue-light);border-color:#c5cbff;color:var(--blue)}.chat-room{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:14px}.chat-room-head{padding:13px 15px;background:#f8f9ff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.chat-room-head h3{margin:0;font-size:15px}.message-feed{height:290px;overflow:auto;padding:14px}.chat-message{max-width:82%;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#f1f3f8;overflow-wrap:anywhere}.chat-message.mine{margin-left:auto;background:var(--blue-light)}.chat-message-head{display:flex;gap:10px;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px}.chat-message p{margin:0;font-size:14px;line-height:1.45;white-space:pre-wrap}.message-form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.message-form textarea{min-height:44px;max-height:100px;margin:0}.message-form button{align-self:flex-end}.chat-status{min-height:20px;font-size:12px;color:var(--muted);margin-top:10px}.chat-status.error{color:#b84b3d}.chat-profile{max-width:500px}@media(max-width:700px){.chat-tools{grid-template-columns:1fr}.chat-card{grid-column:auto}.message-form{flex-direction:column}}
+</style>
 </head>
 <body>
-<header class="top"><div class="brand"><span class="logo">✦</span>Student Community</div><span class="muted">A kind place to talk math</span><a class="back-to-sprint" href="./math-sprint.html">← Go back to Math Sprint</a></header>
+<header class="top"><div class="brand"><span class="logo">✦</span>Student Community</div><a class="back-to-sprint" href="./math-sprint.html">← Go back to Math Sprint</a></header>
 <main>
-<section class="intro"><h1>Sign in & share</h1><p>Create an account or sign in to leave a comment. Use a nickname and keep personal information private.</p></section>
+<section class="intro"><h1>Sign in & share</h1><p>Post a math question, reply to someone, or share a win. Choose a nickname and avatar. Keep personal information private.</p></section>
 <div class="grid">
 <section class="card">
 <h2 id="auth-title">Welcome back</h2><p class="help" id="auth-help">Sign in or create an account to join the conversation.</p>
 <div id="auth-panel"><div class="tabs"><button class="tab active" id="signin-tab" type="button">Sign in</button><button class="tab" id="signup-tab" type="button">Create account</button></div>
-<form id="auth-form"><input id="nickname" type="text" maxlength="30" autocomplete="nickname" placeholder="Nickname" hidden><input id="email" type="email" autocomplete="email" placeholder="Email address" required><input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="Password (at least 6 characters)" required><button class="primary auth-submit" id="auth-submit" type="submit">Sign in</button></form><p class="status" id="auth-status" role="status"></p></div>
-<div id="signed-panel" hidden><div class="signed-row"><span class="signed-name" id="signed-name"></span><button class="secondary" id="signout" type="button">Sign out</button></div><p class="status">You can now post a comment.</p></div>
-<div class="notice" id="config-note">Add your Firebase web app config below, enable Email/Password sign-in, and open this page over HTTPS or localhost.</div>
+<form id="auth-form"><label class="field-label" id="nickname-label" for="nickname" hidden>Nickname</label><input id="nickname" type="text" maxlength="30" autocomplete="nickname" placeholder="Nickname" hidden><label class="field-label" id="signup-avatar-label" for="signup-avatar" hidden>Choose an avatar</label><select id="signup-avatar" hidden><option>🎓</option><option>🐼</option><option>🦊</option><option>🐸</option><option>🐧</option><option>🦉</option><option>🐱</option><option>🐢</option></select><input id="email" type="email" autocomplete="email" placeholder="Email address" required><input id="password" type="password" autocomplete="current-password" minlength="6" placeholder="Password (at least 6 characters)" required><button class="primary auth-submit" id="auth-submit" type="submit">Sign in</button></form><p class="status" id="auth-status" role="status"></p></div>
+<div id="signed-panel" hidden><div class="signed-row"><span class="signed-name" id="signed-name"></span><button class="secondary" id="signout" type="button">Sign out</button></div><div class="profile-box"><h3>Choose your profile</h3><form id="profile-form"><label class="field-label" for="profile-name">Nickname</label><input id="profile-name" maxlength="30" required><label class="field-label" for="profile-avatar">Avatar</label><select id="profile-avatar"><option>🎓</option><option>🐼</option><option>🦊</option><option>🐸</option><option>🐧</option><option>🦉</option><option>🐱</option><option>🐢</option></select><div class="profile-preview"><span class="avatar" id="profile-preview-avatar">🎓</span><span id="profile-preview-name">Your profile</span></div><button class="secondary" type="submit">Save profile</button></form><p class="status" id="profile-status" role="status"></p></div></div>
+<div class="notice" id="config-note">Firebase setup is required to enable accounts and shared comments.</div>
 </section>
-<section class="card"><h2>Comments</h2><p class="help">Ask a math question, share a tip, or celebrate a win.</p>
-<form class="compose" id="comment-form"><textarea id="comment" maxlength="500" placeholder="Write a helpful, kind comment…" disabled required></textarea><button class="primary" id="post-button" type="submit" disabled>Post comment</button></form><p class="status" id="comment-status" role="status"></p><div class="feed" id="feed"><p class="help">Connect Firebase to load comments.</p></div>
-</section>
+<section class="card"><h2>Comments</h2><p class="help">You must sign in to post or reply. Replies appear under their comment.</p><form class="compose" id="comment-form"><textarea id="comment" maxlength="500" placeholder="Write a helpful, kind comment…" disabled required></textarea><button class="primary" id="post-button" type="submit" disabled>Post comment</button></form><p class="status" id="comment-status" role="status"></p><div class="feed" id="feed"><p class="help">Connect Firebase to load comments.</p></div></section>
 </div>
+<section class="card chat-card" aria-labelledby="chat-heading">
+<h2 id="chat-heading">Student chats</h2><p class="help">Start a private chat or make a group. Students must accept an invite before they can read or send messages. Use nicknames only.</p>
+<p class="notice" id="chat-signin-note">Sign in above to create chats, accept invitations, and message classmates.</p>
+<div id="chat-profile-setup" class="chat-profile" hidden><label class="field-label" for="chat-nickname">Chat nickname classmates can search</label><input id="chat-nickname" maxlength="24" placeholder="2–24 letters, numbers, spaces, _ or -"><button class="primary" id="save-chat-profile" data-chat-action type="button">Save chat nickname</button></div>
+<div id="chat-panel" hidden><div class="chat-tools"><div class="chat-tool"><h3>Private chat</h3><p class="help">Enter one classmate’s chat nickname.</p><input id="private-nickname" maxlength="24" placeholder="Classmate nickname"><button class="primary" id="start-private-chat" data-chat-action type="button">Start private chat</button></div><div class="chat-tool"><h3>Make a group</h3><p class="help">Invite up to 9 classmates by nickname, separated by commas.</p><input id="group-title" maxlength="60" placeholder="Group name"><input id="group-invitees" placeholder="Nicknames, separated by commas"><button class="primary" id="create-group-chat" data-chat-action type="button">Create group</button></div></div>
+<h3>Your chats & invitations</h3><div id="chat-list" class="chat-list"><p class="help">Loading chats…</p></div>
+<section id="chat-room" class="chat-room" hidden><div class="chat-room-head"><h3 id="chat-title">Chat</h3><button class="secondary" id="accept-invite" data-chat-action type="button" hidden>Accept invitation</button></div><div id="message-feed" class="message-feed" aria-live="polite"></div><form id="message-form" class="message-form"><textarea id="message-text" maxlength="1000" placeholder="Write a kind message…" aria-label="Message" disabled required></textarea><button class="primary" id="send-message" data-chat-action type="submit" disabled>Send</button></form></section></div><p id="chat-status" class="chat-status" role="status"></p>
+</section></div>
 </main>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-
-// Replace these values with your Firebase project's web app config.
-const firebaseConfig = {
-  apiKey: "AIzaSyD9GeFgQwYvDo8cSzOr5wekEOkIhonVHik",
-  authDomain: "test-project-for-user-login.firebaseapp.com",
-  projectId: "test-project-for-user-login",
-  storageBucket: "test-project-for-user-login.firebasestorage.app",
-  messagingSenderId: "385070622300",
-  appId: "1:385070622300:web:32a0890a372b7342e92899",
-  measurementId: "G-92FHP1EV9V"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const $ = (selector) => document.querySelector(selector);
-let mode = 'signin';
-let signedInUser = null;
-
-function message(element, text, isError = false) {
-  element.textContent = text;
-  element.classList.toggle('error', isError);
-}
-function setMode(nextMode) {
-  mode = nextMode;
-  const signup = mode === 'signup';
-  $('#signin-tab').classList.toggle('active', !signup);
-  $('#signup-tab').classList.toggle('active', signup);
-  $('#auth-title').textContent = signup ? 'Create your account' : 'Welcome back';
-  $('#auth-help').textContent = signup ? 'Use an email and password to join the conversation.' : 'Sign in to join the conversation.';
-  $('#nickname').hidden = !signup;
-  $('#nickname').required = signup;
-  $('#password').autocomplete = signup ? 'new-password' : 'current-password';
-  $('#auth-submit').textContent = signup ? 'Create account' : 'Sign in';
-  message($('#auth-status'), '');
-}
-$('#signin-tab').addEventListener('click', () => setMode('signin'));
-$('#signup-tab').addEventListener('click', () => setMode('signup'));
-
-$('#auth-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const email = $('#email').value.trim();
-  const password = $('#password').value;
-  $('#auth-submit').disabled = true;
-  message($('#auth-status'), mode === 'signup' ? 'Creating account…' : 'Signing in…');
-  try {
-    if (mode === 'signup') {
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
-      const nickname = $('#nickname').value.trim();
-      if (nickname) await updateProfile(credential.user, { displayName: nickname });
-    } else {
-      await signInWithEmailAndPassword(auth, email, password);
-    }
-    $('#auth-form').reset();
-    message($('#auth-status'), '');
-  } catch (error) {
-    const errors = {
-      'auth/email-already-in-use': 'That email already has an account. Try signing in.',
-      'auth/invalid-email': 'Enter a valid email address.',
-      'auth/invalid-credential': 'Email or password is incorrect.',
-      'auth/weak-password': 'Choose a password with at least 6 characters.',
-      'auth/too-many-requests': 'Too many tries. Wait a bit and try again.'
-    };
-    message($('#auth-status'), errors[error.code] || 'Could not sign in. Check your Firebase setup and try again.', true);
-  } finally {
-    $('#auth-submit').disabled = false;
-  }
-});
-$('#signout').addEventListener('click', () => signOut(auth));
-
-function renderComments(snapshot) {
-  const feed = $('#feed');
-  feed.replaceChildren();
-  if (snapshot.empty) {
-    const empty = document.createElement('p');
-    empty.className = 'help';
-    empty.textContent = 'No comments yet. Be the first to share a helpful tip!';
-    feed.append(empty);
-    return;
-  }
-  snapshot.forEach((item) => {
-    const data = item.data();
-    const article = document.createElement('article');
-    const header = document.createElement('div');
-    const author = document.createElement('strong');
-    const date = document.createElement('span');
-    const text = document.createElement('p');
-    article.className = 'comment';
-    header.className = 'comment-head';
-    author.textContent = data.authorName || 'Student';
-    date.textContent = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString() : 'Just now';
-    text.className = 'comment-text';
-    text.textContent = data.text || '';
-    header.append(author, date);
-    article.append(header, text);
-    feed.append(article);
-  });
-}
-
-onAuthStateChanged(auth, (user) => {
-  signedInUser = user;
-  const signedIn = Boolean(user);
-  $('#auth-panel').hidden = signedIn;
-  $('#signed-panel').hidden = !signedIn;
-  $('#signed-name').textContent = signedIn ? `Signed in as ${user.displayName || user.email}` : '';
-  $('#comment').disabled = !signedIn;
-  $('#post-button').disabled = !signedIn;
-  $('#config-note').hidden = true;
-  const comments = query(collection(db, 'comments'), orderBy('createdAt', 'desc'), limit(50));
-  onSnapshot(comments, renderComments, (error) => {
-    const note = document.createElement('p');
-    note.className = 'help';
-    note.textContent = 'Could not load comments. Check your Firestore rules.';
-    $('#feed').replaceChildren(note);
-    console.error(error);
-  });
-});
-
-$('#comment-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  if (!signedInUser) return message($('#comment-status'), 'Sign in before posting.', true);
-  const text = $('#comment').value.trim();
-  if (!text) return message($('#comment-status'), 'Write a comment first.', true);
-  $('#post-button').disabled = true;
-  message($('#comment-status'), 'Posting…');
-  try {
-    await addDoc(collection(db, 'comments'), {
-      uid: signedInUser.uid,
-      authorName: (signedInUser.displayName || signedInUser.email?.split('@')[0] || 'Student').slice(0, 30),
-      text: text.slice(0, 500),
-      createdAt: serverTimestamp()
-    });
-    $('#comment').value = '';
-    message($('#comment-status'), 'Your comment was posted.');
-  } catch (error) {
-    message($('#comment-status'), error.code === 'permission-denied' ? 'Posting was blocked. Check your Firestore rules.' : 'Could not post. Check your Firebase setup.', true);
-  } finally {
-    $('#post-button').disabled = !signedInUser;
-  }
-});
+<script>
+const firebaseConfig = {apiKey:"AIzaSyD9GeFgQwYvDo8cSzOr5wekEOkIhonVHik",authDomain:"test-project-for-user-login.firebaseapp.com",projectId:"test-project-for-user-login",storageBucket:"test-project-for-user-login.firebasestorage.app",messagingSenderId:"385070622300",appId:"1:385070622300:web:32a0890a372b7342e92899",measurementId:"G-92FHP1EV9V"};
+const $ = selector => document.querySelector(selector);
+const configReady = Object.values(firebaseConfig).every(value => value && !value.startsWith('YOUR_'));
+let sdk, auth, db, signedInUser=null, profile={nickname:'',avatar:'🎓'}, mode='signin', allComments=[], profileReady=false;
+function message(element,text,isError=false){element.textContent=text;element.classList.toggle('error',isError)}
+function setMode(next){mode=next;const signup=mode==='signup';$('#signin-tab').classList.toggle('active',!signup);$('#signup-tab').classList.toggle('active',signup);$('#auth-title').textContent=signup?'Create your account':'Welcome back';$('#auth-help').textContent=signup?'Pick a nickname and avatar, then create your account.':'Sign in to post and reply.';$('#nickname').hidden=!signup;$('#nickname-label').hidden=!signup;$('#signup-avatar').hidden=!signup;$('#signup-avatar-label').hidden=!signup;$('#nickname').required=signup;$('#password').autocomplete=signup?'new-password':'current-password';$('#auth-submit').textContent=signup?'Create account':'Sign in';message($('#auth-status'),'')}
+function niceError(error,action='auth'){if(error.code==='permission-denied')return action==='read'?'Firestore denied reading comments. Publish the rules from firestore.rules to this exact Firebase project, then refresh.':'Firestore denied the write. Sign in and check the published Firestore rules.';if(error.code==='auth/operation-not-allowed')return 'Enable Email/Password under Firebase Authentication sign-in providers.';if(error.code==='auth/email-already-in-use')return 'That email already has an account. Try signing in.';if(error.code==='auth/invalid-email')return 'Enter a valid email address.';if(error.code==='auth/invalid-credential')return 'Email or password is incorrect.';if(error.code==='auth/weak-password')return 'Choose a password with at least 6 characters.';return error.message||'Something went wrong. Check Firebase setup and try again.'}
+function dateText(timestamp){return timestamp?.toDate?timestamp.toDate().toLocaleString():'Just now'}
+function addReplyButton(parent,host){const button=document.createElement('button');button.type='button';button.className='reply-button';button.textContent=!signedInUser?'Sign in to reply':(profileReady?'Reply':'Loading profile…');button.disabled=Boolean(signedInUser&&!profileReady);button.addEventListener('click',()=>{if(!signedInUser){setMode('signin');$('#auth-panel').scrollIntoView({behavior:'smooth',block:'center'});$('#email').focus();return}document.querySelectorAll('.reply-form').forEach(form=>form.remove());const form=document.createElement('form');form.className='reply-form';form.dataset.parentId=parent.id;const area=document.createElement('textarea');area.className='reply-text';area.maxLength=500;area.required=true;area.placeholder='Write a kind reply…';const tools=document.createElement('div');tools.className='reply-tools';const cancel=document.createElement('button');cancel.type='button';cancel.className='secondary';cancel.textContent='Cancel';cancel.onclick=()=>form.remove();const post=document.createElement('button');post.type='submit';post.className='primary';post.textContent='Post reply';tools.append(cancel,post);form.append(area,tools);host.append(form);area.focus()});host.append(button)}
+function renderThread(item,replies,isReply=false){const data=item.data,article=document.createElement('article');article.className='comment';const header=document.createElement('div'),avatar=document.createElement('span'),author=document.createElement('strong'),date=document.createElement('span'),body=document.createElement('p'),actions=document.createElement('div'),replyList=document.createElement('div');header.className='comment-head';avatar.className='avatar';avatar.textContent=data.avatar||'🎓';author.textContent=data.authorName||'Student';date.className='comment-meta';date.textContent=dateText(data.createdAt);body.className='comment-text';body.textContent=data.text||'';header.append(avatar,author,date);article.append(header,body);actions.className='comment-actions';if(!isReply)addReplyButton(item,actions);if(!isReply)article.append(actions);if(replies.length){replyList.className='replies';replies.forEach(reply=>replyList.append(renderThread(reply,[],true)));article.append(replyList)}return article}
+function renderComments(){const feed=$('#feed');feed.replaceChildren();const byId=new Map(allComments.map(item=>[item.id,item]));const roots=[],repliesByParent=new Map();for(const item of allComments){const parentId=item.data.parentId;if(parentId&&byId.has(parentId)){if(!repliesByParent.has(parentId))repliesByParent.set(parentId,[]);repliesByParent.get(parentId).push(item)}else roots.push(item)}roots.sort((a,b)=>(b.data.createdAt?.toMillis?.()||0)-(a.data.createdAt?.toMillis?.()||0));for(const replies of repliesByParent.values())replies.sort((a,b)=>(a.data.createdAt?.toMillis?.()||0)-(b.data.createdAt?.toMillis?.()||0));if(!roots.length){const empty=document.createElement('p');empty.className='help';empty.textContent='No comments yet. Be the first to share a helpful tip!';feed.append(empty);return}roots.forEach(item=>feed.append(renderThread(item,repliesByParent.get(item.id)||[])))}
+async function saveComment(text,parentId=null){if(!signedInUser||!profileReady)throw new Error('Sign in and finish loading your profile before posting.');const clean=text.trim();if(!clean)throw new Error('Write a comment first.');await sdk.fs.addDoc(sdk.fs.collection(db,'comments'),{uid:signedInUser.uid,authorName:profile.nickname||'Student',avatar:profile.avatar||'🎓',text:clean.slice(0,500),parentId,createdAt:sdk.fs.serverTimestamp()})}
+$('#signin-tab').addEventListener('click',()=>setMode('signin'));$('#signup-tab').addEventListener('click',()=>setMode('signup'));$('#auth-form').addEventListener('submit',async event=>{event.preventDefault();if(!auth)return message($('#auth-status'),'Connect Firebase before signing in.',true);$('#auth-submit').disabled=true;message($('#auth-status'),mode==='signup'?'Creating account…':'Signing in…');try{if(mode==='signup'){const credential=await sdk.auth.createUserWithEmailAndPassword(auth,$('#email').value.trim(),$('#password').value);const nickname=$('#nickname').value.trim().slice(0,30)||'Student';const avatar=$('#signup-avatar').value;profile={nickname,avatar};await sdk.fs.setDoc(sdk.fs.doc(db,'profiles',credential.user.uid),{nickname,avatar,updatedAt:sdk.fs.serverTimestamp()});await sdk.auth.updateProfile(credential.user,{displayName:nickname})}else await sdk.auth.signInWithEmailAndPassword(auth,$('#email').value.trim(),$('#password').value);$('#auth-form').reset();message($('#auth-status'),'')}catch(error){message($('#auth-status'),niceError(error),true)}finally{$('#auth-submit').disabled=!auth}});
+$('#signout').addEventListener('click',async()=>{try{await sdk.auth.signOut(auth)}catch(error){message($('#auth-status'),niceError(error),true)}});
+$('#profile-avatar').addEventListener('change',()=>{$('#profile-preview-avatar').textContent=$('#profile-avatar').value});$('#profile-name').addEventListener('input',()=>{$('#profile-preview-name').textContent=$('#profile-name').value||'Your profile'});
+$('#profile-form').addEventListener('submit',async event=>{event.preventDefault();if(!signedInUser)return;const nickname=$('#profile-name').value.trim().slice(0,30),avatar=$('#profile-avatar').value;if(!nickname)return message($('#profile-status'),'Choose a nickname.',true);try{await sdk.fs.setDoc(sdk.fs.doc(db,'profiles',signedInUser.uid),{nickname,avatar,updatedAt:sdk.fs.serverTimestamp()},{merge:true});await sdk.auth.updateProfile(signedInUser,{displayName:nickname});profile={nickname,avatar};$('#signed-name').textContent=`Signed in as ${nickname}`;message($('#profile-status'),'Profile saved.')}catch(error){message($('#profile-status'),niceError(error,'write'),true)}});
+$('#comment-form').addEventListener('submit',async event=>{event.preventDefault();if(!signedInUser)return message($('#comment-status'),'Sign in before posting.',true);$('#post-button').disabled=true;message($('#comment-status'),'Posting…');try{await saveComment($('#comment').value,null);$('#comment').value='';message($('#comment-status'),'Your comment was posted.')}catch(error){message($('#comment-status'),error.code?niceError(error,'write'):error.message,true)}finally{$('#post-button').disabled=!signedInUser}});
+$('#feed').addEventListener('submit',async event=>{if(!event.target.matches('.reply-form'))return;event.preventDefault();const form=event.target,button=form.querySelector('[type=submit]');button.disabled=true;try{await saveComment(form.querySelector('textarea').value,form.dataset.parentId);message($('#comment-status'),'Your reply was posted.');form.remove()}catch(error){message($('#comment-status'),error.code?niceError(error,'write'):error.message,true);button.disabled=false}});
+async function connect(){if(!configReady){$('#config-note').textContent='Firebase is not connected yet. Add your Web app config, enable Email/Password, publish firestore.rules, and open this page via HTTPS or localhost. The login and posting controls will stay disabled until connected.';$('#signin-tab').disabled=true;$('#signup-tab').disabled=true;$('#auth-submit').disabled=true;$('#feed').firstElementChild.textContent='Saved comments will appear here after Firebase is connected.';return}$('#config-note').textContent='Connecting to Firebase…';$('#feed').firstElementChild.textContent='Loading comments…';try{const [appModule,authModule,fsModule]=await Promise.all([import('https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js'),import('https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js')]);const app=appModule.initializeApp(firebaseConfig);auth=authModule.getAuth(app);db=fsModule.getFirestore(app);sdk={auth:authModule,fs:fsModule};$('#config-note').hidden=true;$('#signin-tab').disabled=false;$('#signup-tab').disabled=false;$('#auth-submit').disabled=false;authModule.onAuthStateChanged(auth,async user=>{signedInUser=user;const isIn=Boolean(user);$('#auth-panel').hidden=isIn;$('#signed-panel').hidden=!isIn;$('#comment').disabled=!isIn;$('#post-button').disabled=!isIn;profileReady=false;if(isIn){try{const ref=fsModule.doc(db,'profiles',user.uid),snap=await fsModule.getDoc(ref);if(snap.exists())profile={nickname:snap.data().nickname||user.displayName||'Student',avatar:snap.data().avatar||'🎓'};else{profile={nickname:user.displayName||'Student',avatar:'🎓'};await fsModule.setDoc(ref,{...profile,updatedAt:fsModule.serverTimestamp()})}$('#signed-name').textContent=`Signed in as ${profile.nickname}`;$('#profile-name').value=profile.nickname;$('#profile-avatar').value=profile.avatar;$('#profile-preview-avatar').textContent=profile.avatar;$('#profile-preview-name').textContent=profile.nickname;profileReady=true}catch(error){message($('#profile-status'),niceError(error,'write'),true)}}else profile={nickname:'',avatar:'🎓'};renderComments()});const q=fsModule.query(fsModule.collection(db,'comments'),fsModule.orderBy('createdAt','desc'),fsModule.limit(100));fsModule.onSnapshot(q,snapshot=>{allComments=snapshot.docs.map(doc=>({id:doc.id,data:doc.data()}));renderComments()},error=>{const note=document.createElement('p');note.className='help';note.textContent=niceError(error,'read');$('#feed').replaceChildren(note);console.error(error)})}catch(error){$('#config-note').textContent=location.protocol==='file:'?'Firebase needs this page opened through localhost or HTTPS. It cannot connect from a file:// address.':`Firebase could not connect: ${error.message}`;console.error(error)}}
+connect();
+window.MathSprintFirebase = { get auth(){ return auth; }, get db(){ return db; }, get fs(){ return sdk?.fs; } };
+window.dispatchEvent(new Event('mathsprint-firebase-ready'));
 </script>
+<script type="module" src="./community-chats.js"></script>
 </body>
 </html>
