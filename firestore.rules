@@ -17,7 +17,7 @@ service cloud.firestore {
       return data.keys().hasOnly(['nickname', 'avatar', 'updatedAt', 'nicknameLower'])
         && data.nickname is string && data.nickname.size() >= 1 && data.nickname.size() <= 30
         && (!('avatar' in data) || data.avatar in ['🎓', '🐼', '🦊', '🐸', '🐧', '🦉', '🐱', '🐢'])
-        && (!('updatedAt' in data) || data.updatedAt == request.time)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp)
         && (!('nicknameLower' in data) || (data.nicknameLower is string
           && data.nicknameLower.size() >= 2 && data.nicknameLower.size() <= 24
           && data.nicknameLower == data.nickname.lower()));
