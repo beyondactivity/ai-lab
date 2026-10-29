@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function conversationPath(id) { return /databases/$(database)/documents/conversations/$(id); }
+    function profilePath(uid) { return /databases/$(database)/documents/profiles/$(uid); }
+    function isParticipant(id) {
+      return signedIn() && exists(conversationPath(id))
+        && request.auth.uid in get(conversationPath(id)).data.memberUids;
+    }
+    function isActiveMember(id) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/conversations/$(id)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/conversations/$(id)/members/$(request.auth.uid)).data.status == 'active';
+    }
+    function validProfile(data) {
+      return data.keys().hasOnly(['nickname', 'avatar', 'updatedAt', 'nicknameLower'])
+        && data.nickname is string && data.nickname.size() >= 1 && data.nickname.size() <= 30
+        && (!('avatar' in data) || data.avatar in ['🎓', '🐼', '🦊', '🐸', '🐧', '🦉', '🐱', '🐢'])
+        && (!('updatedAt' in data) || data.updatedAt == request.time)
+        && (!('nicknameLower' in data) || (data.nicknameLower is string
+          && data.nicknameLower.size() >= 2 && data.nicknameLower.size() <= 24
+          && data.nicknameLower == data.nickname.lower()));
+    }
+    function validConversation(data) {
+      return data.keys().hasOnly(['type', 'title', 'createdBy', 'memberUids', 'pendingUids', 'createdAt', 'updatedAt'])
+        && data.type in ['direct', 'group'] && data.title is string
+        && data.title.size() >= 2 && data.title.size() <= 60
+        && data.createdBy == request.auth.uid
+        && data.memberUids is list && data.memberUids.size() >= 2 && data.memberUids.size() <= 10
+        && request.auth.uid in data.memberUids
+        && data.pendingUids is list && data.pendingUids.size() == data.memberUids.size() - 1
+        && !(request.auth.uid in data.pendingUids) && data.pendingUids.hasOnly(data.memberUids)
+        && data.createdAt == request.time && data.updatedAt == request.time;
+    }
+    function validMessage(data) {
+      return data.keys().hasOnly(['uid', 'authorName', 'text', 'createdAt'])
+        && data.keys().hasAll(['uid', 'authorName', 'text', 'createdAt'])
+        && data.uid == request.auth.uid
+        && exists(profilePath(request.auth.uid))
+        && data.authorName == get(profilePath(request.auth.uid)).data.nickname
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 1000
+        && data.createdAt == request.time;
+    }
+
+    match /comments/{commentId} {
+      allow get, list: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'authorName', 'avatar', 'text', 'parentId', 'createdAt'])
+        && request.resource.data.keys().hasAll(['uid', 'authorName', 'text', 'parentId', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.authorName is string
+        && request.resource.data.authorName.size() >= 1 && request.resource.data.authorName.size() <= 30
+        && (!('avatar' in request.resource.data) || request.resource.data.avatar in ['🎓', '🐼', '🦊', '🐸', '🐧', '🦉', '🐱', '🐢'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1 && request.resource.data.text.size() <= 500
+        && (request.resource.data.parentId == null || request.resource.data.parentId is string)
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /profiles/{uid} {
+      allow get, list: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && validProfile(request.resource.data);
+      allow update: if signedIn() && request.auth.uid == uid && validProfile(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /conversations/{id} {
+      allow get, list: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow create: if signedIn() && validConversation(request.resource.data);
+      allow update: if (isActiveMember(id)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt'])
+          && request.resource.data.updatedAt == request.time)
+        || (signedIn() && request.auth.uid in resource.data.pendingUids
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingUids', 'updatedAt'])
+          && request.resource.data.updatedAt == request.time
+          && !(request.auth.uid in request.resource.data.pendingUids)
+          && request.resource.data.pendingUids.size() == resource.data.pendingUids.size() - 1
+          && request.resource.data.pendingUids.hasOnly(resource.data.pendingUids)
+          && existsAfter(/databases/$(database)/documents/conversations/$(id)/members/$(request.auth.uid))
+          && getAfter(/databases/$(database)/documents/conversations/$(id)/members/$(request.auth.uid)).data.status == 'active');
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow get, list: if isParticipant(id);
+        allow create: if signedIn()
+          && request.auth.uid == getAfter(conversationPath(id)).data.createdBy
+          && uid in getAfter(conversationPath(id)).data.memberUids
+          && request.resource.data.keys().hasOnly(['uid', 'nickname', 'status', 'addedAt'])
+          && request.resource.data.keys().hasAll(['uid', 'nickname', 'status', 'addedAt'])
+          && request.resource.data.uid == uid && request.resource.data.nickname is string
+          && request.resource.data.nickname.size() >= 2 && request.resource.data.nickname.size() <= 24
+          && request.resource.data.status == (uid == request.auth.uid ? 'active' : 'pending')
+          && request.resource.data.addedAt == request.time;
+        allow update: if signedIn() && request.auth.uid == uid
+          && resource.data.status == 'pending' && request.resource.data.status == 'active'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedAt'])
+          && request.resource.data.acceptedAt == request.time
+          && existsAfter(conversationPath(id))
+          && !(uid in getAfter(conversationPath(id)).data.pendingUids);
+        allow delete: if false;
+      }
+
+      match /messages/{messageId} {
+        allow get, list: if isActiveMember(id);
+        allow create: if isActiveMember(id) && validMessage(request.resource.data);
+        allow update, delete: if false;
+      }
+    }
+  }
+}
