@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Card Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0f19',
+                        cardBg: 'rgba(30, 41, 59, 0.7)',
+                        glassBorder: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    backgroundImage: {
+                        'holo-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 60%)',
+                        'rare-gold': 'linear-gradient(135deg, #f59e0b, #d97706)',
+                        'secret-rainbow': 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Holographic & Glassmorphism Styling */
+        body {
+            background-color: #080c14;
+            background-image: 
+                radial-gradient(at 15% 15%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 85% 85%, rgba(236, 72, 153, 0.12) 0px, transparent 50%);
+            background-attachment: fixed;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #f3f4f6;
+        }
+
+        .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        /* Holographic Card Effect */
+        .holo-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        .holo-card::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                115deg,
+                transparent 20%,
+                rgba(255, 255, 255, 0.15) 40%,
+                rgba(236, 72, 153, 0.25) 48%,
+                rgba(59, 130, 246, 0.25) 52%,
+                rgba(255, 255, 255, 0.15) 60%,
+                transparent 80%
+            );
+            transform: rotate(-25deg) translateY(-100%);
+            transition: transform 0.6s ease;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .holo-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 16px 30px -10px rgba(124, 58, 237, 0.35);
+        }
+
+        .holo-card:hover::after {
+            transform: rotate(-25deg) translateY(100%);
+            opacity: 1;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+
+    <!-- Header Section -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-gray-800 gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white shadow-lg shadow-indigo-500/30">
+                    <i data-lucide="sparkles" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        CardVault <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-medium border border-indigo-500/30">Tracker</span>
+                    </h1>
+                    <p class="text-sm text-gray-400">Organize, track, and showcase your trading card collection</p>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="toggleModal(true)" class="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            Add New Card
+        </button>
+    </header>
+
+    <!-- Stats Dashboard Header -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
+        <div class="glass-card p-4 rounded-2xl flex items-center gap-4">
+            <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl">
+                <i data-lucide="layers" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Total Cards</p>
+                <h3 id="statTotalCards" class="text-2xl font-bold text-white">0</h3>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl flex items-center gap-4">
+            <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
+                <i data-lucide="copy" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Unique Cards</p>
+                <h3 id="statUniqueCards" class="text-2xl font-bold text-white">0</h3>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl flex items-center gap-4">
+            <div class="p-3 bg-pink-500/10 text-pink-400 rounded-xl">
+                <i data-lucide="folder-git-2" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Sets / Games</p>
+                <h3 id="statTotalSets" class="text-2xl font-bold text-white">0</h3>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl flex items-center gap-4">
+            <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl">
+                <i data-lucide="crown" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Secret Rares</p>
+                <h3 id="statSecretRares" class="text-2xl font-bold text-white">0</h3>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filters & Controls Bar -->
+    <div class="glass-card p-4 rounded-2xl mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <!-- Search Bar -->
+        <div class="relative w-full md:w-80">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="searchInput" oninput="render()" placeholder="Search by card name..." class="w-full pl-10 pr-4 py-2 bg-gray-900/60 border border-gray-700/60 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-gray-500">
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <!-- Game / Set Filter -->
+            <select id="filterSet" onchange="render()" class="bg-gray-900/60 border border-gray-700/60 text-gray-300 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500">
+                <option value="all">All Sets / Games</option>
+            </select>
+
+            <!-- Rarity Filter -->
+            <select id="filterRarity" onchange="render()" class="bg-gray-900/60 border border-gray-700/60 text-gray-300 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500">
+                <option value="all">All Rarities</option>
+                <option value="Common">Common</option>
+                <option value="Uncommon">Uncommon</option>
+                <option value="Rare">Rare</option>
+                <option value="Holo">Holo Rare</option>
+                <option value="Secret Rare">Secret Rare</option>
+            </select>
+
+            <!-- View Toggle Buttons -->
+            <div class="flex items-center bg-gray-900/80 p-1 rounded-xl border border-gray-800">
+                <button id="btnGridView" onclick="setViewMode('grid')" class="p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all">
+                    <i data-lucide="grid" class="w-4 h-4"></i>
+                </button>
+                <button id="btnListView" onclick="setViewMode('list')" class="p-1.5 rounded-lg text-gray-400 hover:text-white transition-all">
+                    <i data-lucide="list" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collection Display Container -->
+    <div id="cardsContainer">
+        <!-- Rendered dynamically via JavaScript -->
+    </div>
+
+</div>
+
+<!-- Modal Dialog: Add / Edit Card -->
+<div id="cardModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="glass-card bg-gray-900 border border-gray-700/60 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative overflow-hidden">
+        
+        <div class="flex justify-between items-center pb-4 border-b border-gray-800">
+            <h3 id="modalTitle" class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i> Add Card to Collection
+            </h3>
+            <button onclick="toggleModal(false)" class="text-gray-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="cardForm" onsubmit="handleFormSubmit(event)" class="mt-4 space-y-4">
+            <input type="hidden" id="editCardId">
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Card Name *</label>
+                <input type="text" id="inputName" required placeholder="e.g. Charizard, Black Lotus, Dark Magician" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Set / Game *</label>
+                    <input type="text" id="inputSet" required placeholder="e.g. Pokémon Base Set" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Rarity</label>
+                    <select id="inputRarity" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+                        <option value="Common">Common</option>
+                        <option value="Uncommon">Uncommon</option>
+                        <option value="Rare">Rare</option>
+                        <option value="Holo">Holo Rare</option>
+                        <option value="Secret Rare">Secret Rare</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Condition</label>
+                    <select id="inputCondition" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+                        <option value="Gem Mint">Gem Mint (PSA 10)</option>
+                        <option value="Near Mint" selected>Near Mint</option>
+                        <option value="Lightly Played">Lightly Played</option>
+                        <option value="Heavily Played">Heavily Played</option>
+                        <option value="Damaged">Damaged</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Quantity</label>
+                    <input type="number" id="inputQuantity" value="1" min="1" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Image URL (Optional)</label>
+                <input type="url" id="inputImage" placeholder="https://example.com/card-image.jpg" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-800">
+                <button type="button" onclick="toggleModal(false)" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl text-sm transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-indigo-600/30">
+                    Save Card
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // App State Management
+    let cards = JSON.parse(localStorage.getItem('trading_cards_collection')) || [
+        {
+            id: 1,
+            name: "Charizard",
+            setGame: "Pokémon Base Set",
+            rarity: "Secret Rare",
+            condition: "Near Mint",
+            quantity: 1,
+            image: "https://images.pokemontcg.io/base1/4_hires.png"
+        },
+        {
+            id: 2,
+            name: "Black Lotus",
+            setGame: "Magic: The Gathering",
+            rarity: "Secret Rare",
+            condition: "Lightly Played",
+            quantity: 1,
+            image: ""
+        },
+        {
+            id: 3,
+            name: "Blue-Eyes White Dragon",
+            setGame: "Yu-Gi-Oh!",
+            rarity: "Holo",
+            condition: "Gem Mint",
+            quantity: 3,
+            image: ""
+        }
+    ];
+
+    let viewMode = 'grid'; // 'grid' | 'list'
+
+    function saveState() {
+        localStorage.setItem('trading_cards_collection', JSON.stringify(cards));
+        updateStats();
+        updateSetFilterOptions();
+    }
+
+    function updateStats() {
+        const totalCount = cards.reduce((sum, c) => sum + (parseInt(c.quantity) || 1), 0);
+        const uniqueCount = cards.length;
+        const setsCount = new Set(cards.map(c => c.setGame)).size;
+        const secretRares = cards.filter(c => c.rarity === 'Secret Rare').reduce((sum, c) => sum + c.quantity, 0);
+
+        document.getElementById('statTotalCards').textContent = totalCount;
+        document.getElementById('statUniqueCards').textContent = uniqueCount;
+        document.getElementById('statTotalSets').textContent = setsCount;
+        document.getElementById('statSecretRares').textContent = secretRares;
+    }
+
+    function updateSetFilterOptions() {
+        const select = document.getElementById('filterSet');
+        const currentVal = select.value;
+        const sets = ['all', ...new Set(cards.map(c => c.setGame))];
+
+        select.innerHTML = sets.map(s => 
+            `<option value="${s}">${s === 'all' ? 'All Sets / Games' : s}</option>`
+        ).join('');
+
+        if (sets.includes(currentVal)) {
+            select.value = currentVal;
+        }
+    }
+
+    function setViewMode(mode) {
+        viewMode = mode;
+        const btnGrid = document.getElementById('btnGridView');
+        const btnList = document.getElementById('btnListView');
+
+        if (mode === 'grid') {
+            btnGrid.className = 'p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all';
+            btnList.className = 'p-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
+        } else {
+            btnList.className = 'p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all';
+            btnGrid.className = 'p-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
+        }
+
+        render();
+    }
+
+    function getRarityBadge(rarity) {
+        switch (rarity) {
+            case 'Secret Rare':
+                return '<span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-gradient-to-r from-amber-400 via-pink-500 to-indigo-500 text-white shadow-sm">Secret Rare</span>';
+            case 'Holo':
+                return '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-gradient-to-r from-purple-500 to-indigo-500 text-white">Holo Rare</span>';
+            case 'Rare':
+                return '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">Rare</span>';
+            case 'Uncommon':
+                return '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">Uncommon</span>';
+            default:
+                return '<span class="px-2 py-0.5 rounded-md text-[10px] font-medium uppercase bg-gray-800 text-gray-400 border border-gray-700">Common</span>';
+        }
+    }
+
+    function getConditionBadge(condition) {
+        return `<span class="text-xs text-gray-400 bg-gray-900/80 px-2 py-0.5 rounded-md border border-gray-800">${condition}</span>`;
+    }
+
+    function render() {
+        const container = document.getElementById('cardsContainer');
+        const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+        const setVal = document.getElementById('filterSet').value;
+        const rarityVal = document.getElementById('filterRarity').value;
+
+        const filtered = cards.filter(c => {
+            const matchesSearch = c.name.toLowerCase().includes(searchVal) || c.setGame.toLowerCase().includes(searchVal);
+            const matchesSet = setVal === 'all' || c.setGame === setVal;
+            const matchesRarity = rarityVal === 'all' || c.rarity === rarityVal;
+            return matchesSearch && matchesSet && matchesRarity;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="glass-card rounded-2xl p-12 text-center text-gray-400">
+                    <i data-lucide="box" class="w-12 h-12 mx-auto mb-3 text-gray-600"></i>
+                    <p class="text-lg font-medium">No cards found in your collection.</p>
+                    <p class="text-sm text-gray-500 mt-1">Try resetting your filters or add a new card.</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        if (viewMode === 'grid') {
+            container.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
+            container.innerHTML = filtered.map(card => `
+                <div class="holo-card glass-card rounded-2xl overflow-hidden flex flex-col justify-between group">
+                    <div>
+                        <!-- Card Image / Header Placeholder -->
+                        <div class="h-48 w-full bg-slate-900/90 relative flex items-center justify-center overflow-hidden border-b border-gray-800">
+                            ${card.image ? 
+                                `<img src="${card.image}" alt="${card.name}" class="w-full h-full object-contain p-2" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'flex flex-col items-center justify-center text-gray-600\'><i data-lucide=\'image-off\' class=\'w-10 h-10 mb-1\'></i><span class=\'text-xs\'>Image unavailable</span></div>'; lucide.createIcons();">` : 
+                                `<div class="flex flex-col items-center justify-center text-gray-600">
+                                    <i data-lucide="shield" class="w-12 h-12 mb-1 text-indigo-500/40"></i>
+                                    <span class="text-xs text-gray-500 font-semibold">${card.setGame}</span>
+                                 </div>`
+                            }
+                            <div class="absolute top-3 right-3">
+                                ${getRarityBadge(card.rarity)}
+                            </div>
+                        </div>
+
+                        <!-- Card Info -->
+                        <div class="p-4">
+                            <h4 class="font-bold text-white text-base truncate group-hover:text-indigo-300 transition-colors">${card.name}</h4>
+                            <p class="text-xs text-gray-400 mt-0.5 truncate">${card.setGame}</p>
+                            
+                            <div class="mt-3 flex items-center justify-between">
+                                ${getConditionBadge(card.condition)}
+                                <div class="flex items-center gap-1.5 bg-gray-900/90 border border-gray-800 rounded-lg px-2 py-1">
+                                    <button onclick="adjustQty(${card.id}, -1)" class="text-gray-400 hover:text-white transition-colors">
+                                        <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <span class="text-xs font-bold text-indigo-400 px-1">Qty: ${card.quantity}</span>
+                                    <button onclick="adjustQty(${card.id}, 1)" class="text-gray-400 hover:text-white transition-colors">
+                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Controls -->
+                    <div class="px-4 py-3 bg-gray-950/60 border-t border-gray-800/80 flex items-center justify-between">
+                        <button onclick="editCard(${card.id})" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors">
+                            <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Edit
+                        </button>
+                        <button onclick="deleteCard(${card.id})" class="text-xs text-red-400 hover:text-red-300 font-medium flex items-center gap-1 transition-colors">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            // List View
+            container.className = "glass-card rounded-2xl overflow-hidden";
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-950/80 text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                                <th class="p-4">Card Name</th>
+                                <th class="p-4">Set / Game</th>
+                                <th class="p-4">Rarity</th>
+                                <th class="p-4">Condition</th>
+                                <th class="p-4 text-center">Quantity</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800/60 text-sm">
+                            ${filtered.map(card => `
+                                <tr class="hover:bg-gray-900/40 transition-colors">
+                                    <td class="p-4 font-semibold text-white flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded bg-gray-900 border border-gray-800 flex items-center justify-center flex-shrink-0 text-indigo-400">
+                                            <i data-lucide="square" class="w-4 h-4"></i>
+                                        </div>
+                                        ${card.name}
+                                    </td>
+                                    <td class="p-4 text-gray-300">${card.setGame}</td>
+                                    <td class="p-4">${getRarityBadge(card.rarity)}</td>
+                                    <td class="p-4">${getConditionBadge(card.condition)}</td>
+                                    <td class="p-4 text-center">
+                                        <div class="inline-flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-lg px-2 py-1">
+                                            <button onclick="adjustQty(${card.id}, -1)" class="text-gray-400 hover:text-white"><i data-lucide="minus" class="w-3 h-3"></i></button>
+                                            <span class="text-xs font-bold text-indigo-400">${card.quantity}</span>
+                                            <button onclick="adjustQty(${card.id}, 1)" class="text-gray-400 hover:text-white"><i data-lucide="plus" class="w-3 h-3"></i></button>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button onclick="editCard(${card.id})" class="p-1.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                        <button onclick="deleteCard(${card.id})" class="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        lucide.createIcons();
+    }
+
+    // Modal Operations
+    function toggleModal(show) {
+        const modal = document.getElementById('cardModal');
+        if (show) {
+            modal.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
+            document.getElementById('cardForm').reset();
+            document.getElementById('editCardId').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i> Add Card to Collection';
+            lucide.createIcons();
+        }
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('editCardId').value;
+        const name = document.getElementById('inputName').value.trim();
+        const setGame = document.getElementById('inputSet').value.trim();
+        const rarity = document.getElementById('inputRarity').value;
+        const condition = document.getElementById('inputCondition').value;
+        const quantity = parseInt(document.getElementById('inputQuantity').value) || 1;
+        const image = document.getElementById('inputImage').value.trim();
+
+        if (id) {
+            // Edit Existing
+            cards = cards.map(c => c.id == id ? { ...c, name, setGame, rarity, condition, quantity, image } : c);
+        } else {
+            // Add New
+            const newCard = {
+                id: Date.now(),
+                name,
+                setGame,
+                rarity,
+                condition,
+                quantity,
+                image
+            };
+            cards.push(newCard);
+        }
+
+        saveState();
+        render();
+        toggleModal(false);
+    }
+
+    function editCard(id) {
+        const card = cards.find(c => c.id === id);
+        if (!card) return;
+
+        document.getElementById('editCardId').value = card.id;
+        document.getElementById('inputName').value = card.name;
+        document.getElementById('inputSet').value = card.setGame;
+        document.getElementById('inputRarity').value = card.rarity;
+        document.getElementById('inputCondition').value = card.condition;
+        document.getElementById('inputQuantity').value = card.quantity;
+        document.getElementById('inputImage').value = card.image || '';
+
+        document.getElementById('modalTitle').innerHTML = '<i data-lucide="edit-2" class="w-5 h-5 text-indigo-400"></i> Edit Card Details';
+        lucide.createIcons();
+        toggleModal(true);
+    }
+
+    function adjustQty(id, amount) {
+        cards = cards.map(c => {
+            if (c.id === id) {
+                const newQty = c.quantity + amount;
+                return { ...c, quantity: newQty > 0 ? newQty : 1 };
+            }
+            return c;
+        });
+        saveState();
+        render();
+    }
+
+    function deleteCard(id) {
+        cards = cards.filter(c => c.id !== id);
+        saveState();
+        render();
+    }
+
+    // Initial load setup
+    window.onload = function() {
+        updateStats();
+        updateSetFilterOptions();
+        render();
+    };
+</script>
+
+</body>
+</html>
