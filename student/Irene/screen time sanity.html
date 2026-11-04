@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Time & Sanity: Find Your Focus</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .priority-item.dragging {
+            opacity: 0.4;
+            border: 2px dashed #6366f1;
+        }
+        .priority-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            background-color: #f1f5f9;
+            color: #475569;
+            transition: all 0.2s;
+        }
+        .priority-btn:hover {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+        .rank-badge {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 9999px;
+        }
+        .sound-btn {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #475569;
+            background-color: white;
+            transition: all 0.2s;
+        }
+        .sound-btn:hover {
+            border-color: #c7d2fe;
+            background-color: #f5f3ff;
+        }
+        .sound-btn.active {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+    </style>
+
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBuh257UkCxRN260yziiF0mNx3WlO-b00",
+            authDomain: "irene-test-project-d6665.firebaseapp.com",
+            projectId: "irene-test-project-d6665",
+            storageBucket: "irene-test-project-d6665.firebasestorage.app",
+            messagingSenderId: "971824505194",
+            appId: "1:971824505194:web:d9645bed679f30be660513",
+            measurementId: "G-YTWPBYB91J"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'screen-time-app';
+        let currentUser = null;
+        let unsubscribeUserData = null;
+
+        // Make auth handlers globally accessible for buttons
+        window.firebaseLogin = async function() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const errEl = document.getElementById('authError');
+            errEl.textContent = '';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                closeAuthModal();
+            } catch (err) {
+                errEl.textContent = err.message.replace("Firebase: ", "");
+            }
+        };
+
+        window.firebaseSignup = async function() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const errEl = document.getElementById('authError');
+            errEl.textContent = '';
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                closeAuthModal();
+            } catch (err) {
+                errEl.textContent = err.message.replace("Firebase: ", "");
+            }
+        };
+
+        window.firebaseLogout = async function() {
+            await signOut(auth);
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                try {
+                    await signInAnonymously(auth);
+                } catch(e) {
+                    updateAuthUI(null);
+                }
+            }
+        };
+
+        // Initialize Authentication (Auth Before Queries)
+        async function initAuth() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                try {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } catch(e) {
+                    console.warn("Custom token auth failed, falling back:", e.message);
+                    try {
+                        await signInAnonymously(auth);
+                    } catch(err) {
+                        updateAuthUI(null);
+                    }
+                }
+            } else if (!auth.currentUser) {
+                try {
+                    await signInAnonymously(auth);
+                } catch(e) {
+                    updateAuthUI(null);
+                }
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                updateAuthUI(user);
+                listenToUserData(user.uid);
+            } else {
+                if (unsubscribeUserData) unsubscribeUserData();
+                updateAuthUI(null);
+            }
+        });
+
+        // Sync local updates to Firestore (Rule 1 Path)
+        window.saveUserDataToCloud = async function() {
+            if (!currentUser) return;
+            const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'userData', 'mainDoc');
+            
+            const habitCheckboxes = document.querySelectorAll('#habitList input[type="checkbox"]');
+            const habitStates = Array.from(habitCheckboxes).map(c => c.checked);
+
+            try {
+                await setDoc(userDocRef, {
+                    priorities: window.priorities || [],
+                    habitStates: habitStates,
+                    completedSessions: window.completedSessions || 0,
+                    totalFocusMins: window.totalFocusMins || 0,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            } catch(e) {
+                console.warn("Could not save to Firestore (check Security Rules):", e.message);
+            }
+        };
+
+        // Real-time listener for User Data
+        function listenToUserData(userId) {
+            if (unsubscribeUserData) unsubscribeUserData();
+
+            try {
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'userData', 'mainDoc');
+                unsubscribeUserData = onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        
+                        if (data.priorities && Array.isArray(data.priorities)) {
+                            window.priorities = data.priorities;
+                            if (window.renderPriorities) window.renderPriorities();
+                        }
+
+                        if (data.habitStates && Array.isArray(data.habitStates)) {
+                            const habits = document.querySelectorAll('#habitList input[type="checkbox"]');
+                            habits.forEach((checkbox, idx) => {
+                                if (data.habitStates[idx] !== undefined) {
+                                    checkbox.checked = data.habitStates[idx];
+                                }
+                            });
+                            if (window.checkHabitsCompletion) window.checkHabitsCompletion();
+                        }
+
+                        if (data.completedSessions !== undefined) {
+                            window.completedSessions = data.completedSessions;
+                            const el = document.getElementById('completedSessionsVal');
+                            if (el) el.textContent = window.completedSessions;
+                        }
+
+                        if (data.totalFocusMins !== undefined) {
+                            window.totalFocusMins = data.totalFocusMins;
+                            const el = document.getElementById('totalFocusMinsVal');
+                            if (el) el.textContent = window.totalFocusMins + 'm';
+                        }
+                    }
+                }, (error) => {
+                    console.warn("Firestore subscription inactive (Security Rules or Guest restriction):", error.message);
+                });
+            } catch (err) {
+                console.warn("Unable to attach Firestore listener:", err.message);
+            }
+        }
+
+        function updateAuthUI(user) {
+            const statusEl = document.getElementById('userStatusText');
+            const authBtn = document.getElementById('authActionBtn');
+
+            if (user && !user.isAnonymous) {
+                statusEl.textContent = `Logged in as: ${user.email}`;
+                authBtn.textContent = 'Log Out';
+                authBtn.onclick = window.firebaseLogout;
+            } else if (user && user.isAnonymous) {
+                statusEl.textContent = `Guest Mode (${user.uid.substring(0, 8)}...)`;
+                authBtn.textContent = 'Account Sign In';
+                authBtn.onclick = window.openAuthModal;
+            } else {
+                statusEl.textContent = `Local Mode (Sign in to sync)`;
+                authBtn.textContent = 'Account Sign In';
+                authBtn.onclick = window.openAuthModal;
+            }
+        }
+
+        initAuth();
+    </script>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold text-lg">🧠</div>
+                <h1 class="font-bold text-xl text-slate-800">Find Your Focus</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <nav class="flex space-x-2">
+                    <button id="tab1Btn" onclick="switchTab('tab1')" class="tab-btn px-3 py-2 text-sm font-medium active">Digital Wellness</button>
+                    <button id="tab2Btn" onclick="switchTab('tab2')" class="tab-btn px-3 py-2 text-sm font-medium text-slate-500">Checklist & Focus Timer</button>
+                </nav>
+                <div class="border-l border-slate-200 pl-3 flex items-center space-x-2 text-xs">
+                    <span id="userStatusText" class="text-slate-500 font-medium hidden md:inline">Connecting...</span>
+                    <button id="authActionBtn" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold px-2.5 py-1.5 rounded-lg transition">Sign In</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- TAB 1: Digital Wellness -->
+        <section id="tab1" class="space-y-6">
+            <!-- Wellness Hero Banner -->
+            <div class="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-6 md:p-8 text-white shadow-md">
+                <h2 class="text-2xl md:text-3xl font-bold mb-2">Reclaim Your Attention & Peace</h2>
+                <p class="text-indigo-100 text-sm md:text-base max-w-2xl">
+                    Intentional screen time habits help restore deep focus, reduce cognitive overload, and improve sleep quality.
+                </p>
+            </div>
+
+            <!-- Interactive Impact Simulator -->
+            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span>⚡</span> Interactive Impact Simulator
+                </h3>
+                <p class="text-sm text-slate-600">Slide to set your target daily screen time and see the potential impact on your focus and free time.</p>
+                
+                <div class="space-y-2 pt-2">
+                    <div class="flex justify-between text-sm font-semibold">
+                        <span>Target Daily Screen Time:</span>
+                        <span id="screenTimeDisplay" class="text-indigo-600 font-bold">4 Hours</span>
+                    </div>
+                    <input type="range" id="screenTimeSlider" min="1" max="10" value="4" oninput="updateSimulator(this.value)" class="w-full accent-indigo-600">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                    <div class="bg-slate-50 p-4 rounded-lg text-center border border-slate-100">
+                        <div id="focusCapacityVal" class="text-2xl font-bold text-indigo-600">+40%</div>
+                        <div class="text-xs text-slate-500 font-medium mt-1">Focus Capacity</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg text-center border border-slate-100">
+                        <div id="sleepQualityVal" class="text-2xl font-bold text-emerald-600">Great</div>
+                        <div class="text-xs text-slate-500 font-medium mt-1">Sleep Quality Impact</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg text-center border border-slate-100">
+                        <div id="booksCountVal" class="text-2xl font-bold text-indigo-600">~243 Books</div>
+                        <div class="text-xs text-slate-500 font-medium mt-1">📚 Books You Could Read / Year</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Digital Wellness Tips Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="text-2xl">📱</div>
+                    <h4 class="font-semibold text-slate-800">Phone-Free Bedrooms</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Charge your phone outside the bedroom to prevent late-night scrolling and improve restorative sleep.
+                    </p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="text-2xl">⏳</div>
+                    <h4 class="font-semibold text-slate-800">Batch Notifications</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Turn off instant pings for non-urgent apps. Schedule specific check-in times throughout your day.
+                    </p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="text-2xl">🌿</div>
+                    <h4 class="font-semibold text-slate-800">The 20-20-20 Rule</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Every 20 minutes, look at an object 20 feet away for 20 seconds to reduce digital eye strain.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: Checklist & Focus Timer -->
+        <section id="tab2" class="space-y-6 hidden">
+
+            <!-- Daily Focus Habits Checklist -->
+            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm space-y-4">
+                
+                <!-- Completion Banner (Shown when all habits checked) -->
+                <div id="completionBanner" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center space-y-1">
+                    <h3 class="text-lg font-bold text-emerald-800">🎉 Great job!</h3>
+                    <p class="text-sm font-medium text-emerald-700">Come back tomorrow to extend your streak</p>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span>✅</span> Daily Focus Habits
+                    </h3>
+                    <span class="text-xs font-semibold bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full">Streak & Habits</span>
+                </div>
+
+                <div id="habitList" class="space-y-3">
+                    <label class="flex items-center space-x-3 p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" onchange="toggleHabit(this)" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                        <span class="text-sm font-medium text-slate-700">Morning 30-minute phone-free zone</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" onchange="toggleHabit(this)" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                        <span class="text-sm font-medium text-slate-700">Complete 1 deep focus block (25 mins)</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" onchange="toggleHabit(this)" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                        <span class="text-sm font-medium text-slate-700">Turn off non-essential notifications</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition">
+                        <input type="checkbox" onchange="toggleHabit(this)" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                        <span class="text-sm font-medium text-slate-700">Screen-free 30 minutes before sleep</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Priority Ranking Section -->
+            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span>📌</span> Priority Ranking (Drag to Order)
+                </h3>
+                <p class="text-xs text-slate-500">Add custom goals or priorities below and drag or use arrows to order them by urgency.</p>
+
+                <div class="flex space-x-2">
+                    <input type="text" id="priorityInput" placeholder="Add a new goal or priority..." class="flex-1 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <button onclick="addPriority()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition">Add</button>
+                </div>
+
+                <div id="priorityList" class="space-y-2 pt-2">
+                    <!-- Priorities rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Focus Timer Section -->
+            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm space-y-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span>⏱️</span> Pomodoro Focus Timer
+                    </h3>
+                    <div class="text-xs font-semibold text-slate-500">
+                        Sessions Completed: <span id="completedSessionsVal" class="text-indigo-600 font-bold">0</span> | Total Focus: <span id="totalFocusMinsVal" class="text-indigo-600 font-bold">0m</span>
+                    </div>
+                </div>
+
+                <!-- Timer Presets -->
+                <div class="flex space-x-2 justify-center">
+                    <button onclick="setTimerPreset(25)" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition">25 min Focus</button>
+                    <button onclick="setTimerPreset(5)" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition">5 min Break</button>
+                    <button onclick="setTimerPreset(15)" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition">15 min Break</button>
+                </div>
+
+                <!-- Digital Timer Display -->
+                <div class="text-center py-6">
+                    <div id="timerDisplay" class="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-800 font-mono">25:00</div>
+                    <div id="timerStatus" class="text-xs font-semibold text-slate-400 mt-2 uppercase tracking-wider">Ready to Focus</div>
+                </div>
+
+                <!-- Timer Controls -->
+                <div class="flex justify-center space-x-3">
+                    <button id="startTimerBtn" onclick="toggleTimer()" class="w-32 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg transition shadow-sm">Start</button>
+                    <button onclick="resetTimer()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-lg transition">Reset</button>
+                </div>
+
+                <!-- Ambient Audio Synthesizer Controls -->
+                <div class="border-t border-slate-100 pt-4 space-y-2">
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">Ambient Focus Sounds</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <button onclick="toggleAmbientSound('rain')" id="sound-rain" class="sound-btn">🌧️ Rain</button>
+                        <button onclick="toggleAmbientSound('waves')" id="sound-waves" class="sound-btn">🌊 Waves</button>
+                        <button onclick="toggleAmbientSound('whitenoise')" id="sound-whitenoise" class="sound-btn">📻 White Noise</button>
+                        <button onclick="toggleAmbientSound('forest')" id="sound-forest" class="sound-btn">🌲 Forest</button>
+                        <button onclick="toggleAmbientSound('fireplace')" id="sound-fireplace" class="sound-btn">🔥 Fireplace</button>
+                        <button onclick="toggleAmbientSound('cafe')" id="sound-cafe" class="sound-btn">☕ Cafe Ambience</button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Reward Popup Modal -->
+    <div id="rewardModal" class="modal-overlay">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center shadow-2xl border border-slate-100 space-y-4">
+            <div class="text-4xl">🎉</div>
+            <h3 class="font-bold text-xl text-slate-800">Focus Block Complete!</h3>
+            <p class="text-slate-600 text-sm">Great job keeping distractions away! Take a 5-minute break before your next block.</p>
+            <button onclick="hideSquirrelModal()" class="w-full py-2 bg-indigo-600 text-white font-bold text-sm rounded-lg hover:bg-indigo-700 transition">Awesome!</button>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal-overlay">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Account Access</h3>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+            <p class="text-xs text-slate-500">Sign in or create an account to persist your focus timer data & priorities across devices.</p>
+            
+            <div id="authError" class="text-xs text-red-500 font-medium"></div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+                    <input type="email" id="authEmail" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                    <input type="password" id="authPassword" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="••••••••">
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="window.firebaseLogin()" class="flex-1 bg-indigo-600 text-white font-semibold py-2 text-sm rounded-lg hover:bg-indigo-700 transition">Log In</button>
+                    <button onclick="window.firebaseSignup()" class="flex-1 bg-slate-100 text-slate-700 font-semibold py-2 text-sm rounded-lg hover:bg-slate-200 transition">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Modal Handlers
+        window.openAuthModal = function() {
+            document.getElementById('authModal').style.display = 'flex';
+        };
+
+        window.closeAuthModal = function() {
+            document.getElementById('authModal').style.display = 'none';
+        };
+
+        function showSquirrelModal() {
+            document.getElementById('rewardModal').style.display = 'flex';
+        }
+
+        function hideSquirrelModal() {
+            document.getElementById('rewardModal').style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Tab Navigation Logic
+        function switchTab(tabId) {
+            document.getElementById('tab1').classList.add('hidden');
+            document.getElementById('tab2').classList.add('hidden');
+            document.getElementById('tab1Btn').classList.remove('active', 'text-indigo-600');
+            document.getElementById('tab2Btn').classList.remove('active', 'text-indigo-600');
+            document.getElementById('tab1Btn').classList.add('text-slate-500');
+            document.getElementById('tab2Btn').classList.add('text-slate-500');
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById(tabId + 'Btn');
+            activeBtn.classList.add('active', 'text-indigo-600');
+            activeBtn.classList.remove('text-slate-500');
+        }
+
+        // Interactive Simulator Logic
+        function updateSimulator(hours) {
+            document.getElementById('screenTimeDisplay').textContent = hours + (hours == 1 ? ' Hour' : ' Hours');
+            
+            const hoursSavedPerDay = Math.max(0, 12 - hours);
+            const focusGain = Math.round((hoursSavedPerDay / 12) * 60);
+            document.getElementById('focusCapacityVal').textContent = '+' + focusGain + '%';
+
+            if (hours <= 3) {
+                document.getElementById('sleepQualityVal').textContent = 'Optimal 😴';
+                document.getElementById('sleepQualityVal').className = 'text-2xl font-bold text-emerald-600';
+            } else if (hours <= 6) {
+                document.getElementById('sleepQualityVal').textContent = 'Moderate 😐';
+                document.getElementById('sleepQualityVal').className = 'text-2xl font-bold text-indigo-600';
+            } else {
+                document.getElementById('sleepQualityVal').textContent = 'Disrupted 🥱';
+                document.getElementById('sleepQualityVal').className = 'text-2xl font-bold text-amber-600';
+            }
+
+            const yearlyHoursReclaimed = hoursSavedPerDay * 365;
+            const booksCount = Math.round(yearlyHoursReclaimed / 12);
+            document.getElementById('booksCountVal').textContent = '~' + booksCount + ' Books';
+        }
+
+        // Habit Checklist Tracker Logic
+        function toggleHabit(checkbox) {
+            checkHabitsCompletion();
+            if (window.saveUserDataToCloud) window.saveUserDataToCloud();
+        }
+
+        function checkHabitsCompletion() {
+            const habits = document.querySelectorAll('#habitList input[type="checkbox"]');
+            const allChecked = Array.from(habits).every(h => h.checked);
+            const banner = document.getElementById('completionBanner');
+
+            if (allChecked && habits.length > 0) {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+        window.checkHabitsCompletion = checkHabitsCompletion;
+
+        // Priority Drag and Drop Logic (Starts Empty)
+        window.priorities = [];
+        let dragSrcIndex = null;
+
+        function renderPriorities() {
+            const container = document.getElementById('priorityList');
+            container.innerHTML = '';
+
+            if (!window.priorities || window.priorities.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-400 text-sm italic border-2 border-dashed border-slate-200 rounded-lg">
+                        No priorities added yet. Add your first goal above!
+                    </div>
+                `;
+                return;
+            }
+
+            window.priorities.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'priority-item p-3 flex items-center justify-between border border-slate-200 rounded-lg bg-white shadow-sm';
+                div.draggable = true;
+                div.dataset.index = index;
+
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3 flex-1 pointer-events-none">
+                        <span class="text-slate-400 cursor-grab text-xs font-bold">⋮⋮</span>
+                        <span class="rank-badge">#${index + 1}</span>
+                        <span class="text-sm font-medium text-slate-800">${escapeHtml(item.text)}</span>
+                    </div>
+                    <div class="flex items-center space-x-1 ml-2">
+                        <button onclick="movePriority(${index}, -1)" class="priority-btn" ${index === 0 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>▲</button>
+                        <button onclick="movePriority(${index}, 1)" class="priority-btn" ${index === window.priorities.length - 1 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>▼</button>
+                        <button onclick="deletePriority(${index})" class="priority-btn hover:text-red-600">✕</button>
+                    </div>
+                `;
+
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('drop', handleDrop);
+                div.addEventListener('dragend', handleDragEnd);
+
+                container.appendChild(div);
+            });
+        }
+        window.renderPriorities = renderPriorities;
+
+        function handleDragStart(e) {
+            dragSrcIndex = parseInt(this.dataset.index);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', dragSrcIndex);
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) e.stopPropagation();
+            const targetIndex = parseInt(this.dataset.index);
+
+            if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) {
+                const movedItem = window.priorities.splice(dragSrcIndex, 1)[0];
+                window.priorities.splice(targetIndex, 0, movedItem);
+                renderPriorities();
+                if (window.saveUserDataToCloud) window.saveUserDataToCloud();
+            }
+            return false;
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+        }
+
+        function addPriority() {
+            const input = document.getElementById('priorityInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!window.priorities) window.priorities = [];
+            window.priorities.push({ text: text });
+            input.value = '';
+            renderPriorities();
+            if (window.saveUserDataToCloud) window.saveUserDataToCloud();
+        }
+
+        function movePriority(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= window.priorities.length) return;
+
+            const temp = window.priorities[index];
+            window.priorities[index] = window.priorities[newIndex];
+            window.priorities[newIndex] = temp;
+            renderPriorities();
+            if (window.saveUserDataToCloud) window.saveUserDataToCloud();
+        }
+
+        function deletePriority(index) {
+            window.priorities.splice(index, 1);
+            renderPriorities();
+            if (window.saveUserDataToCloud) window.saveUserDataToCloud();
+        }
+
+        // Pomodoro Focus Timer Logic
+        let timerSeconds = 25 * 60;
+        let originalSeconds = 25 * 60;
+        let timerInterval = null;
+        let isRunning = false;
+        window.completedSessions = 0;
+        window.totalFocusMins = 0;
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSeconds / 60);
+            const secs = timerSeconds % 60;
+            document.getElementById('timerDisplay').textContent = 
+                `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function setTimerPreset(mins) {
+            if (isRunning) toggleTimer();
+            timerSeconds = mins * 60;
+            originalSeconds = mins * 60;
+            updateTimerDisplay();
+            document.getElementById('timerStatus').textContent = `${mins} min Session Selected`;
+        }
+
+        function toggleTimer() {
+            const btn = document.getElementById('startTimerBtn');
+            const status = document.getElementById('timerStatus');
+
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                btn.textContent = 'Start';
+                btn.className = 'w-32 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg transition shadow-sm';
+                status.textContent = 'Timer Paused';
+            } else {
+                isRunning = true;
+                btn.textContent = 'Pause';
+                btn.className = 'w-32 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-lg transition shadow-sm';
+                status.textContent = 'Deep Focus Session Active';
+
+                timerInterval = setInterval(() => {
+                    if (timerSeconds > 0) {
+                        timerSeconds--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        btn.textContent = 'Start';
+                        btn.className = 'w-32 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-lg transition shadow-sm';
+                        status.textContent = 'Session Complete!';
+
+                        window.completedSessions++;
+                        window.totalFocusMins += Math.round(originalSeconds / 60);
+                        document.getElementById('completedSessionsVal').textContent = window.completedSessions;
+                        document.getElementById('totalFocusMinsVal').textContent = window.totalFocusMins + 'm';
+
+                        if (window.saveUserDataToCloud) window.saveUserDataToCloud();
+
+                        showSquirrelModal();
+                        timerSeconds = originalSeconds;
+                        updateTimerDisplay();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            if (isRunning) toggleTimer();
+            timerSeconds = originalSeconds;
+            updateTimerDisplay();
+            document.getElementById('timerStatus').textContent = 'Ready to Focus';
+        }
+
+        // Web Audio Synthesizer Ambient Noise Generator
+        let audioCtx = null;
+        let activeNoiseNode = null;
+        let activeGainNode = null;
+        let currentSoundType = null;
+
+        function toggleAmbientSound(type) {
+            const buttons = document.querySelectorAll('.sound-btn');
+            
+            if (currentSoundType === type) {
+                stopAmbientSound();
+                buttons.forEach(b => b.classList.remove('active'));
+                currentSoundType = null;
+                return;
+            }
+
+            buttons.forEach(b => b.classList.remove('active'));
+            stopAmbientSound();
+
+            const targetBtn = document.getElementById('sound-' + type);
+            if (targetBtn) targetBtn.classList.add('active');
+            currentSoundType = type;
+
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            activeNoiseNode = audioCtx.createBufferSource();
+            activeNoiseNode.buffer = buffer;
+            activeNoiseNode.loop = true;
+
+            const filter = audioCtx.createBiquadFilter();
+            activeGainNode = audioCtx.createGain();
+
+            if (type === 'rain') {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            } else if (type === 'waves') {
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            } else if (type === 'whitenoise') {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(3000, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            } else if (type === 'forest') {
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            } else if (type === 'fireplace') {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(500, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            } else if (type === 'cafe') {
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+                activeGainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            }
+
+            activeNoiseNode.connect(filter);
+            filter.connect(activeGainNode);
+            activeGainNode.connect(audioCtx.destination);
+            activeNoiseNode.start();
+        }
+
+        function stopAmbientSound() {
+            if (activeNoiseNode) {
+                try { activeNoiseNode.stop(); } catch(e){}
+                activeNoiseNode.disconnect();
+                activeNoiseNode = null;
+            }
+        }
+
+        // Initialize UI State
+        window.onload = function() {
+            renderPriorities();
+            updateSimulator(4);
+        };
+    </script>
+</body>
+</html>
