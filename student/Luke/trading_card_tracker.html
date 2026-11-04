@@ -14,11 +14,6 @@
                         darkBg: '#0b0f19',
                         cardBg: 'rgba(30, 41, 59, 0.7)',
                         glassBorder: 'rgba(255, 255, 255, 0.1)',
-                    },
-                    backgroundImage: {
-                        'holo-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 60%)',
-                        'rare-gold': 'linear-gradient(135deg, #f59e0b, #d97706)',
-                        'secret-rainbow': 'linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6)',
                     }
                 }
             }
@@ -27,7 +22,6 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Custom Holographic & Glassmorphism Styling */
         body {
             background-color: #080c14;
             background-image: 
@@ -90,7 +84,6 @@
             opacity: 1;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -101,16 +94,13 @@
             background: #1f2937;
             border-radius: 4px;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #374151;
-        }
     </style>
 </head>
 <body class="min-h-screen pb-12">
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
 
-    <!-- Header Section -->
+    <!-- Header -->
     <header class="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-gray-800 gap-4">
         <div>
             <div class="flex items-center gap-3">
@@ -119,17 +109,28 @@
                 </div>
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                        CardVault <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-medium border border-indigo-500/30">Tracker</span>
+                        CardVault <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 font-medium border border-indigo-500/30">Firebase Auth & Sync</span>
                     </h1>
-                    <p class="text-sm text-gray-400">Organize, track, and showcase your trading card collection</p>
+                    <p class="text-sm text-gray-400">Organize, track, and cloud-sync your trading card collection</p>
                 </div>
             </div>
         </div>
 
-        <button onclick="toggleModal(true)" class="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
-            <i data-lucide="plus-circle" class="w-5 h-5"></i>
-            Add New Card
-        </button>
+        <div class="flex items-center gap-3">
+            <div id="userInfo" class="hidden flex items-center gap-3 bg-gray-900/80 px-3 py-1.5 rounded-xl border border-gray-800">
+                <span id="userEmailDisplay" class="text-xs text-indigo-300 font-medium truncate max-w-[150px]"></span>
+                <button onclick="handleSignOut()" class="text-xs text-gray-400 hover:text-red-400 font-semibold transition-colors">Sign Out</button>
+            </div>
+            
+            <button id="btnLogin" onclick="toggleAuthModal(true)" class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl text-sm transition-all border border-gray-700">
+                <i data-lucide="log-in" class="w-4 h-4"></i> Sign In / Register
+            </button>
+
+            <button onclick="toggleModal(true)" class="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                Add New Card
+            </button>
+        </div>
     </header>
 
     <!-- Stats Dashboard Header -->
@@ -175,21 +176,18 @@
         </div>
     </section>
 
-    <!-- Filters & Controls Bar -->
+    <!-- Controls Bar -->
     <div class="glass-card p-4 rounded-2xl mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <!-- Search Bar -->
         <div class="relative w-full md:w-80">
             <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
             <input type="text" id="searchInput" oninput="render()" placeholder="Search by card name..." class="w-full pl-10 pr-4 py-2 bg-gray-900/60 border border-gray-700/60 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-gray-500">
         </div>
 
         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-            <!-- Game / Set Filter -->
             <select id="filterSet" onchange="render()" class="bg-gray-900/60 border border-gray-700/60 text-gray-300 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500">
                 <option value="all">All Sets / Games</option>
             </select>
 
-            <!-- Rarity Filter -->
             <select id="filterRarity" onchange="render()" class="bg-gray-900/60 border border-gray-700/60 text-gray-300 text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500">
                 <option value="all">All Rarities</option>
                 <option value="Common">Common</option>
@@ -199,7 +197,6 @@
                 <option value="Secret Rare">Secret Rare</option>
             </select>
 
-            <!-- View Toggle Buttons -->
             <div class="flex items-center bg-gray-900/80 p-1 rounded-xl border border-gray-800">
                 <button id="btnGridView" onclick="setViewMode('grid')" class="p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all">
                     <i data-lucide="grid" class="w-4 h-4"></i>
@@ -211,14 +208,12 @@
         </div>
     </div>
 
-    <!-- Collection Display Container -->
-    <div id="cardsContainer">
-        <!-- Rendered dynamically via JavaScript -->
-    </div>
+    <!-- Cards Output -->
+    <div id="cardsContainer"></div>
 
 </div>
 
-<!-- Modal Dialog: Add / Edit Card -->
+<!-- Modal Dialog -->
 <div id="cardModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="glass-card bg-gray-900 border border-gray-700/60 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative overflow-hidden">
         
@@ -236,7 +231,7 @@
 
             <div>
                 <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Card Name *</label>
-                <input type="text" id="inputName" required placeholder="e.g. Charizard, Black Lotus, Dark Magician" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+                <input type="text" id="inputName" required placeholder="e.g. Charizard, Black Lotus" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -292,51 +287,274 @@
     </div>
 </div>
 
-<script>
-    // App State Management
-    let cards = JSON.parse(localStorage.getItem('trading_cards_collection')) || [
-        {
-            id: 1,
-            name: "Charizard",
-            setGame: "Pokémon Base Set",
-            rarity: "Secret Rare",
-            condition: "Near Mint",
-            quantity: 1,
-            image: "https://images.pokemontcg.io/base1/4_hires.png"
-        },
-        {
-            id: 2,
-            name: "Black Lotus",
-            setGame: "Magic: The Gathering",
-            rarity: "Secret Rare",
-            condition: "Lightly Played",
-            quantity: 1,
-            image: ""
-        },
-        {
-            id: 3,
-            name: "Blue-Eyes White Dragon",
-            setGame: "Yu-Gi-Oh!",
-            rarity: "Holo",
-            condition: "Gem Mint",
-            quantity: 3,
-            image: ""
+<!-- Authentication Modal -->
+<div id="authModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="glass-card bg-gray-900 border border-gray-700/60 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden">
+        <div class="flex justify-between items-center pb-4 border-b border-gray-800">
+            <h3 id="authModalTitle" class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="user" class="w-5 h-5 text-indigo-400"></i> Account Sign In
+            </h3>
+            <button onclick="toggleAuthModal(false)" class="text-gray-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="mt-4 space-y-4">
+            <div id="authError" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs"></div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Email Address</label>
+                <input type="email" id="authEmail" required placeholder="collector@example.com" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Password</label>
+                <input type="password" id="authPassword" required minlength="6" placeholder="••••••••" class="w-full px-3 py-2 bg-gray-950 border border-gray-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+            </div>
+
+            <div class="flex flex-col gap-2 pt-2">
+                <button type="submit" id="authSubmitBtn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-indigo-600/30">
+                    Sign In
+                </button>
+                <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-xs text-gray-400 hover:text-indigo-400 mt-2 text-center transition-colors">
+                    Don't have an account? Register here
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Firebase Modular SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        createUserWithEmailAndPassword, 
+        signOut, 
+        onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+        getFirestore, 
+        collection, 
+        doc, 
+        addDoc, 
+        updateDoc, 
+        deleteDoc, 
+        onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Provided Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyDdaRPIMZ58CypohrALR_-vCTZn58GVZ9c",
+        authDomain: "flight-sim-thingy.firebaseapp.com",
+        projectId: "flight-sim-thingy",
+        storageBucket: "flight-sim-thingy.firebasestorage.app",
+        messagingSenderId: "1025625782125",
+        appId: "1:1025625782125:web:d36586ac3e0192a4590c64",
+        measurementId: "G-BJ3EW7S2MP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'trading-card-tracker';
+    
+    let cards = [];
+    let viewMode = 'grid';
+    let currentUser = null;
+    let isRegistering = false;
+    let unsubscribeFirestore = null;
+
+    // Monitor Firebase Auth state
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        const userInfo = document.getElementById('userInfo');
+        const btnLogin = document.getElementById('btnLogin');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+
+        if (user) {
+            userInfo.classList.remove('hidden');
+            btnLogin.classList.add('hidden');
+            userEmailDisplay.textContent = user.email || 'User';
+            subscribeToUserData(user.uid);
+        } else {
+            userInfo.classList.add('hidden');
+            btnLogin.classList.remove('hidden');
+            // Fallback to local data when logged out
+            if (unsubscribeFirestore) unsubscribeFirestore();
+            cards = JSON.parse(localStorage.getItem('trading_cards_fallback')) || [];
+            updateStats();
+            updateSetFilterOptions();
+            render();
         }
-    ];
+    });
 
-    let viewMode = 'grid'; // 'grid' | 'list'
+    function subscribeToUserData(userId) {
+        if (unsubscribeFirestore) unsubscribeFirestore();
 
-    function saveState() {
-        localStorage.setItem('trading_cards_collection', JSON.stringify(cards));
-        updateStats();
-        updateSetFilterOptions();
+        const userCardsCollection = collection(db, 'artifacts', appId, 'users', userId, 'trading_cards');
+        
+        unsubscribeFirestore = onSnapshot(userCardsCollection, (snapshot) => {
+            cards = snapshot.docs.map(docSnapshot => ({
+                id: docSnapshot.id,
+                ...docSnapshot.data()
+            }));
+            updateStats();
+            updateSetFilterOptions();
+            render();
+        }, (error) => {
+            console.warn("Firestore user sync error:", error);
+            updateStats();
+            updateSetFilterOptions();
+            render();
+        });
     }
+
+    window.toggleAuthModal = function(show) {
+        const modal = document.getElementById('authModal');
+        if (show) {
+            modal.classList.remove('hidden');
+            document.getElementById('authError').classList.add('hidden');
+        } else {
+            modal.classList.add('hidden');
+            document.getElementById('authForm').reset();
+        }
+    };
+
+    window.toggleAuthMode = function() {
+        isRegistering = !isRegistering;
+        const title = document.getElementById('authModalTitle');
+        const submitBtn = document.getElementById('authSubmitBtn');
+        const toggleBtn = document.getElementById('authToggleBtn');
+        document.getElementById('authError').classList.add('hidden');
+
+        if (isRegistering) {
+            title.innerHTML = '<i data-lucide="user-plus" class="w-5 h-5 text-indigo-400"></i> Create Account';
+            submitBtn.textContent = 'Register Account';
+            toggleBtn.textContent = 'Already have an account? Sign in';
+        } else {
+            title.innerHTML = '<i data-lucide="user" class="w-5 h-5 text-indigo-400"></i> Account Sign In';
+            submitBtn.textContent = 'Sign In';
+            toggleBtn.textContent = "Don't have an account? Register here";
+        }
+        lucide.createIcons();
+    };
+
+    window.handleAuthSubmit = async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        const errorDiv = document.getElementById('authError');
+
+        errorDiv.classList.add('hidden');
+
+        try {
+            if (isRegistering) {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } else {
+                await signInWithEmailAndPassword(auth, email, password);
+            }
+            toggleAuthModal(false);
+        } catch (err) {
+            errorDiv.textContent = err.message.replace('Firebase: ', '');
+            errorDiv.classList.remove('hidden');
+        }
+    };
+
+    window.handleSignOut = function() {
+        signOut(auth);
+    };
+
+    // Card CRUD Operations with User ID Routing
+    function getCardsCollectionRef() {
+        if (currentUser) {
+            return collection(db, 'artifacts', appId, 'users', currentUser.uid, 'trading_cards');
+        }
+        return null;
+    }
+
+    window.handleFormSubmit = async function(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('editCardId').value;
+        const name = document.getElementById('inputName').value.trim();
+        const setGame = document.getElementById('inputSet').value.trim();
+        const rarity = document.getElementById('inputRarity').value;
+        const condition = document.getElementById('inputCondition').value;
+        const quantity = parseInt(document.getElementById('inputQuantity').value) || 1;
+        const image = document.getElementById('inputImage').value.trim();
+
+        const cardData = { name, setGame, rarity, condition, quantity, image, createdAt: Date.now() };
+
+        try {
+            if (currentUser) {
+                if (id) {
+                    const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'trading_cards', id);
+                    await updateDoc(docRef, { name, setGame, rarity, condition, quantity, image });
+                } else {
+                    await addDoc(getCardsCollectionRef(), cardData);
+                }
+            } else {
+                if (id) {
+                    cards = cards.map(c => c.id === id ? { ...c, ...cardData, id } : c);
+                } else {
+                    cards.push({ ...cardData, id: 'local_' + Date.now() });
+                }
+                localStorage.setItem('trading_cards_fallback', JSON.stringify(cards));
+                updateStats();
+                updateSetFilterOptions();
+                render();
+            }
+            window.toggleModal(false);
+        } catch (err) {
+            console.error("Error saving card:", err);
+        }
+    };
+
+    window.adjustQty = async function(id, amount) {
+        const card = cards.find(c => c.id === id);
+        if (!card) return;
+        const newQty = Math.max(1, (card.quantity || 1) + amount);
+
+        if (currentUser) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'trading_cards', id);
+                await updateDoc(docRef, { quantity: newQty });
+            } catch (err) {
+                console.error("Error updating quantity:", err);
+            }
+        } else {
+            card.quantity = newQty;
+            localStorage.setItem('trading_cards_fallback', JSON.stringify(cards));
+            updateStats();
+            render();
+        }
+    };
+
+    window.deleteCard = async function(id) {
+        if (currentUser) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'trading_cards', id);
+                await deleteDoc(docRef);
+            } catch (err) {
+                console.error("Error deleting card:", err);
+            }
+        } else {
+            cards = cards.filter(c => c.id !== id);
+            localStorage.setItem('trading_cards_fallback', JSON.stringify(cards));
+            updateStats();
+            updateSetFilterOptions();
+            render();
+        }
+    };
 
     function updateStats() {
         const totalCount = cards.reduce((sum, c) => sum + (parseInt(c.quantity) || 1), 0);
         const uniqueCount = cards.length;
         const setsCount = new Set(cards.map(c => c.setGame)).size;
-        const secretRares = cards.filter(c => c.rarity === 'Secret Rare').reduce((sum, c) => sum + c.quantity, 0);
+        const secretRares = cards.filter(c => c.rarity === 'Secret Rare').reduce((sum, c) => sum + (parseInt(c.quantity) || 1), 0);
 
         document.getElementById('statTotalCards').textContent = totalCount;
         document.getElementById('statUniqueCards').textContent = uniqueCount;
@@ -358,22 +576,6 @@
         }
     }
 
-    function setViewMode(mode) {
-        viewMode = mode;
-        const btnGrid = document.getElementById('btnGridView');
-        const btnList = document.getElementById('btnListView');
-
-        if (mode === 'grid') {
-            btnGrid.className = 'p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all';
-            btnList.className = 'p-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
-        } else {
-            btnList.className = 'p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all';
-            btnGrid.className = 'p-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
-        }
-
-        render();
-    }
-
     function getRarityBadge(rarity) {
         switch (rarity) {
             case 'Secret Rare':
@@ -390,17 +592,17 @@
     }
 
     function getConditionBadge(condition) {
-        return `<span class="text-xs text-gray-400 bg-gray-900/80 px-2 py-0.5 rounded-md border border-gray-800">${condition}</span>`;
+        return `<span class="text-xs text-gray-400 bg-gray-900/80 px-2 py-0.5 rounded-md border border-gray-800">${condition || 'Near Mint'}</span>`;
     }
 
-    function render() {
+    window.render = function() {
         const container = document.getElementById('cardsContainer');
         const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
         const setVal = document.getElementById('filterSet').value;
         const rarityVal = document.getElementById('filterRarity').value;
 
         const filtered = cards.filter(c => {
-            const matchesSearch = c.name.toLowerCase().includes(searchVal) || c.setGame.toLowerCase().includes(searchVal);
+            const matchesSearch = (c.name || '').toLowerCase().includes(searchVal) || (c.setGame || '').toLowerCase().includes(searchVal);
             const matchesSet = setVal === 'all' || c.setGame === setVal;
             const matchesRarity = rarityVal === 'all' || c.rarity === rarityVal;
             return matchesSearch && matchesSet && matchesRarity;
@@ -411,7 +613,7 @@
                 <div class="glass-card rounded-2xl p-12 text-center text-gray-400">
                     <i data-lucide="box" class="w-12 h-12 mx-auto mb-3 text-gray-600"></i>
                     <p class="text-lg font-medium">No cards found in your collection.</p>
-                    <p class="text-sm text-gray-500 mt-1">Try resetting your filters or add a new card.</p>
+                    <p class="text-sm text-gray-500 mt-1">Add a card using the button above.</p>
                 </div>
             `;
             lucide.createIcons();
@@ -423,7 +625,6 @@
             container.innerHTML = filtered.map(card => `
                 <div class="holo-card glass-card rounded-2xl overflow-hidden flex flex-col justify-between group">
                     <div>
-                        <!-- Card Image / Header Placeholder -->
                         <div class="h-48 w-full bg-slate-900/90 relative flex items-center justify-center overflow-hidden border-b border-gray-800">
                             ${card.image ? 
                                 `<img src="${card.image}" alt="${card.name}" class="w-full h-full object-contain p-2" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'flex flex-col items-center justify-center text-gray-600\'><i data-lucide=\'image-off\' class=\'w-10 h-10 mb-1\'></i><span class=\'text-xs\'>Image unavailable</span></div>'; lucide.createIcons();">` : 
@@ -437,7 +638,6 @@
                             </div>
                         </div>
 
-                        <!-- Card Info -->
                         <div class="p-4">
                             <h4 class="font-bold text-white text-base truncate group-hover:text-indigo-300 transition-colors">${card.name}</h4>
                             <p class="text-xs text-gray-400 mt-0.5 truncate">${card.setGame}</p>
@@ -445,11 +645,11 @@
                             <div class="mt-3 flex items-center justify-between">
                                 ${getConditionBadge(card.condition)}
                                 <div class="flex items-center gap-1.5 bg-gray-900/90 border border-gray-800 rounded-lg px-2 py-1">
-                                    <button onclick="adjustQty(${card.id}, -1)" class="text-gray-400 hover:text-white transition-colors">
+                                    <button onclick="adjustQty('${card.id}', -1)" class="text-gray-400 hover:text-white transition-colors">
                                         <i data-lucide="minus" class="w-3.5 h-3.5"></i>
                                     </button>
-                                    <span class="text-xs font-bold text-indigo-400 px-1">Qty: ${card.quantity}</span>
-                                    <button onclick="adjustQty(${card.id}, 1)" class="text-gray-400 hover:text-white transition-colors">
+                                    <span class="text-xs font-bold text-indigo-400 px-1">Qty: ${card.quantity || 1}</span>
+                                    <button onclick="adjustQty('${card.id}', 1)" class="text-gray-400 hover:text-white transition-colors">
                                         <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                                     </button>
                                 </div>
@@ -457,19 +657,17 @@
                         </div>
                     </div>
 
-                    <!-- Footer Controls -->
                     <div class="px-4 py-3 bg-gray-950/60 border-t border-gray-800/80 flex items-center justify-between">
-                        <button onclick="editCard(${card.id})" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors">
+                        <button onclick="editCard('${card.id}')" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors">
                             <i data-lucide="edit-2" class="w-3.5 h-3.5"></i> Edit
                         </button>
-                        <button onclick="deleteCard(${card.id})" class="text-xs text-red-400 hover:text-red-300 font-medium flex items-center gap-1 transition-colors">
+                        <button onclick="deleteCard('${card.id}')" class="text-xs text-red-400 hover:text-red-300 font-medium flex items-center gap-1 transition-colors">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
                         </button>
                     </div>
                 </div>
             `).join('');
         } else {
-            // List View
             container.className = "glass-card rounded-2xl overflow-hidden";
             container.innerHTML = `
                 <div class="overflow-x-auto">
@@ -498,14 +696,14 @@
                                     <td class="p-4">${getConditionBadge(card.condition)}</td>
                                     <td class="p-4 text-center">
                                         <div class="inline-flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-lg px-2 py-1">
-                                            <button onclick="adjustQty(${card.id}, -1)" class="text-gray-400 hover:text-white"><i data-lucide="minus" class="w-3 h-3"></i></button>
-                                            <span class="text-xs font-bold text-indigo-400">${card.quantity}</span>
-                                            <button onclick="adjustQty(${card.id}, 1)" class="text-gray-400 hover:text-white"><i data-lucide="plus" class="w-3 h-3"></i></button>
+                                            <button onclick="adjustQty('${card.id}', -1)" class="text-gray-400 hover:text-white"><i data-lucide="minus" class="w-3 h-3"></i></button>
+                                            <span class="text-xs font-bold text-indigo-400">${card.quantity || 1}</span>
+                                            <button onclick="adjustQty('${card.id}', 1)" class="text-gray-400 hover:text-white"><i data-lucide="plus" class="w-3 h-3"></i></button>
                                         </div>
                                     </td>
                                     <td class="p-4 text-right space-x-2">
-                                        <button onclick="editCard(${card.id})" class="p-1.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                                        <button onclick="deleteCard(${card.id})" class="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        <button onclick="editCard('${card.id}')" class="p-1.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                                        <button onclick="deleteCard('${card.id}')" class="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -516,96 +714,9 @@
         }
 
         lucide.createIcons();
-    }
-
-    // Modal Operations
-    function toggleModal(show) {
-        const modal = document.getElementById('cardModal');
-        if (show) {
-            modal.classList.remove('hidden');
-        } else {
-            modal.classList.add('hidden');
-            document.getElementById('cardForm').reset();
-            document.getElementById('editCardId').value = '';
-            document.getElementById('modalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i> Add Card to Collection';
-            lucide.createIcons();
-        }
-    }
-
-    function handleFormSubmit(e) {
-        e.preventDefault();
-
-        const id = document.getElementById('editCardId').value;
-        const name = document.getElementById('inputName').value.trim();
-        const setGame = document.getElementById('inputSet').value.trim();
-        const rarity = document.getElementById('inputRarity').value;
-        const condition = document.getElementById('inputCondition').value;
-        const quantity = parseInt(document.getElementById('inputQuantity').value) || 1;
-        const image = document.getElementById('inputImage').value.trim();
-
-        if (id) {
-            // Edit Existing
-            cards = cards.map(c => c.id == id ? { ...c, name, setGame, rarity, condition, quantity, image } : c);
-        } else {
-            // Add New
-            const newCard = {
-                id: Date.now(),
-                name,
-                setGame,
-                rarity,
-                condition,
-                quantity,
-                image
-            };
-            cards.push(newCard);
-        }
-
-        saveState();
-        render();
-        toggleModal(false);
-    }
-
-    function editCard(id) {
-        const card = cards.find(c => c.id === id);
-        if (!card) return;
-
-        document.getElementById('editCardId').value = card.id;
-        document.getElementById('inputName').value = card.name;
-        document.getElementById('inputSet').value = card.setGame;
-        document.getElementById('inputRarity').value = card.rarity;
-        document.getElementById('inputCondition').value = card.condition;
-        document.getElementById('inputQuantity').value = card.quantity;
-        document.getElementById('inputImage').value = card.image || '';
-
-        document.getElementById('modalTitle').innerHTML = '<i data-lucide="edit-2" class="w-5 h-5 text-indigo-400"></i> Edit Card Details';
-        lucide.createIcons();
-        toggleModal(true);
-    }
-
-    function adjustQty(id, amount) {
-        cards = cards.map(c => {
-            if (c.id === id) {
-                const newQty = c.quantity + amount;
-                return { ...c, quantity: newQty > 0 ? newQty : 1 };
-            }
-            return c;
-        });
-        saveState();
-        render();
-    }
-
-    function deleteCard(id) {
-        cards = cards.filter(c => c.id !== id);
-        saveState();
-        render();
-    }
-
-    // Initial load setup
-    window.onload = function() {
-        updateStats();
-        updateSetFilterOptions();
-        render();
     };
+
+    lucide.createIcons();
 </script>
 
 </body>
