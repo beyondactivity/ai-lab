@@ -367,6 +367,52 @@
     let isRegistering = false;
     let unsubscribeFirestore = null;
 
+    // Define UI helper functions globally on window scope
+    window.toggleModal = function(show) {
+        const modal = document.getElementById('cardModal');
+        if (show) {
+            document.getElementById('cardForm').reset();
+            document.getElementById('editCardId').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i> Add Card to Collection';
+            modal.classList.remove('hidden');
+        } else {
+            modal.classList.add('hidden');
+        }
+        lucide.createIcons();
+    };
+
+    window.editCard = function(id) {
+        const card = cards.find(c => c.id === id);
+        if (!card) return;
+
+        document.getElementById('editCardId').value = card.id;
+        document.getElementById('inputName').value = card.name || '';
+        document.getElementById('inputSet').value = card.setGame || '';
+        document.getElementById('inputRarity').value = card.rarity || 'Common';
+        document.getElementById('inputCondition').value = card.condition || 'Near Mint';
+        document.getElementById('inputQuantity').value = card.quantity || 1;
+        document.getElementById('inputImage').value = card.image || '';
+
+        document.getElementById('modalTitle').innerHTML = '<i data-lucide="edit-2" class="w-5 h-5 text-indigo-400"></i> Edit Card Details';
+        document.getElementById('cardModal').classList.remove('hidden');
+        lucide.createIcons();
+    };
+
+    window.setViewMode = function(mode) {
+        viewMode = mode;
+        const btnGrid = document.getElementById('btnGridView');
+        const btnList = document.getElementById('btnListView');
+
+        if (mode === 'grid') {
+            btnGrid.className = 'p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all';
+            btnList.className = 'p-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
+        } else {
+            btnList.className = 'p-1.5 rounded-lg text-indigo-400 bg-indigo-600/20 transition-all';
+            btnGrid.className = 'p-1.5 rounded-lg text-gray-400 hover:text-white transition-all';
+        }
+        render();
+    };
+
     // Monitor Firebase Auth state
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
