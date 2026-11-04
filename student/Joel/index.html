@@ -1,0 +1,2317 @@
+<title>Forget-Me-Not</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Cg fill=%27%233a60d8%27%3E%3Ccircle cx=%2720%27 cy=%279%27 r=%277%27/%3E%3Ccircle cx=%2730.5%27 cy=%2716.6%27 r=%277%27/%3E%3Ccircle cx=%2726.5%27 cy=%2729%27 r=%277%27/%3E%3Ccircle cx=%2713.5%27 cy=%2729%27 r=%277%27/%3E%3Ccircle cx=%279.5%27 cy=%2716.6%27 r=%277%27/%3E%3C/g%3E%3Ccircle cx=%2720%27 cy=%2720%27 r=%275%27 fill=%27%23f2b705%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: header with level and streak, an "up next" alert card across the top,
+   month calendar beside the selected day's agenda, daily quests, and a flower garden below. */
+:root{
+  --bg:#eef2fa; --surface:#ffffff; --surface2:#e3e9f7; --ink:#14213d; --muted:#586a8e; --line:#cdd7ee;
+  --accent:#3a60d8; --accent-ink:#ffffff; --sun:#f2b705; --leaf:#2f9a6b; --bad:#b4234a;
+  --c-meeting:#4a63e8; --c-class:#1b9a72; --c-focus:#d9801f; --c-event:#d1428a; --c-personal:#8a63d2; --v-giant:#2f9a6b; --v-shiny:#1698b8; --v-golden:#c99a00;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif; --font-body:'Figtree',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1530; --surface:#141f40; --surface2:#1e2b57; --ink:#e8edfb; --muted:#9aa9d0; --line:#2b3a6c;
+  --accent:#86a2ff; --accent-ink:#0d1530; --sun:#ffd23f; --leaf:#4cc38a; --bad:#ff7a9c;
+  --c-meeting:#8da0ff; --c-class:#3fd6a2; --c-focus:#ffaa4d; --c-event:#ff7ab8; --c-personal:#b79bff; --v-giant:#4cc38a; --v-shiny:#4fd0ee; --v-golden:#ffd23f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1530; --surface:#141f40; --surface2:#1e2b57; --ink:#e8edfb; --muted:#9aa9d0; --line:#2b3a6c;
+  --accent:#86a2ff; --accent-ink:#0d1530; --sun:#ffd23f; --leaf:#4cc38a; --bad:#ff7a9c;
+  --c-meeting:#8da0ff; --c-class:#3fd6a2; --c-focus:#ffaa4d; --c-event:#ff7ab8; --c-personal:#b79bff; --v-giant:#4cc38a; --v-shiny:#4fd0ee; --v-golden:#ffd23f; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1160px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:20px;font-weight:700}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+
+.top{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand h1{font-size:30px;font-weight:800;line-height:1}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.stats{display:flex;flex-wrap:wrap;gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-width:120px;display:flex;flex-direction:column}
+.stat .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.stat b{font-family:var(--font-display);font-size:22px;line-height:1.15}
+.stat small{color:var(--muted);font-size:12px}
+.stat.lvl{min-width:200px}
+.bar{height:8px;border-radius:99px;background:var(--surface2);margin:5px 0 3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--sun);border-radius:99px;transition:width .5s}
+
+.grid{display:grid;gap:16px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  grid-template-areas:"next next" "cal day" "cal quests" "garden garden"}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"next" "cal" "day" "quests" "garden"}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+#next{grid-area:next}#cal{min-width:0}[hidden]{display:none!important}.gate{min-height:100vh;display:grid;place-items:center;margin:-20px 0 -48px}.gate[hidden]{display:none}.gate-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;gap:12px}.gate-card .gate-logo{align-self:center}.gate-name{font-size:26px;font-weight:800;text-align:center}.gate-card h2{text-align:center}.gate-card form{display:flex;flex-direction:column;gap:12px}.showpw{display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer}.showpw input{width:auto}.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer}.presets{display:flex;flex-wrap:wrap;gap:8px}.preset{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px 6px 8px;font:inherit;font-size:13.5px;cursor:pointer;min-height:36px}.preset:hover{background:var(--surface2)}.preset .sw{display:inline-flex}.preset .sw i{width:12px;height:12px;border-radius:50%;margin-right:-3px;border:1.5px solid var(--surface)}.crow{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.cpick{display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;position:relative;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:10px;min-height:40px}.cpick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}.cpick .dot{width:26px;height:26px;border-radius:8px;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}.cpick:focus-within{outline:3px solid var(--accent);outline-offset:2px}.area-cal{grid-area:cal;display:flex;flex-direction:column;gap:16px;min-width:0}#paste textarea{min-height:110px}.plist{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}.prow{border:1px solid var(--line,rgba(127,127,127,.3));border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}.prow.off{opacity:.55}.prow-top{display:flex;gap:10px;align-items:center}.prow-top input[type=text]{flex:1;min-width:0}.prow-top input[type=checkbox]{width:20px;height:20px;flex:none}.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.pgrid select,.pgrid input{width:100%;min-width:0}.pgrid .field:last-child{grid-column:span 2}.pdays{font-size:13px;color:var(--muted)}.pflag{font-size:13px;color:var(--bad)}.area-day{grid-area:day;display:flex;flex-direction:column;gap:16px;min-width:0}
+#quests{grid-area:quests}#garden{grid-area:garden}
+
+.btn{font-weight:600;font-size:14px;border-radius:10px;padding:8px 14px;min-height:40px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.btn:hover{background:var(--surface2)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08);background:var(--accent)}
+.btn.small{min-height:34px;padding:5px 11px;font-size:13px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn[disabled]{opacity:.55;cursor:default}
+
+/* Up next */
+.next{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center;justify-content:space-between}
+.next .eyebrow{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.next h2{font-size:clamp(24px,4vw,34px);font-weight:800;margin:2px 0 4px}
+.next .when{font-family:var(--font-display);font-size:clamp(22px,3.4vw,30px);font-weight:700;color:var(--accent)}
+.next .meta{color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.next.alert{border-color:var(--sun);box-shadow:0 0 0 3px var(--sun)}
+.next.alert .eyebrow{color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){.next.alert{animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--sun) 35%,transparent)}}}
+.slipped{margin:10px 0 0;font-size:14px;color:var(--bad)}
+.slipped button{background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer;padding:0;font-weight:600}
+.hint{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+
+/* Calendar */
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.calhead .nav{display:flex;gap:6px}
+.dow,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center;padding:4px 0}
+.day{min-height:64px;border:2px solid transparent;border-radius:10px;background:transparent;padding:5px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;cursor:pointer;text-align:left;min-width:0}
+.day:hover{background:var(--surface2)}
+.day.other{opacity:.45}
+.day.sel{border-color:var(--accent);background:var(--surface2)}
+.day .num{font-weight:600;font-size:14px;min-width:24px;text-align:center;border-radius:99px;padding:0 4px}
+.day.today .num{background:var(--sun);color:#14213d}
+.dots{display:flex;flex-wrap:wrap;gap:3px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.dot.pending{background:transparent;box-shadow:inset 0 0 0 2px var(--c)}
+.dot.miss{background:transparent;box-shadow:inset 0 0 0 2px var(--muted);opacity:.7}
+.more{font-size:10px;color:var(--muted);line-height:9px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:12.5px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.cats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.cats span{display:inline-flex;align-items:center;gap:6px}
+.cats i{width:10px;height:10px;border-radius:3px;background:var(--c)}
+
+/* Agenda */
+.dayhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-bottom:12px}
+.dayhead p{margin:0;color:var(--muted);font-size:13px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:78px minmax(0,1fr);gap:4px 12px;padding:12px;border:1px solid var(--line);border-radius:12px}
+.row .time{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.row .time small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.row b.title{font-family:var(--font-display);font-size:17px;display:block;overflow-wrap:anywhere}
+.row.done b.title{text-decoration:line-through;color:var(--muted)}
+.row.miss{border-style:dashed}
+.row.soon,.row.now{border-color:var(--sun);border-width:2px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--surface2)}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.chip.state{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.row .info{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin-top:3px}
+.row .notes{margin:5px 0 0;color:var(--muted);font-size:13.5px;overflow-wrap:anywhere}
+.row .acts{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.empty{color:var(--muted);margin:0}
+
+/* Form */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.wide{grid-column:1/-1}
+label{font-size:12.5px;font-weight:700;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:60px}
+.err{color:var(--bad);font-size:13.5px;margin:10px 0 0;min-height:1em}
+.formacts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick label.pd{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:40px;cursor:pointer;background:var(--bg)}
+.pick label.pd input{width:auto;margin:0;accent-color:var(--accent)}
+.pick label.pd:has(input:checked){background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pick label.pd:has(input:focus-visible){outline:3px solid var(--sun);outline-offset:2px}
+/* Quests */
+.quest{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.quest:first-of-type{border-top:0}
+.tick{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:var(--accent-ink);font-weight:800;font-size:14px}
+.quest.ok .tick{background:var(--leaf);border-color:var(--leaf)}
+.quest .q{flex:1;min-width:0}
+.quest .q small{display:block;color:var(--muted)}
+.quest .xp{font-weight:700;color:var(--muted);font-size:13px;white-space:nowrap}
+.quest.ok .xp{color:var(--leaf)}
+
+/* Farm */
+.ghead{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+.ghead>div:first-child{min-width:0;flex:1 1 320px}
+.ghead p{margin:4px 0 0}
+.gtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.gtools .inhand{font-size:13.5px;color:var(--muted)}
+.btn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+#farm{display:block;width:100%;border-radius:12px;border:1px solid var(--line);touch-action:manipulation;background:var(--surface2)}
+.gcap{margin:8px 0 0;color:var(--muted);font-size:13.5px;min-height:1.5em}
+.gpanels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:24px;margin-top:18px}
+.gpanels>div{min-width:0}
+.gpanels h3{font-size:18px;font-weight:700;margin:0 0 4px}
+.shopsub{margin:14px 0 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px}
+.item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;min-width:0}
+.item:hover{background:var(--surface2)}
+.item.sel{border:2px solid var(--accent);background:var(--surface2);padding:9px}
+.item b{font-family:var(--font-display);font-size:15px;margin-top:4px}
+.item small{color:var(--muted);font-size:12px;line-height:1.35}
+.item .cost{font-weight:700;font-size:13.5px}
+.item.poor .cost{color:var(--bad)}
+.vchip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;border:1px solid var(--line);background:var(--surface2)}
+.vchip i{width:8px;height:8px;border-radius:50%;background:var(--v)}
+.vchip.giant{--v:var(--v-giant)}.vchip.shiny{--v:var(--v-shiny)}.vchip.golden{--v:var(--v-golden)}
+.barn{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.bi{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 10px;padding:10px;border:1px solid var(--line);border-radius:12px;align-items:center}
+.bi b{font-family:var(--font-display);font-size:15px;overflow-wrap:anywhere}
+.bi .vs{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.bi .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.bi .acts{grid-column:2;display:flex;flex-wrap:wrap;gap:6px}
+.bi.rare{border:2px solid var(--v-golden);padding:9px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.banner{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface2);margin-bottom:10px;font-weight:600;font-size:14px}
+.banner span{min-width:0;flex:1 1 260px}
+.banner.bad{border-color:var(--bad)}.banner.good{border-color:var(--leaf)}.banner.special{border-color:var(--v-golden)}.banner.mixed{border-color:var(--sun)}
+.vchip.bad{border-color:var(--bad)}
+.wlog{margin-top:8px;font-size:13px;color:var(--muted)}
+.wlog summary{cursor:pointer;font-weight:600}
+.wlog ul{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.guide{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.guide summary{cursor:pointer;font-weight:700}
+.gscroll{overflow-x:auto;margin-top:8px}
+.gtable{width:100%;border-collapse:collapse;font-size:13.5px;min-width:420px}
+.gtable th,.gtable td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.gtable th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.item.owned{opacity:.7;cursor:default}
+
+/* Toasts */
+#toasts{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;z-index:20}
+.toast{pointer-events:auto;max-width:460px;width:100%;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.remind{background:var(--sun);color:#14213d;font-weight:600}
+.toast button{background:transparent;border:1px solid currentColor;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:600;flex:none}
+
+.foot{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;color:var(--muted);font-size:13px}
+.foot .btn{min-height:32px;font-size:12.5px;padding:4px 10px}
+</style>
+
+<main class="gate" id="gate" hidden aria-label="Log in">
+  <div class="gate-card">
+    <svg class="gate-logo" viewBox="0 0 40 40" width="64" height="64" aria-hidden="true"><g style="fill:var(--accent)"><circle cx="20" cy="9" r="7"/><circle cx="30.5" cy="16.6" r="7"/><circle cx="26.5" cy="29" r="7"/><circle cx="13.5" cy="29" r="7"/><circle cx="9.5" cy="16.6" r="7"/></g><circle cx="20" cy="20" r="5" style="fill:var(--sun)"/></svg>
+    <h1 class="gate-name">Forget-Me-Not</h1>
+    <h2 id="g-title">Welcome back</h2>
+    <p class="hint" id="g-sub" style="margin:4px 0 14px"></p>
+    <form id="gate-form" novalidate>
+      <div class="field" id="g-userf" hidden><label for="g-user">Username</label><input id="g-user" autocomplete="username" maxlength="24"></div>
+      <div class="field"><label for="g-email">Email</label><input id="g-email" type="email" autocomplete="email" inputmode="email"></div>
+      <div class="field"><label for="g-pw">Password</label><input id="g-pw" type="password" autocomplete="current-password"></div>
+      <div class="field" id="g-pw2f" hidden><label for="g-pw2">Confirm password</label><input id="g-pw2" type="password" autocomplete="new-password"></div>
+      <label class="showpw"><input type="checkbox" id="g-show"> Show passwords</label>
+      <p class="err" id="g-err" role="alert"></p>
+      <button class="btn pri" type="submit" id="g-submit" style="width:100%">Log in</button>
+    </form>
+    <p class="hint" id="g-switch" style="text-align:center"></p>
+    <p class="hint" style="text-align:center">Your account and calendar are stored securely with Firebase, so they follow you to any device.</p>
+  </div>
+</main>
+<div class="wrap" hidden>
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 64 64" width="52" height="52" role="img" aria-label="Forget-Me-Not logo">
+        <defs><linearGradient id="lg-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dfe8ff"/><stop offset="1" stop-color="#b9cbff"/></linearGradient>
+        <radialGradient id="lg-p" cx=".5" cy=".25" r=".9"><stop offset="0" stop-color="#8fb0ff"/><stop offset="1" stop-color="#3a60d8"/></radialGradient></defs>
+        <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#lg-bg)"/>
+        <path d="M32 62 C31 50 33 44 32 36" stroke="#2f9a6b" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+        <path d="M32 52 C40 52 45 47 46 41 C38 41 33 45 32 52Z" fill="#3fb57f"/>
+        <path d="M32 55 C25 55 20 51 19 46 C27 46 31 49 32 55Z" fill="#2f9a6b"/>
+        <g fill="url(#lg-p)" stroke="#2b4cb8" stroke-width=".8">
+          <ellipse cx="32" cy="14" rx="7.5" ry="9"/>
+          <ellipse cx="32" cy="14" rx="7.5" ry="9" transform="rotate(72 32 26)"/>
+          <ellipse cx="32" cy="14" rx="7.5" ry="9" transform="rotate(144 32 26)"/>
+          <ellipse cx="32" cy="14" rx="7.5" ry="9" transform="rotate(216 32 26)"/>
+          <ellipse cx="32" cy="14" rx="7.5" ry="9" transform="rotate(288 32 26)"/>
+        </g>
+        <circle cx="32" cy="26" r="6.2" fill="#fff"/><circle cx="32" cy="26" r="4.4" fill="#f2b705"/>
+        <circle cx="30.4" cy="24.4" r="1.2" fill="#fff6c9"/>
+      </svg>
+      <div>
+        <h1>Forget-Me-Not</h1>
+        <p>Add what is coming up. Get nudged. Earn coins for your farm.</p>
+      </div>
+    </div>
+    <div class="stats" id="hdr-stats" aria-live="polite"></div>
+  </header>
+
+  <main class="grid">
+    <section class="card" id="next" aria-label="Up next"></section>
+
+    <div class="area-cal">
+      <section class="card" id="cal" aria-label="Calendar"></section>
+      <section class="card" id="colors" aria-label="Event colors"></section>
+      <section class="card" id="paste" aria-label="Paste to add events">
+        <h2>Paste to add</h2>
+        <p class="hint" style="margin:4px 0 10px">Paste a schedule, an email or a list of notes. I will pick out the name, the time and the info, and you can check them before they are added.</p>
+        <div class="field"><label for="p-text">Paste your text here</label><textarea id="p-text" rows="5" maxlength="6000" placeholder="Biology lecture, Mon/Wed/Fri 9:00-10:15 AM, Room 204&#10;Dentist Nov 3 at 2:30pm (bring insurance card)"></textarea></div>
+        <div class="formacts"><button type="button" class="btn pri" data-a="pparse">Find events</button><button type="button" class="btn" data-a="pexample">Try an example</button></div>
+        <div id="p-out" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div class="area-day">
+      <section class="card" id="form-card" hidden aria-label="Event form">
+        <h2 id="form-title">Add an event</h2>
+        <form id="form" novalidate style="margin-top:12px">
+          <div class="fgrid">
+            <div class="field wide"><label for="f-title">What is it?</label><input id="f-title" maxlength="80" placeholder="Biology lecture, call the plumber, finish report"></div>
+            <div class="field"><label for="f-date">Date</label><input id="f-date" type="date"></div>
+            <div class="field"><label for="f-start">Starts</label><input id="f-start" type="time"></div>
+            <div class="field"><label for="f-end">Ends</label><input id="f-end" type="time"></div>
+            <div class="field"><label for="f-cat">Type</label><select id="f-cat"></select></div>
+            <div class="field"><label for="f-lead">Remind me</label><select id="f-lead"></select></div>
+            <div class="field"><label for="f-repeat">Repeats</label><select id="f-repeat"></select></div>
+            <div class="field wide" id="days-field" hidden><label id="days-label">Which days?</label><div class="pick" id="f-days" role="group" aria-labelledby="days-label"></div></div>
+            <div class="field wide"><label for="f-notes">Notes (optional)</label><textarea id="f-notes" maxlength="300" placeholder="Room number, what to bring, link to the meeting"></textarea></div>
+          </div>
+          <p class="err" id="f-err" role="alert"></p>
+          <div class="formacts">
+            <button class="btn pri" type="submit">Save event</button>
+            <button class="btn" type="button" data-a="closeform">Cancel</button>
+          </div>
+        </form>
+      </section>
+      <section class="card" id="day" aria-label="Selected day"></section>
+    </div>
+
+    <section class="card" id="quests" aria-label="Daily quests"></section>
+
+    <section class="card" id="garden" aria-label="Your farm">
+      <div class="ghead">
+        <div><h2>Your farm</h2><p class="hint" id="g-odds"></p></div>
+        <div class="stat"><span class="k">Coins</span><b id="g-coins">0</b><small id="g-coins-sub"></small></div>
+      </div>
+      <div class="gtools" id="g-tools"></div>
+      <div class="banner" id="g-banner" hidden><span id="b-text"></span><button type="button" class="btn small pri" id="b-btn" data-a="harvestall" data-fid="b-harvest" hidden></button></div>
+      <canvas id="farm" role="img" aria-label="Your farm plot"></canvas>
+      <p class="gcap" id="g-cap"></p>
+      <details class="wlog"><summary>Weather log</summary><ul id="g-log"></ul></details>
+      <div class="gpanels"><div id="g-shop"></div><div id="g-barn"></div></div>
+      <details class="guide"><summary>Mutation guide</summary><div class="gscroll" id="g-guide"></div></details>
+    </section>
+  </main>
+
+  <footer class="foot" id="foot"></footer>
+</div>
+<div id="toasts" role="status" aria-live="polite"></div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,updateProfile,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+try{
+  const firebaseConfig={
+    apiKey:"AIzaSyBEgvxCHN108XRUONeLai-Vq-l9oRfys0Q",
+    authDomain:"pixel-outlaws.firebaseapp.com",
+    projectId:"pixel-outlaws",
+    storageBucket:"pixel-outlaws.firebasestorage.app",
+    messagingSenderId:"536793461722",
+    appId:"1:536793461722:web:7c785f6e6b01fb442a06e3",
+    measurementId:"G-D8LC73HLVY"
+  };
+  const app=initializeApp(firebaseConfig);
+  window.FB={auth:getAuth(app),db:getFirestore(app),onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,updateProfile,sendPasswordResetEmail,doc,getDoc,setDoc,serverTimestamp};
+}catch(e){window.FBfail=true;console.error(e)}
+</script>
+<script>
+(function(){
+'use strict';
+var LSKEY='forget-me-not.v1';
+var CATS={meeting:{n:'Meeting',v:'--c-meeting'},class:{n:'Class',v:'--c-class'},focus:{n:'Work on',v:'--c-focus'},event:{n:'Event',v:'--c-event'},personal:{n:'Personal',v:'--c-personal'}};
+var LEVELS=['Seed','Sprout','Seedling','Bud','Bloom','Bouquet','Meadow','Garden','Greenhouse','Grove','Orchard','Forest'];
+var LEADS=[[0,'At the start time'],[5,'5 minutes before'],[10,'10 minutes before'],[15,'15 minutes before'],[30,'30 minutes before'],[60,'1 hour before'],[120,'2 hours before'],[1440,'1 day before']];
+var REPEATS=[['none','Does not repeat'],['daily','Every day'],['weekdays','Every weekday (Mon to Fri)'],['weekly','Every week'],['custom','Repeat every chosen day']];
+var PICKDAYS=[[1,'Mon'],[2,'Tue'],[3,'Wed'],[4,'Thu'],[5,'Fri']];
+var GRACE=15*60000;
+var HR=3600000,DAY=24*HR;
+var START_COINS=60,C_ONTIME=25,C_RESCUE=8,MAXP=60,MAXPROPS=8,STALL=1.15,SPRINK=0.25,SCARE_BOOST=1.5;
+var VAR={
+  giant:{n:'Giant',p:0.20,m:2,col:'#2f9a6b',how:'20% chance'},
+  shiny:{n:'Shiny',p:0.15,m:3,col:'#1698b8',how:'15% chance'},
+  golden:{n:'Golden',p:0.10,m:5,col:'#c99a00',how:'10% chance'},
+  glowing:{n:'Glowing',p:0.06,m:4,col:'#2fbf86',how:'6% chance'},
+  crystal:{n:'Crystal',p:0.03,m:7,col:'#4fb0d8',how:'3% chance'},
+  charged:{n:'Charged',p:0,m:6,col:'#2f7fe0',how:'Struck by lightning in a thunderstorm'},
+  frosted:{n:'Frosted',p:0,m:5,col:'#7fb8e8',how:'Frozen just right in a cold snap'},
+  rainbow:{n:'Rainbow',p:0,m:10,col:'#d44bb0',how:'Chosen by a rainbow'},
+  starlit:{n:'Starlit',p:0,m:8,col:'#6a5acd',how:'Touched by a meteor shower'},
+  wilted:{n:'Wilted',p:0.07,m:0.5,bad:1,col:'#a08a50',how:'7% chance'},
+  rotten:{n:'Rotten',p:0.04,m:0.2,bad:1,col:'#6b7a2a',how:'4% chance'},
+  bruised:{n:'Bruised',p:0,m:0.5,bad:1,col:'#7a4a8a',how:'Hit by hail'},
+  buggy:{n:'Buggy',p:0,m:0.4,bad:1,col:'#555555',how:'Chewed by a locust swarm'}
+};
+var VORDER=['giant','shiny','golden','glowing','crystal','charged','frosted','rainbow','starlit','wilted','rotten','bruised','buggy'];
+var VNAT_GOOD=['giant','shiny','golden','glowing','crystal'],VNAT_BAD=['wilted','rotten'];
+var VNAME=['rainbow','starlit','charged','frosted','crystal','glowing','golden','shiny','giant','bruised','buggy','wilted','rotten'];
+var VRARE=['golden','rainbow','starlit','charged','frosted','crystal'];
+var EV_MIN=2*HR,EV_MAX=5*HR,WARM_MIN=8*60000,WARM_MAX=25*60000,BOOM=1.25;
+var EVENTS={
+  rain:{n:'Gentle rain',kind:'good',w:18,warn:0,dur:45000,tip:''},
+  boom:{n:'Market boom',kind:'good',w:10,warn:0,dur:6000,tip:''},
+  rainbow:{n:'Rainbow',kind:'special',w:6,warn:0,dur:25000,tip:''},
+  meteor:{n:'Meteor shower',kind:'special',w:5,warn:0,dur:12000,tip:''},
+  thunder:{n:'Thunderstorm',kind:'mixed',w:10,warn:30000,dur:10000,tip:'Lightning can supercharge a plant or burn it up. Plants under a greenhouse only get the good part.'},
+  tornado:{n:'Tornado',kind:'bad',w:9,warn:60000,dur:8000,tip:'Harvest what is ready. Plants under a greenhouse are safe.'},
+  flood:{n:'Flood',kind:'bad',w:9,warn:45000,dur:10000,tip:'Crops may wash away. Trees are safe. A greenhouse protects crops too.'},
+  hail:{n:'Hailstorm',kind:'bad',w:10,warn:30000,dur:9000,tip:'Hail bruises plants and lowers their value. A greenhouse protects them.'},
+  locusts:{n:'Locust swarm',kind:'bad',w:8,warn:45000,dur:10000,tip:'Locusts eat crops and leave plants Buggy. A greenhouse protects them.'},
+  cold:{n:'Cold snap',kind:'mixed',w:10,warn:45000,dur:14000,tip:'Frost kills some crops, but survivors can turn Frosted and sell for much more.'}
+};
+var CROPS={
+  wheat:{n:'Wheat',cost:14,sell:27,leaf:'#8fae3a',body:'#e2b94b',acc:'#f3d57a',hw:15,h:42},
+  onion:{n:'Onion',cost:18,sell:33,leaf:'#5aa05a',body:'#c1568f',acc:'#e7a8cc',hw:13,h:30},
+  potato:{n:'Potato',cost:20,sell:38,leaf:'#3f9b4f',body:'#b98a54',acc:'#e6dff3',hw:16,h:34},
+  turnip:{n:'Turnip',cost:24,sell:46,leaf:'#4ca455',body:'#efe6f5',acc:'#8e5fb0',hw:14,h:32},
+  carrot:{n:'Carrot',cost:28,sell:52,leaf:'#4cb04f',body:'#f08a24',acc:'#ffb15c',hw:14,h:32},
+  lettuce:{n:'Lettuce',cost:34,sell:62,leaf:'#5fbf63',body:'#b4e8a0',acc:'#d9f5c2',hw:17,h:22},
+  tomato:{n:'Tomato',cost:38,sell:70,leaf:'#3f9b4f',body:'#e0412f',acc:'#f08a7a',hw:16,h:38},
+  corn:{n:'Corn',cost:44,sell:82,leaf:'#5ca34a',body:'#f2cf4a',acc:'#b9d36a',hw:15,h:54},
+  strawberry:{n:'Strawberry',cost:52,sell:96,leaf:'#3f9b4f',body:'#e03a4a',acc:'#ffffff',hw:16,h:24},
+  pumpkin:{n:'Pumpkin',cost:70,sell:130,leaf:'#4a9a48',body:'#ee8a2a',acc:'#7a5a2a',hw:20,h:30}
+};
+var TREES={
+  apple:{n:'Apple tree',fn:'Apple',cost:220,sell:22,every:6*HR,cap:5,leaf:'#43a04f',leafD:'#2f7d3c',fruit:'#d9342b',trunk:'#7a4e2a'},
+  lemon:{n:'Lemon tree',fn:'Lemon',cost:260,sell:26,every:6*HR,cap:5,leaf:'#52ad54',leafD:'#3b8a41',fruit:'#f4e03a',trunk:'#7a4e2a',shape:'oval'},
+  orange:{n:'Orange tree',fn:'Orange',cost:340,sell:32,every:6*HR,cap:5,leaf:'#2f9447',leafD:'#217036',fruit:'#f28c1a',trunk:'#6e4626',slots:'alt'},
+  peach:{n:'Peach tree',fn:'Peach',cost:400,sell:38,every:6*HR,cap:5,leaf:'#6dbb5e',leafD:'#4e9a46',fruit:'#f7a07c',trunk:'#7a4e2a'},
+  banana:{n:'Banana tree',fn:'Banana',cost:480,sell:44,every:6*HR,cap:5,leaf:'#62c066',leafD:'#43a14c',fruit:'#f4d03a',trunk:'#8aa862'},
+  mango:{n:'Mango tree',fn:'Mango',cost:600,sell:56,every:6*HR,cap:5,leaf:'#2d7a45',leafD:'#1f5c33',fruit:'#f0a030',trunk:'#6a4426',shape:'oval',slots:'alt'}
+};
+var CROP_IDS=['wheat','onion','potato','turnip','carrot','lettuce','tomato','corn','strawberry','pumpkin'],TREE_IDS=['apple','lemon','orange','peach','banana','mango'];
+var FERTS={
+  quick:{n:'Quick Compost',cost:30,hrs:6,d:'Saves 6 hours of growing.'},
+  rapid:{n:'Rapid Mix',cost:55,hrs:12,d:'Saves 12 hours of growing.'},
+  lucky:{n:'Lucky Fertilizer',cost:70,boost:2,d:'A bonus roll for giant, shiny and golden at double odds.'},
+  miracle:{n:'Miracle Mix',cost:200,hrs:24,boost:3,d:'Ready right now, plus a bonus roll at triple odds.'}
+};
+var FERT_IDS=['quick','rapid','lucky','miracle'];
+var PROPS={
+  greenhouse:{n:'Greenhouse',cost:350,d:'Plants in its area are safe from tornadoes, floods, hail, locusts and frost.'},
+  sprinkler:{n:'Sprinkler',cost:150,d:'Plants in its area grow 25% faster, even while you are away.'},
+  scarecrow:{n:'Scarecrow',cost:180,d:'Crops planted and fruit grown in its area get 1.5x odds of giant, shiny and golden.'}
+};
+var UPS={
+  can:{n:'Watering can',cost:80,d:'Tap a plant to save an hour, once per plant every 4 hours. Free to use.'},
+  stall:{n:'Market stall',cost:400,d:'Everything you sell is worth 15% more.'}
+};
+
+function pad(n){return String(n).padStart(2,'0')}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function fromYmd(s){var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x}
+function toMin(t){var p=t.split(':').map(Number);return p[0]*60+p[1]}
+function atMs(ds,t){var p=ds.split('-').map(Number),q=t.split(':').map(Number);return new Date(p[0],p[1]-1,p[2],q[0],q[1]).getTime()}
+function fmtTime(t){var p=t.split(':').map(Number),h=p[0],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+pad(p[1])+' '+ap}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function uid(){return 'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function dur(ms){
+  var m=Math.max(0,Math.round(ms/60000));
+  if(m<1)return 'under a minute';
+  if(m<60)return m+' min';
+  var h=Math.floor(m/60),r=m%60;
+  if(h<24)return h+' h'+(r?' '+r+' min':'');
+  var d=Math.floor(h/24);return d+(d===1?' day':' days');
+}
+function dayLabel(ds){
+  var t=ymd(new Date());
+  if(ds===t)return 'Today';
+  if(ds===ymd(addDays(new Date(),1)))return 'Tomorrow';
+  return fromYmd(ds).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+}
+function leadLabel(n){for(var i=0;i<LEADS.length;i++)if(LEADS[i][0]===n)return LEADS[i][1];return n+' minutes before'}
+function catVar(c){return 'var('+(CATS[c]?CATS[c].v:'--accent')+')'}
+
+/* ---------- state ---------- */
+function blank(){return{v:1,events:[],done:{},bonus:{},seeded:false,sound:false,farm:{plants:[],inv:{},sales:0,spent:0}}}
+function loadLocal(){try{var r=localStorage.getItem(LSKEY);if(r)return Object.assign(blank(),JSON.parse(r))}catch(e){}return null}
+function seed(s){
+  var n=new Date();
+  function round(d){d.setMinutes(Math.ceil(d.getMinutes()/5)*5,0,0);return d}
+  function mk(title,cat,sd,mins,lead,repeat){
+    var ed=new Date(sd.getTime()+mins*60000),ds=ymd(sd);
+    var et=ymd(ed)!==ds?'23:59':pad(ed.getHours())+':'+pad(ed.getMinutes());
+    return{id:uid(),title:title,date:ds,start:pad(sd.getHours())+':'+pad(sd.getMinutes()),end:et,cat:cat,lead:lead,repeat:repeat,notes:'',sample:true,created:ymd(n)};
+  }
+  var c=round(new Date(n.getTime()+35*60000));
+  s.events.push(mk('Chemistry class','class',c,75,15,'weekly'));
+  var e=round(new Date(c.getTime()+120*60000));
+  s.events.push(mk('Work on essay outline','focus',e,60,10,'none'));
+  var t=addDays(n,1);t.setHours(9,30,0,0);s.events.push(mk('Team stand-up','meeting',t,15,10,'weekdays'));
+  var d2=addDays(n,2);d2.setHours(8,30,0,0);s.events.push(mk('Dentist appointment','personal',d2,45,120,'none'));
+  var d3=addDays(n,3);d3.setHours(19,0,0,0);s.events.push(mk('Birthday dinner','event',d3,120,60,'none'));
+  s.seeded=true;
+}
+var S=loadLocal();
+if(!S){S=blank();seed(S)}
+normFarm();
+var ref=null,saveTimer=null,chain=Promise.resolve(),syncMsg='Saved on this device';
+var today0=new Date();
+var view={y:today0.getFullYear(),m:today0.getMonth()};
+var sel=ymd(today0),editId=null,confirmDel=null,fired={};
+
+function save(){
+  try{localStorage.setItem(LSKEY,JSON.stringify(S))}catch(e){}
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(flush,400);
+}
+function setSync(m){syncMsg=m;renderFoot()}
+
+/* ---------- events and status ---------- */
+function occursOn(e,ds){
+  if(ds<e.date)return false;
+  if(e.repeat==='none')return ds===e.date;
+  var d=fromYmd(ds),b=fromYmd(e.date);
+  if(e.repeat==='daily')return true;
+  if(e.repeat==='weekdays'){var w=d.getDay();return w>0&&w<6}
+  if(e.repeat==='weekly')return d.getDay()===b.getDay();
+  if(e.repeat==='custom')return (e.days||[]).indexOf(d.getDay())>=0;
+  return false;
+}
+function mkOcc(e,ds){return{e:e,ds:ds,key:e.id+'@'+ds,startMs:atMs(ds,e.start),endMs:atMs(ds,e.end)}}
+function occs(ds){
+  return S.events.filter(function(e){return occursOn(e,ds)}).map(function(e){return mkOcc(e,ds)}).sort(function(a,b){return a.startMs-b.startMs});
+}
+function occByKey(k){
+  var i=k.lastIndexOf('@'),id=k.slice(0,i),ds=k.slice(i+1);
+  var e=S.events.find(function(x){return x.id===id});
+  return e&&occursOn(e,ds)?mkOcc(e,ds):null;
+}
+function statusOf(o,t){
+  if(S.done[o.key])return 'done';
+  if(t>o.endMs+GRACE)return 'miss';
+  if(t>=o.startMs)return 'now';
+  if(t>=o.startMs-o.e.lead*60000)return 'soon';
+  return 'later';
+}
+function dayState(ds,t){
+  var list=occs(ds);if(!list.length)return 'none';
+  var allDone=true,missed=false;
+  list.forEach(function(o){var s=statusOf(o,t);if(s!=='done')allDone=false;if(s==='miss')missed=true});
+  return allDone?'clear':(missed?'miss':'pending');
+}
+function earliest(){var m=null;S.events.forEach(function(e){if(!m||e.date<m)m=e.date});return m}
+function streak(){
+  var t=Date.now(),first=earliest(),n=0;
+  if(!first)return 0;
+  for(var i=0;i<120;i++){
+    var ds=ymd(addDays(new Date(t),-i));
+    if(ds<first)break;
+    var s=dayState(ds,t);
+    if(s==='none')continue;
+    if(s==='clear'){n++;continue}
+    if(s==='pending'&&i===0)continue;
+    break;
+  }
+  return n;
+}
+function totalXP(){
+  var x=0,k;
+  for(k in S.done)x+=S.done[k].pts||0;
+  for(k in S.bonus)x+=S.bonus[k]||0;
+  return x;
+}
+function levelOf(xp){return Math.floor(Math.sqrt(xp/40))+1}
+function missedList(days){
+  var t=Date.now(),out=[];
+  for(var i=0;i<=days;i++){
+    var ds=ymd(addDays(new Date(t),-i));
+    occs(ds).forEach(function(o){if(statusOf(o,t)==='miss')out.push(o)});
+  }
+  return out;
+}
+function nextOcc(){
+  var t=Date.now();
+  for(var i=0;i<30;i++){
+    var ds=ymd(addDays(new Date(t),i)),list=occs(ds);
+    for(var j=0;j<list.length;j++){
+      var st=statusOf(list[j],t);
+      if(st==='now'||st==='soon'||st==='later')return{o:list[j],st:st};
+    }
+  }
+  return null;
+}
+
+/* ---------- game actions ---------- */
+function markDone(k){
+  var o=occByKey(k);if(!o)return;
+  var t=Date.now(),st=statusOf(o,t);
+  if(st==='done'||st==='later')return;
+  var before=levelOf(totalXP());
+  var pts=st==='miss'?C_RESCUE:C_ONTIME;
+  S.done[k]={ts:t,pts:pts,cat:o.e.cat,title:o.e.title,late:st==='miss'};
+  toast(st==='miss'?'Rescued late (+'+C_RESCUE+' coins).':'Done on time (+'+C_ONTIME+' coins).',{});
+  checkQuests();
+  var after=levelOf(totalXP());
+  if(after>before)toast('Level '+after+': '+LEVELS[Math.min(after-1,LEVELS.length-1)]+'. Nice work.',{});
+  chime();save();renderAll();
+}
+function undo(k){delete S.done[k];save();renderAll()}
+var QUESTS=[
+  {id:'q1',t:'Plan ahead',d:'Add an event for tomorrow.',c:20,p:function(c){return[Math.min(1,c.addedTomorrow),1]}},
+  {id:'q4',t:'Fresh start',d:'Add a new event today.',c:15,p:function(c){return[Math.min(1,c.added),1]}},
+  {id:'q2',t:'Two down',d:'Finish 2 events today.',c:20,p:function(c){return[Math.min(2,c.todayDone.length),2]}},
+  {id:'q5',t:'Triple play',d:'Finish 3 events today.',c:35,p:function(c){return[Math.min(3,c.todayDone.length),3]}},
+  {id:'q6',t:'Five alive',d:'Finish 5 events today.',c:70,p:function(c){return[Math.min(5,c.todayDone.length),5]}},
+  {id:'q3',t:'Right on time',d:'Finish an event while its reminder is showing.',c:20,p:function(c){return[c.todayDone.some(function(v){return v.pts>=15})?1:0,1]}},
+  {id:'q7',t:'Clean sweep',d:'Finish every event planned today (at least 2).',c:50,p:function(c){return[c.occDone,Math.max(2,c.occN)]}},
+  {id:'q8',t:'Mix it up',d:'Finish events of 2 different types today.',c:25,p:function(c){return[Math.min(2,c.cats),2]}},
+  {id:'q9',t:'Rescuer',d:'Finish a slipped event late.',c:20,p:function(c){return[Math.min(1,c.late),1]}},
+  {id:'q10',t:'Planter',d:'Plant 2 seeds or saplings on the farm.',c:15,p:function(c){return[Math.min(2,c.pl),2]}},
+  {id:'q11',t:'Green thumb',d:'Harvest 3 items.',c:25,p:function(c){return[Math.min(3,c.hv),3]}},
+  {id:'q12',t:'Market day',d:'Sell produce worth 100 coins.',c:30,p:function(c){return[Math.min(100,c.sold),100]}},
+  {id:'q13',t:'On a roll',d:'Keep a 3 day streak.',c:40,p:function(c){return[Math.min(3,c.streak),3]}},
+  {id:'q14',t:'Lucky find',d:'Harvest something worth double or more.',c:30,p:function(c){return[Math.min(1,c.lk),1]}}
+];
+function qctx(){
+  var today=ymd(new Date()),tomorrow=ymd(addDays(new Date(),1)),all=Object.keys(S.done).map(function(k){return S.done[k]});
+  var todayDone=all.filter(function(v){return ymd(new Date(v.ts))===today});
+  var oc=occs(today),cats={},d=dayStat();
+  todayDone.forEach(function(v){cats[v.cat]=1});
+  var mine=S.events.filter(function(e){return !e.sample&&e.created===today});
+  return{today:today,todayDone:todayDone,occN:oc.length,occDone:oc.filter(function(o){return S.done[o.key]}).length,
+    cats:Object.keys(cats).length,added:mine.length,addedTomorrow:mine.filter(function(e){return e.date===tomorrow}).length,
+    late:todayDone.filter(function(v){return v.late||(v.pts&&v.pts<15)}).length,pl:d.pl,hv:d.hv,sold:d.sold,lk:d.lk||0,streak:streak()};
+}
+function checkQuests(){
+  var c=qctx(),won=false;
+  QUESTS.forEach(function(q){
+    var key=c.today+':'+q.id,pr=q.p(c);
+    if(!S.bonus[key]&&pr[0]>=pr[1]){S.bonus[key]=q.c;won=true;toast('Quest complete: '+q.t+' (+'+q.c+' coins).',{})}
+  });
+  if(won)save();
+}
+
+/* ---------- toasts, sound, reminders ---------- */
+var ac=null;
+function chime(){
+  if(!S.sound)return;
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    [660,880].forEach(function(f,i){
+      var o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.connect(g);g.connect(ac.destination);
+      var t=ac.currentTime+i*0.16;
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.15,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
+      o.start(t);o.stop(t+0.32);
+    });
+  }catch(e){}
+}
+function toast(msg,opt){
+  var box=document.getElementById('toasts');
+  var el=document.createElement('div');
+  el.className='toast'+(opt.remind?' remind':'');
+  var span=document.createElement('span');span.textContent=msg;
+  var b=document.createElement('button');b.type='button';b.textContent=opt.remind?'Got it':'Close';
+  b.addEventListener('click',function(){el.remove()});
+  el.appendChild(span);el.appendChild(b);box.appendChild(el);
+  while(box.children.length>4)box.removeChild(box.firstChild);
+  if(!opt.remind)setTimeout(function(){el.remove()},4500);
+}
+function tick(){
+  if(!authed)return;
+  var t=Date.now(),today=ymd(new Date(t));
+  occs(today).forEach(function(o){
+    if(S.done[o.key])return;
+    var st=statusOf(o,t);
+    if(st==='soon'&&!fired[o.key+'s']){fired[o.key+'s']=1;toast(o.e.title+' starts in '+dur(o.startMs-t)+'.',{remind:true});chime()}
+    if(st==='now'&&!fired[o.key+'n']){fired[o.key+'n']=1;toast(o.e.title+' is starting now.',{remind:true});chime()}
+  });
+  var nx=nextOcc();
+  document.title=(nx&&(nx.st==='soon'||nx.st==='now'))?'('+(nx.st==='now'?'now':dur(nx.o.startMs-t))+') '+nx.o.e.title+' | Forget-Me-Not':'Forget-Me-Not';
+  if(farmTick(t))save();
+  renderHdr();renderNext();renderCal();renderDay();renderTools();renderCoins();updateCaption();
+}
+
+/* ---------- rendering ---------- */
+function $(s){return document.querySelector(s)}
+function renderHdr(){
+  var xp=totalXP(),L=levelOf(xp),lo=40*(L-1)*(L-1),hi=40*L*L,pct=Math.round((xp-lo)/(hi-lo)*100),st=streak();
+  $('#hdr-stats').innerHTML=
+    '<div class="stat lvl"><span class="k">Level '+L+'</span><b>'+LEVELS[Math.min(L-1,LEVELS.length-1)]+'</b>'+
+    '<div class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100" aria-label="Progress to next level"><i style="width:'+pct+'%"></i></div>'+
+    '<small>'+(xp-lo)+' of '+(hi-lo)+' coins from events to level '+(L+1)+'</small></div>'+
+    '<div class="stat"><span class="k">Streak</span><b>'+st+'</b><small>'+(st===1?'day':'days')+' with everything done</small></div>'+
+    '<div class="stat"><span class="k">Coins</span><b>'+coins()+'</b><small>spend them on the farm</small></div>';
+}
+function catChip(c){return '<span class="chip" style="--c:'+catVar(c)+'"><i></i>'+esc(CATS[c]?CATS[c].n:'Event')+'</span>'}
+function renderNext(){
+  var t=Date.now(),nx=nextOcc(),el=$('#next'),h='';
+  var slipped=missedList(0).length;
+  if(!nx){
+    el.className='card next';
+    h='<div><div class="eyebrow">Up next</div><h2>Nothing coming up</h2><div class="meta">Add a class, a meeting or a block of time to work on something. Forget-Me-Not will remind you.</div></div><button class="btn pri" data-a="add">Add an event</button>';
+  }else{
+    var o=nx.o,st=nx.st,alert=(st==='soon'||st==='now');
+    el.className='card next'+(alert?' alert':'');
+    var eyebrow=st==='now'?'Happening now':(st==='soon'?'Heads up':'Up next');
+    var when=st==='now'?'Ends in '+dur(Math.max(0,o.endMs-t)):'Starts in '+dur(o.startMs-t);
+    h='<div style="min-width:0"><div class="eyebrow">'+eyebrow+'</div><h2>'+esc(o.e.title)+'</h2>'+
+      '<div class="when">'+when+'</div>'+
+      '<div class="meta"><span>'+dayLabel(o.ds)+', '+fmtTime(o.e.start)+' to '+fmtTime(o.e.end)+'</span>'+catChip(o.e.cat)+'</div></div>';
+    if(alert)h+='<button class="btn pri" data-a="done" data-k="'+esc(o.key)+'">Mark done, +'+C_ONTIME+' coins</button>';
+    else h+='<button class="btn" data-a="goto" data-d="'+o.ds+'">See the day</button>';
+  }
+  if(slipped)h+='<p class="slipped" style="flex-basis:100%">'+slipped+(slipped===1?' thing':' things')+' slipped today. <button data-a="goto" data-d="'+ymd(new Date())+'">Rescue '+(slipped===1?'it':'them')+' for a few coins</button></p>';
+  h+='<p class="hint" style="flex-basis:100%">Reminders appear here while this page is open, so keep it in a pinned tab.</p>';
+  el.innerHTML=h;
+}
+function renderCal(){
+  var t=Date.now(),first=new Date(view.y,view.m,1),lead=first.getDay(),dim=new Date(view.y,view.m+1,0).getDate(),tdy=ymd(new Date());
+  var label=first.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  var h='<div class="calhead"><h2>'+label+'</h2><div class="nav"><button class="btn small" data-a="prev" aria-label="Previous month">Prev</button><button class="btn small" data-a="today">Today</button><button class="btn small" data-a="next" aria-label="Next month">Next</button></div></div>';
+  h+='<div class="dow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div class="days">';
+  for(var i=0;i<lead;i++)h+='<span></span>';
+  for(var d=1;d<=dim;d++){
+    var ds=view.y+'-'+pad(view.m+1)+'-'+pad(d),list=occs(ds),dots='';
+    list.slice(0,6).forEach(function(o){
+      var st=statusOf(o,t),cls=st==='done'?'':(st==='miss'?' miss':' pending');
+      dots+='<i class="dot'+cls+'" style="--c:'+catVar(o.e.cat)+'"></i>';
+    });
+    if(list.length>6)dots+='<span class="more">+'+(list.length-6)+'</span>';
+    var full=fromYmd(ds).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+    h+='<button class="day'+(ds===sel?' sel':'')+(ds===tdy?' today':'')+'" data-a="sel" data-d="'+ds+'" aria-label="'+full+', '+list.length+(list.length===1?' event':' events')+'"><span class="num">'+d+'</span><span class="dots">'+dots+'</span></button>';
+  }
+  h+='</div>';
+  h+='<div class="legend"><span><i class="dot" style="--c:var(--ink)"></i>Done</span><span><i class="dot pending" style="--c:var(--ink)"></i>To do</span><span><i class="dot miss" style="--c:var(--muted)"></i>Slipped</span></div>';
+  h+='<div class="cats">'+Object.keys(CATS).map(function(k){return '<span style="--c:'+catVar(k)+'"><i></i>'+CATS[k].n+'</span>'}).join('')+'</div>';
+  $('#cal').innerHTML=h;
+}
+function rowHtml(o,t){
+  var st=statusOf(o,t),e=o.e,acts='';
+  if(st==='done')acts+='<button class="btn small" data-a="undo" data-k="'+esc(o.key)+'">Undo</button>';
+  else if(st==='miss')acts+='<button class="btn small pri" data-a="done" data-k="'+esc(o.key)+'">Rescue, +'+C_RESCUE+' coins</button>';
+  else if(st==='now'||st==='soon')acts+='<button class="btn small pri" data-a="done" data-k="'+esc(o.key)+'">Done, +'+C_ONTIME+' coins</button>';
+  else acts+='<button class="btn small" disabled title="You can finish it once its reminder starts">Opens '+dur(o.startMs-e.lead*60000-t)+' from now</button>';
+  acts+='<button class="btn small" data-a="edit" data-id="'+e.id+'">Edit</button>';
+  if(confirmDel===e.id)acts+='<button class="btn small danger" data-a="delyes" data-id="'+e.id+'">'+(e.repeat!=='none'?'Yes, delete all repeats':'Yes, delete')+'</button><button class="btn small" data-a="delno">Keep</button>';
+  else acts+='<button class="btn small" data-a="del" data-id="'+e.id+'">Delete</button>';
+  var stateText={done:'Done',miss:'Slipped',now:'Happening now',soon:'Reminder on',later:''}[st];
+  return '<li class="row '+st+'"><div class="time">'+fmtTime(e.start)+'<small>to '+fmtTime(e.end)+'</small></div>'+
+    '<div style="min-width:0"><b class="title">'+esc(e.title)+'</b><div class="info">'+catChip(e.cat)+
+    (stateText?'<span class="chip state">'+stateText+'</span>':'')+
+    (e.repeat!=='none'?'<span class="chip state">'+esc(repLabel(e))+'</span>':'')+
+    '<span class="chip state">Reminds '+esc(leadLabel(e.lead).toLowerCase())+'</span>'+
+    (e.sample?'<span class="chip state">Example</span>':'')+'</div>'+
+    (e.notes?'<p class="notes">'+esc(e.notes)+'</p>':'')+'</div><div class="acts">'+acts+'</div></li>';
+}
+function renderDay(){
+  var t=Date.now(),list=occs(sel);
+  var head=fromYmd(sel).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+  var done=list.filter(function(o){return S.done[o.key]}).length;
+  var h='<div class="dayhead"><div><h2>'+head+'</h2><p>'+(list.length?done+' of '+list.length+' done':'Nothing planned')+'</p></div><button class="btn pri" data-a="add">Add event</button></div>';
+  if(!list.length)h+='<p class="empty">Nothing planned for this day. Add a class, a meeting or time to work on something, and you will get a reminder before it starts.</p>';
+  else h+='<ul class="list">'+list.map(function(o){return rowHtml(o,t)}).join('')+'</ul>';
+  $('#day').innerHTML=h;
+}
+function renderQuests(){
+  var c=qctx(),done=0,earned=0,rows=[];
+  QUESTS.forEach(function(q,i){
+    var pr=q.p(c),got=S.bonus[c.today+':'+q.id],ok=!!got;
+    if(ok){done++;earned+=got}
+    rows.push({ok:ok,i:i,h:'<div class="quest'+(ok?' ok':'')+'"><span class="tick" aria-hidden="true">'+(ok?'&#10003;':'')+'</span><div class="q"><b>'+q.t+'</b><small>'+q.d+(ok?'':' ('+pr[0]+' of '+pr[1]+')')+'</small></div><span class="xp">'+(ok?'+':'')+q.c+' coins</span></div>'});
+  });
+  rows.sort(function(a,b){return (a.ok-b.ok)||(a.i-b.i)});
+  $('#quests').innerHTML='<h2>Today\'s quests</h2><p class="hint" style="margin:4px 0 8px">'+done+' of '+QUESTS.length+' done, '+earned+' coins earned. They reset tomorrow.</p>'+rows.map(function(r){return r.h}).join('');
+}
+/* ---------- farm ---------- */
+var cv=document.getElementById('farm'),cx=cv.getContext('2d');
+var reduce=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+var W=800,CH=360,SC=1,soil={x:12,y:120,w:776,h:228},raf=0,lastT=0;
+var tool='hand',ptr=null,hoverId=null,flashMsg='',flashT=0,shopTab='seeds',pendingBuy=null;
+var fx=null,ghosts=[],lastEvT=0,lastBoom=false,bannerMsg='',bannerKind='good',bannerUntil=0,bannerCache='';
+var TAU=6.2832;
+var SLOTS={
+  round:[[-17,-56],[18,-60],[2,-78],[-8,-44],[27,-44]],
+  alt:[[-20,-58],[16,-54],[1,-72],[-6,-90],[26,-70]],
+  banana:[[-8,-30],[-3,-27],[2,-26],[7,-28],[11,-31]]
+};
+var BLOBS=[[0,-64,30],[-24,-48,21],[24,-48,21],[-14,-82,20],[15,-80,20]];
+
+function normFarm(){
+  var f=S.farm&&typeof S.farm==='object'?S.farm:{};
+  S.farm={
+    plants:Array.isArray(f.plants)?f.plants:[],
+    props:Array.isArray(f.props)?f.props:[],
+    inv:(f.inv&&typeof f.inv==='object')?f.inv:{},
+    up:(f.up&&typeof f.up==='object')?f.up:{},
+    day:(f.day&&typeof f.day==='object')?f.day:{d:'',pl:0,hv:0,sold:0,lk:0},
+    ev:{next:Number(f.ev&&f.ev.next)||0,warn:(f.ev&&f.ev.warn&&EVENTS[f.ev.warn.id])?f.ev.warn:null,boom:Number(f.ev&&f.ev.boom)||0},
+    log:Array.isArray(f.log)?f.log.slice(0,8):[],
+    lc:Number(f.lc)||0,sales:Number(f.sales)||0,spent:Number(f.spent)||0
+  };
+}
+function dayStat(){
+  var d=ymd(new Date());
+  if(S.farm.day.d!==d)S.farm.day={d:d,pl:0,hv:0,sold:0,lk:0};
+  return S.farm.day;
+}
+function itemName(id){return CROPS[id]?CROPS[id].n:TREES[id].n}
+function prodName(id){return CROPS[id]?CROPS[id].n:TREES[id].fn}
+function prodBase(id){return CROPS[id]?CROPS[id].sell:TREES[id].sell}
+function itemCost(id){return CROPS[id]?CROPS[id].cost:TREES[id].cost}
+function isTree(p){return !!TREES[p.t]}
+function fkey(f){return VORDER.filter(function(x){return f.indexOf(x)>=0}).join('+')}
+function invKey(id,f){return id+':'+fkey(f)}
+function parseKey(k){var i=k.indexOf(':'),r=k.slice(i+1);return{id:k.slice(0,i),f:r?r.split('+'):[]}}
+function mult(f){var m=1;f.forEach(function(x){if(VAR[x])m*=VAR[x].m});return m}
+function boomOn(now){return (S.farm.ev.boom||0)>(now||Date.now())}
+function unit(id,f){return Math.max(1,Math.round(prodBase(id)*mult(f)*(S.farm.up.stall?STALL:1)*(boomOn()?BOOM:1)))}
+function priceOf(k){var pk=parseKey(k);return unit(pk.id,pk.f)}
+function vname(f,id){
+  var w=VNAME.filter(function(x){return f.indexOf(x)>=0}).map(function(x){return VAR[x].n});
+  w.push(prodName(id));return w.join(' ');
+}
+function rollV(b){
+  var out=VNAT_GOOD.filter(function(x){return Math.random()<Math.min(0.9,VAR[x].p*(b||1))}).concat(VNAT_BAD.filter(function(x){return Math.random()<VAR[x].p}));
+  return VORDER.filter(function(x){return out.indexOf(x)>=0});
+}
+function coins(){return Math.round(START_COINS+totalXP()+S.farm.sales-S.farm.spent)}
+function addInv(id,f){var k=invKey(id,f);S.farm.inv[k]=(S.farm.inv[k]||0)+1}
+function growOf(p,now){return Math.max(0,Math.min(1,(now-p.at)/DAY))}
+function isReady(p,now){return isTree(p)?(p.fruits&&p.fruits.length>0):now>=p.at+DAY}
+function near(a,b){var dx=(a.x-b.x)/0.2,dy=(a.y-b.y)/0.55;return dx*dx+dy*dy<=1}
+function boostAt(x,y){
+  var pt={x:x,y:y};
+  return S.farm.props.some(function(r){return r.t==='scarecrow'&&near(r,pt)})?SCARE_BOOST:1;
+}
+function tickTrees(now){
+  var ch=false;
+  S.farm.plants.forEach(function(p){
+    if(!isTree(p))return;
+    var T=TREES[p.t];
+    if(!Array.isArray(p.fruits)){p.fruits=[];ch=true}
+    if(!p.next){p.next=p.at+DAY;ch=true}
+    if(now<p.at+DAY)return;
+    while(p.fruits.length<T.cap&&now>=p.next){
+      var b=(p.luckN>0?(p.luckB||1):1)*boostAt(p.x,p.y);
+      var nf=rollV(b);
+      if(p.pend&&p.pend.length){var pf=p.pend.shift();if(nf.indexOf(pf)<0)nf=VORDER.filter(function(x){return nf.indexOf(x)>=0||x===pf})}
+      p.fruits.push(nf);if(p.luckN>0)p.luckN--;
+      p.next+=T.every;ch=true;
+    }
+    if(p.fruits.length>=T.cap&&p.next<now){p.next=now+T.every;ch=true}
+  });
+  return ch;
+}
+function sprinklers(now){
+  var sp=S.farm.props.filter(function(r){return r.t==='sprinkler'}),lc=S.farm.lc||now,ch=false;
+  if(sp.length){
+    S.farm.plants.forEach(function(p){
+      sp.forEach(function(s){
+        if(!near(s,p))return;
+        var ov=now-Math.max(lc,s.at,p.at);
+        if(ov<=0)return;
+        var shave=ov*SPRINK;
+        if(now<p.at+DAY){shave=Math.min(shave,p.at+DAY-now);p.at-=shave;if(isTree(p)&&p.next)p.next-=shave;ch=true}
+        else if(isTree(p)&&p.fruits&&p.fruits.length<TREES[p.t].cap){p.next-=shave;ch=true}
+      });
+    });
+  }
+  S.farm.lc=now;
+  return ch;
+}
+function farmTick(now){var a=sprinklers(now),b=tickTrees(now);return a||b}
+function scaleOf(p,g){
+  if(isTree(p))return SC*(0.28+0.72*g);
+  if(g<0.22)return SC;
+  var gi=(g>=1&&(p.v||[]).indexOf('giant')>=0)?1.55:1;
+  return SC*(0.45+0.55*Math.min(1,g))*gi;
+}
+function dims(p,g){
+  var tr=isTree(p),k=scaleOf(p,g),hw=tr?40:CROPS[p.t].hw,h=tr?106:CROPS[p.t].h;
+  return{k:k,hw:Math.max(14,hw*k),h:Math.max(24,h*k)};
+}
+function pos(p){return{x:soil.x+p.x*soil.w,y:soil.y+14+p.y*(soil.h-26)}}
+
+/* colors */
+function rgbOf(s){
+  if(s.charAt(0)==='#'){var x=parseInt(s.slice(1),16);return[x>>16,(x>>8)&255,x&255]}
+  var m=s.match(/rgb\((\d+),(\d+),(\d+)\)/);
+  return m?[+m[1],+m[2],+m[3]]:[128,128,128];
+}
+function mix(a,b,t){
+  var x=rgbOf(a),y=rgbOf(b);
+  return 'rgb('+Math.round(x[0]+(y[0]-x[0])*t)+','+Math.round(x[1]+(y[1]-x[1])*t)+','+Math.round(x[2]+(y[2]-x[2])*t)+')';
+}
+function pal(c,f,t){
+  function has(x){return f.indexOf(x)>=0}
+  var P;
+  if(has('rainbow')){var h=((t||0)/14)%360;P={leaf:'hsl('+h+',75%,48%)',leaf2:'hsl('+(h+40)+',80%,56%)',body:'hsl('+(h+90)+',85%,58%)',body2:'hsl('+(h+130)+',90%,72%)',acc:'hsl('+(h+200)+',85%,70%)',dark:'hsl('+h+',60%,28%)'}}
+  else if(has('starlit'))P={leaf:'#5b4bd0',leaf2:'#7a6af0',body:'#3b2f9a',body2:'#8f84ff',acc:'#c8c0ff',dark:'#241a66'};
+  else if(has('charged'))P={leaf:'#3fb4f0',leaf2:'#7bd4ff',body:'#a5e6ff',body2:'#e8fbff',acc:'#fff7a8',dark:'#1c6fa0'};
+  else if(has('golden'))P={leaf:'#d8aa00',leaf2:'#f4c820',body:'#f2b705',body2:'#ffe27a',acc:'#fff3b0',dark:'#b27d00'};
+  else if(has('crystal'))P={leaf:'#8fd3e8',leaf2:'#b7e9f7',body:'#c9efff',body2:'#effaff',acc:'#ffffff',dark:'#4a9bb8'};
+  else{
+    var tgt=has('frosted')?'#dff1ff':'#ffffff',w=has('frosted')?0.55:(has('shiny')?0.32:0);
+    P={leaf:mix(c.leaf,tgt,w),leaf2:mix(c.leaf,tgt,w+0.22),body:mix(c.body,tgt,w),body2:mix(c.body,tgt,w+0.25),acc:mix(c.acc,tgt,w),dark:mix(c.leaf,'#000000',0.3)};
+  }
+  if(!has('rainbow')){
+    var bad=has('rotten')?['#5a4a22',0.55]:(has('wilted')?['#8a8660',0.4]:null);
+    if(bad)Object.keys(P).forEach(function(k){P[k]=mix(P[k],bad[0],bad[1])});
+  }
+  return P;
+}
+
+/* drawing helpers (local, unscaled plant units) */
+function leaf(rot,len,wid,col){cx.save();cx.rotate(rot);cx.beginPath();cx.ellipse(0,-len/2,wid,len/2,0,0,TAU);cx.fillStyle=col;cx.fill();cx.restore()}
+function dot(x,y,r,col){cx.fillStyle=col;cx.beginPath();cx.arc(x,y,r,0,TAU);cx.fill()}
+function star(x,y,r,col){
+  cx.beginPath();cx.moveTo(x,y-r);cx.quadraticCurveTo(x,y,x+r,y);cx.quadraticCurveTo(x,y,x,y+r);cx.quadraticCurveTo(x,y,x-r,y);cx.quadraticCurveTo(x,y,x,y-r);
+  cx.fillStyle=col;cx.fill();
+}
+function sparkles(t,n,hw,h,seed,col){
+  for(var i=0;i<n;i++){
+    var ph=((t/900)+i/n+seed)%1,s=Math.sin(ph*Math.PI);
+    star(Math.sin(i*2.3+seed*9)*hw,-(((i*37)%100)/100)*h-4,1+s*4.5,col);
+  }
+}
+function glow(hw,h,col,c0){
+  var r=Math.max(hw,h/2)+10,g=cx.createRadialGradient(0,-h/2,2,0,-h/2,r);
+  g.addColorStop(0,col);g.addColorStop(1,c0||'rgba(255,214,64,0)');
+  cx.fillStyle=g;cx.beginPath();cx.arc(0,-h/2,r,0,TAU);cx.fill();
+}
+function auras(f,t,seed,hw,h){
+  function a(x){return f.indexOf(x)>=0}
+  if(a('golden'))glow(hw,h,'rgba(255,214,64,0.55)','rgba(255,214,64,0)');
+  if(a('glowing'))glow(hw,h,'rgba(110,255,190,'+(0.4+0.15*Math.sin(t/400+seed*5)).toFixed(2)+')','rgba(110,255,190,0)');
+  if(a('crystal'))glow(hw,h,'rgba(170,230,255,0.42)','rgba(170,230,255,0)');
+  if(a('starlit'))glow(hw,h,'rgba(150,120,255,0.45)','rgba(150,120,255,0)');
+  if(a('charged'))glow(hw,h,'rgba(100,190,255,0.42)','rgba(100,190,255,0)');
+  if(a('rainbow'))glow(hw,h,'rgba(255,255,255,0.4)','rgba(255,255,255,0)');
+}
+function bug(x,y,t,s){cx.fillStyle='#1c1c1c';cx.beginPath();cx.ellipse(x+Math.sin(t/180+s)*1.5,y,2,1.3,0,0,TAU);cx.fill()}
+function overlays(f,t,seed,hw,h){
+  function a(x){return f.indexOf(x)>=0}
+  var i;
+  if(a('shiny'))sparkles(t,5,hw,h,seed,'#ffffff');
+  if(a('golden'))sparkles(t,4,hw*0.9,h,seed+0.3,'#fff2a0');
+  if(a('crystal'))sparkles(t,5,hw,h,seed+0.1,'#d9f6ff');
+  if(a('frosted'))sparkles(t,4,hw,h,seed+0.6,'#ffffff');
+  if(a('starlit'))sparkles(t,7,hw*1.1,h*1.1,seed+0.2,'#ffffff');
+  if(a('rainbow'))sparkles(t,5,hw,h,seed+0.4,'#ffffff');
+  if(a('charged')&&Math.sin(t/90+seed*13)>0.15){
+    var bx=Math.sin(seed*20)*hw*0.6;
+    cx.strokeStyle='#fff7a8';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(bx,-h-3);cx.lineTo(bx+hw*0.25,-h*0.72);cx.lineTo(bx-hw*0.1,-h*0.55);cx.lineTo(bx+hw*0.2,-h*0.3);cx.lineTo(bx,-2);cx.stroke();
+  }
+  if(a('bruised')){
+    cx.fillStyle='rgba(70,30,90,0.42)';
+    [[-0.35,0.35,0.28],[0.3,0.62,0.22]].forEach(function(q){cx.beginPath();cx.ellipse(q[0]*hw,-h*q[1],hw*q[2],h*0.12,0.3,0,TAU);cx.fill()});
+  }
+  if(a('buggy')){for(i=0;i<3;i++)bug(Math.sin(seed*7+i*2.1)*hw*0.7,-h*(0.25+0.25*i),t,seed+i)}
+  if(a('rotten')){
+    cx.strokeStyle='rgba(130,170,50,0.75)';cx.lineWidth=1.3;
+    for(i=0;i<3;i++){
+      var ph=((t/700)+i/3)%1,x0=(i-1)*hw*0.5,y0=-h*0.5-ph*h*0.5;
+      cx.beginPath();cx.moveTo(x0,y0);cx.bezierCurveTo(x0+3,y0-h*0.1,x0-3,y0-h*0.2,x0,y0-h*0.3);cx.stroke();
+    }
+  }
+}
+function drawCrop(p,g,t){
+  var c=CROPS[p.t],v=p.v||[],f=g>=1?v:[],P=pal(c,f,t),i,ripe=g>=1;
+  if(g<0.22){
+    cx.strokeStyle=P.leaf;cx.lineWidth=2;cx.lineCap='round';cx.beginPath();cx.moveTo(0,0);cx.lineTo(0,-7);cx.stroke();
+    cx.save();cx.translate(0,-6);leaf(-0.9,9,3.2,P.leaf2);leaf(0.9,9,3.2,P.leaf2);cx.restore();
+    return;
+  }
+  if(f.indexOf('wilted')>=0){cx.rotate(0.16);cx.scale(1,0.86)}
+  auras(f,t,p.s,18,c.h);
+  if(p.t==='potato'){
+    cx.fillStyle=P.body;cx.beginPath();cx.ellipse(0,0,9,5,0,0,TAU);cx.fill();
+    cx.save();cx.translate(0,-3);
+    [-1,-0.5,0,0.5,1].forEach(function(r,j){leaf(r*0.9,22+(j%2)*6,5.5,j%2?P.leaf:P.leaf2)});
+    cx.restore();
+    if(ripe){[[-6,-24],[5,-27],[0,-31]].forEach(function(q){dot(q[0],q[1],2.4,P.acc)})}
+  }else if(p.t==='carrot'){
+    cx.save();cx.translate(0,-3);
+    [-0.7,-0.35,0,0.35,0.7].forEach(function(r,j){leaf(r,26-Math.abs(r)*8,2.8,j%2?P.leaf:P.leaf2)});
+    cx.restore();
+    cx.fillStyle=P.body;cx.beginPath();cx.ellipse(0,0,7,6,0,Math.PI,TAU);cx.closePath();cx.fill();
+    cx.strokeStyle=P.dark;cx.globalAlpha=0.35;cx.lineWidth=1;cx.beginPath();cx.moveTo(-3,-1);cx.lineTo(-2,-4);cx.moveTo(2,-1);cx.lineTo(3,-4);cx.stroke();cx.globalAlpha=1;
+  }else if(p.t==='wheat'){
+    var hd=ripe?P.body:P.leaf2;
+    for(i=-2;i<=2;i++){
+      cx.strokeStyle=P.leaf;cx.lineWidth=1.8;cx.lineCap='round';
+      cx.beginPath();cx.moveTo(i*4,0);cx.quadraticCurveTo(i*4+i*1.5,-16,i*4+i*2.4,-32);cx.stroke();
+      cx.save();cx.translate(i*4+i*2.4,-35);cx.rotate(i*0.12);cx.fillStyle=hd;cx.beginPath();cx.ellipse(0,0,2.8,6.5,0,0,TAU);cx.fill();
+      cx.strokeStyle=P.dark;cx.globalAlpha=0.35;cx.lineWidth=0.8;cx.beginPath();cx.moveTo(0,-5);cx.lineTo(0,5);cx.stroke();cx.globalAlpha=1;cx.restore();
+    }
+  }else if(p.t==='turnip'){
+    cx.save();cx.translate(0,-14);
+    [-0.6,-0.2,0.2,0.6].forEach(function(r,j){leaf(r,24,4.5,j%2?P.leaf:P.leaf2)});
+    cx.restore();
+    var gr=cx.createLinearGradient(0,-17,0,1);
+    gr.addColorStop(0,P.acc);gr.addColorStop(0.5,P.acc);gr.addColorStop(0.51,P.body);gr.addColorStop(1,P.body);
+    cx.fillStyle=gr;cx.beginPath();cx.arc(0,-8,9,0,TAU);cx.fill();
+  }else if(p.t==='lettuce'){
+    for(i=0;i<8;i++){
+      var a=i/8*TAU;
+      cx.save();cx.translate(Math.cos(a)*9,-5+Math.sin(a)*3.5);cx.fillStyle=i%2?P.leaf:P.leaf2;
+      cx.beginPath();cx.ellipse(0,0,8,6.5,a*0.3,0,TAU);cx.fill();cx.restore();
+    }
+    for(i=0;i<5;i++){
+      var b=i/5*TAU+0.4;
+      cx.save();cx.translate(Math.cos(b)*4.5,-8+Math.sin(b)*2);cx.fillStyle=P.body;
+      cx.beginPath();cx.ellipse(0,0,6.5,5.5,b*0.3,0,TAU);cx.fill();cx.restore();
+    }
+    dot(0,-9,4.5,P.body2);
+  }else if(p.t==='onion'){
+    cx.strokeStyle=P.leaf;cx.lineCap='round';cx.lineWidth=2.6;
+    [-5,-1.5,2,5.5].forEach(function(x,j){cx.beginPath();cx.moveTo(x*0.6,-4);cx.quadraticCurveTo(x*1.6,-18,x*2.2,-(26+(j%2)*5));cx.stroke()});
+    cx.fillStyle=P.body;cx.beginPath();cx.ellipse(0,-3.5,7.5,6.5,0,0,TAU);cx.fill();
+    cx.globalAlpha=0.5;cx.fillStyle=P.acc;cx.beginPath();cx.ellipse(-2,-5,2.2,4,0.2,0,TAU);cx.fill();cx.globalAlpha=1;
+  }else if(p.t==='tomato'){
+    cx.strokeStyle='#8a6a3a';cx.lineWidth=1.6;cx.beginPath();cx.moveTo(0,0);cx.lineTo(0,-36);cx.stroke();
+    cx.save();cx.translate(0,-4);[-1.1,-0.6,0.55,1.05].forEach(function(r,j){leaf(r,18+(j%2)*5,5,j%2?P.leaf:P.leaf2)});cx.restore();
+    [[-8,-11],[8,-15],[-1,-22],[6,-28]].forEach(function(q){
+      dot(q[0],q[1],4.6,ripe?P.body:P.leaf2);
+      cx.fillStyle='rgba(255,255,255,0.4)';cx.beginPath();cx.ellipse(q[0]-1.5,q[1]-1.8,1.4,1,-0.6,0,TAU);cx.fill();
+    });
+  }else if(p.t==='corn'){
+    cx.strokeStyle=P.leaf;cx.lineWidth=4;cx.lineCap='round';cx.beginPath();cx.moveTo(0,0);cx.lineTo(0,-46);cx.stroke();
+    cx.save();cx.translate(0,-12);leaf(-1.0,26,4,P.leaf);leaf(1.0,26,4,P.leaf);cx.restore();
+    cx.save();cx.translate(0,-28);leaf(-0.8,24,3.6,P.leaf);leaf(0.85,24,3.6,P.leaf);cx.restore();
+    cx.strokeStyle=ripe?P.body:P.leaf2;cx.lineWidth=1.4;
+    [-0.6,-0.2,0.2,0.6].forEach(function(r){cx.beginPath();cx.moveTo(0,-46);cx.lineTo(Math.sin(r)*9,-46-Math.cos(r)*9);cx.stroke()});
+    if(ripe){
+      [[5,-24,0.2],[-5,-34,-0.2]].forEach(function(q){
+        cx.save();cx.translate(q[0],q[1]);cx.rotate(q[2]);
+        cx.fillStyle=P.leaf;cx.beginPath();cx.ellipse(0,0,3.8,9,0,0,TAU);cx.fill();
+        cx.fillStyle=P.body;cx.beginPath();cx.ellipse(0.4,-1.5,2.6,7,0,0,TAU);cx.fill();cx.restore();
+      });
+    }
+  }else if(p.t==='strawberry'){
+    [-1,0,1].forEach(function(k){
+      cx.save();cx.translate(k*7,-3);cx.rotate(k*0.35);
+      leaf(-0.5,12,4.2,P.leaf);leaf(0,14,4.2,P.leaf2);leaf(0.5,12,4.2,P.leaf);
+      cx.restore();
+    });
+    [[-9,-3],[7,-2],[-1,1],[11,-6]].forEach(function(q){
+      if(ripe){dot(q[0],q[1],3.6,P.body);cx.fillStyle='rgba(255,255,255,0.8)';[[-1,-1],[1,0.5],[-0.5,1.5]].forEach(function(s){cx.fillRect(q[0]+s[0]-0.3,q[1]+s[1]-0.3,0.8,0.8)})}
+      else{dot(q[0],q[1]-4,2.2,'#ffffff');dot(q[0],q[1]-4,0.9,'#f2c230')}
+    });
+  }else if(p.t==='pumpkin'){
+    var pc=ripe?P.body:P.leaf2;
+    cx.fillStyle=pc;
+    [[-8,-10,9,10],[8,-10,9,10],[0,-11,10,12]].forEach(function(e){cx.beginPath();cx.ellipse(e[0],e[1],e[2],e[3],0,0,TAU);cx.fill()});
+    cx.strokeStyle=P.dark;cx.globalAlpha=0.28;cx.lineWidth=1.2;
+    [-6,0,6].forEach(function(x){cx.beginPath();cx.moveTo(x*0.8,-22);cx.quadraticCurveTo(x*1.6,-11,x*0.8,-1);cx.stroke()});cx.globalAlpha=1;
+    cx.strokeStyle=ripe?'#6a8a3a':P.leaf;cx.lineWidth=3.6;cx.lineCap='round';cx.beginPath();cx.moveTo(0,-22);cx.quadraticCurveTo(1,-27,4,-29);cx.stroke();
+    cx.save();cx.translate(12,-4);leaf(1.25,15,7,P.leaf);cx.restore();
+  }
+  overlays(f,t,p.s,16,c.h);
+}
+function drawFruit(id,x,y,f,t){
+  var T=TREES[id],P=pal({leaf:T.fruit,body:T.fruit,acc:T.fruit},f,t),big=(f.indexOf('giant')>=0?1.5:1)*(f.indexOf('wilted')>=0?0.85:1);
+  var col=P.body,r=6.2*big,seed=((x*0.37+y*0.11)%1+1)%1,ban=id==='banana',hh=ban?14*big:2*r,cy0=ban?13*big:r;
+  cx.save();cx.translate(x,y);
+  cx.save();cx.translate(0,cy0);auras(f,t,seed,r*1.6,hh);cx.restore();
+  if(ban){
+    cx.lineCap='round';cx.strokeStyle=col;cx.lineWidth=5.4*big;
+    cx.beginPath();cx.moveTo(0,0);cx.quadraticCurveTo(6*big,5*big,3*big,13*big);cx.stroke();
+    cx.strokeStyle=f.indexOf('golden')>=0?'#b27d00':'#5a3b12';cx.lineWidth=2;
+    cx.beginPath();cx.moveTo(3*big,12*big);cx.lineTo(3*big,14.5*big);cx.stroke();
+  }else{
+    cx.fillStyle=col;cx.beginPath();
+    if(T.shape==='oval')cx.ellipse(0,0,r*1.2,r*0.88,-0.4,0,TAU);else cx.arc(0,0,r,0,TAU);
+    cx.fill();
+    cx.fillStyle='rgba(255,255,255,0.45)';cx.beginPath();cx.ellipse(-r*0.35,-r*0.35,r*0.28,r*0.2,-0.6,0,TAU);cx.fill();
+    if(id==='apple'||id==='peach'){
+      cx.strokeStyle='#5a3b12';cx.lineWidth=1.4;cx.beginPath();cx.moveTo(0,-r);cx.lineTo(1,-r-3);cx.stroke();
+      cx.fillStyle='#3f9b4f';cx.beginPath();cx.ellipse(3.5,-r-1,3.2,1.6,-0.5,0,TAU);cx.fill();
+    }
+  }
+  cx.save();cx.translate(0,cy0);overlays(f,t,seed,r*1.3,hh);cx.restore();
+  cx.restore();
+}
+function drawTree(p,g,t){
+  var T=TREES[p.t],i;
+  if(p.t==='banana'){
+    cx.fillStyle=T.trunk;cx.beginPath();cx.moveTo(-5,0);cx.lineTo(-4,-34);cx.lineTo(4,-34);cx.lineTo(5,0);cx.closePath();cx.fill();
+    cx.strokeStyle='rgba(0,0,0,0.18)';cx.lineWidth=1.2;
+    for(i=-8;i>-34;i-=7){cx.beginPath();cx.moveTo(-4.5,i);cx.lineTo(4.5,i);cx.stroke()}
+    cx.save();cx.translate(0,-33);
+    [-1.4,-0.9,-0.4,0,0.4,0.9,1.4].forEach(function(a,j){leaf(a,(j===3?40:46-Math.abs(a)*4),8.5-Math.abs(a)*1.2,j%2?T.leaf:T.leafD)});
+    cx.restore();
+  }else{
+    cx.fillStyle=T.trunk;cx.beginPath();cx.moveTo(-6,0);cx.lineTo(-4,-42);cx.lineTo(4,-42);cx.lineTo(6,0);cx.closePath();cx.fill();
+    cx.fillStyle=T.leafD;BLOBS.forEach(function(b){cx.beginPath();cx.arc(b[0],b[1]+3,b[2],0,TAU);cx.fill()});
+    cx.fillStyle=T.leaf;BLOBS.forEach(function(b){cx.beginPath();cx.arc(b[0],b[1],b[2]*0.92,0,TAU);cx.fill()});
+  }
+  if(g>=1&&p.fruits){
+    var sl=p.t==='banana'?SLOTS.banana:(T.slots==='alt'?SLOTS.alt:SLOTS.round);
+    p.fruits.forEach(function(f,j){var s=sl[j];if(s)drawFruit(p.t,s[0],s[1],f,t)});
+  }
+}
+function drawProp(r,t,dk){
+  if(r.t==='sprinkler'){
+    cx.fillStyle='#8a98a8';cx.fillRect(-2.2,-14,4.4,14);
+    cx.fillStyle='#4f7cb8';cx.beginPath();cx.arc(0,-16,5,0,TAU);cx.fill();
+    cx.fillStyle='#8a98a8';cx.fillRect(-6,-1,12,3);
+    for(var i=0;i<8;i++){
+      var a=i/8*TAU,ph=reduce?(i/8):((t/800+i/8)%1);
+      dot(Math.cos(a)*ph*24,-16-Math.sin(ph*Math.PI)*13+Math.sin(a)*ph*6,1.7,'rgba(140,200,255,0.95)');
+    }
+  }else if(r.t==='greenhouse'){
+    cx.fillStyle='rgba(190,235,255,0.42)';cx.strokeStyle='#e9f6ff';cx.lineWidth=1.6;
+    cx.fillRect(-22,-24,44,24);cx.strokeRect(-22,-24,44,24);
+    cx.beginPath();cx.moveTo(-24,-24);cx.lineTo(0,-42);cx.lineTo(24,-24);cx.closePath();cx.fill();cx.stroke();
+    cx.beginPath();cx.moveTo(0,-42);cx.lineTo(0,0);cx.moveTo(-11,-24);cx.lineTo(-11,0);cx.moveTo(11,-24);cx.lineTo(11,0);cx.stroke();
+    cx.fillStyle='#5b8a5e';cx.fillRect(-22,-2,44,3);
+  }else{
+    cx.strokeStyle='#7a5530';cx.lineCap='round';cx.lineWidth=4;
+    cx.beginPath();cx.moveTo(0,0);cx.lineTo(0,-46);cx.moveTo(-19,-31);cx.lineTo(19,-31);cx.stroke();
+    cx.strokeStyle='#e6c258';cx.lineWidth=2;cx.beginPath();cx.moveTo(-19,-31);cx.lineTo(-24,-26);cx.moveTo(19,-31);cx.lineTo(24,-26);cx.moveTo(-19,-31);cx.lineTo(-23,-33);cx.moveTo(19,-31);cx.lineTo(23,-33);cx.stroke();
+    cx.fillStyle='#c75050';cx.beginPath();cx.moveTo(-9,-39);cx.lineTo(9,-39);cx.lineTo(7,-18);cx.lineTo(-7,-18);cx.closePath();cx.fill();
+    cx.strokeStyle='rgba(255,255,255,0.35)';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(-8,-33);cx.lineTo(8,-33);cx.moveTo(-7,-26);cx.lineTo(7,-26);cx.moveTo(0,-39);cx.lineTo(0,-18);cx.stroke();
+    dot(0,-48,7,'#e8c98a');
+    cx.fillStyle='#6b4a2a';cx.beginPath();cx.ellipse(0,-53,12,3,0,0,TAU);cx.fill();cx.beginPath();cx.ellipse(0,-57,6.5,5,0,0,TAU);cx.fill();
+    dot(-2.4,-48.5,0.9,'#3a2a1a');dot(2.4,-48.5,0.9,'#3a2a1a');
+  }
+}
+
+/* scene */
+function isDark(){
+  var a=document.documentElement.getAttribute('data-theme');
+  return a==='dark'||(a!=='light'&&!!(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches));
+}
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+function cover(q,dash){
+  cx.save();if(dash)cx.setLineDash([6,5]);
+  cx.fillStyle='rgba(120,190,255,0.14)';cx.strokeStyle='rgba(255,255,255,0.85)';cx.lineWidth=1.5;
+  cx.beginPath();cx.ellipse(q.x,q.y,0.2*soil.w,0.55*(soil.h-26),0,0,TAU);cx.fill();cx.stroke();cx.restore();
+}
+function draw(ts){
+  var t=reduce?600:ts,now=Date.now(),dk=isDark(),i,g;
+  cx.clearRect(0,0,W,CH);
+  g=cx.createLinearGradient(0,0,0,soil.y+10);
+  if(dk){g.addColorStop(0,'#0b1330');g.addColorStop(1,'#26396f')}else{g.addColorStop(0,'#9fd3ff');g.addColorStop(1,'#e4f4ff')}
+  cx.fillStyle=g;cx.fillRect(0,0,W,CH);
+  if(dk){
+    for(i=0;i<16;i++){cx.fillStyle='rgba(255,255,255,'+(0.5+0.4*Math.sin(t/700+i)).toFixed(2)+')';cx.beginPath();cx.arc(((i*173)%1000)/1000*W,((i*89)%100)/100*(soil.y-34)+8,1+(i%3)*0.4,0,TAU);cx.fill()}
+    cx.fillStyle='#f3efd0';cx.beginPath();cx.arc(W-66,46,18,0,TAU);cx.fill();
+  }else{
+    var sg=cx.createRadialGradient(W-66,46,4,W-66,46,46);sg.addColorStop(0,'rgba(255,224,102,1)');sg.addColorStop(0.45,'rgba(255,224,102,0.9)');sg.addColorStop(1,'rgba(255,224,102,0)');
+    cx.fillStyle=sg;cx.beginPath();cx.arc(W-66,46,46,0,TAU);cx.fill();
+    cx.fillStyle='rgba(255,255,255,0.92)';
+    [[0.18,36,1],[0.52,26,0.8],[0.8,58,1.1]].forEach(function(c){
+      var xx=((c[0]*W+t*0.012)%(W+200))-100,s=c[2],y=c[1];
+      cx.beginPath();cx.arc(xx,y,14*s,0,TAU);cx.arc(xx+16*s,y-6*s,17*s,0,TAU);cx.arc(xx+34*s,y,13*s,0,TAU);cx.fill();
+    });
+  }
+  cx.fillStyle=dk?'#1d4a46':'#8fd08f';cx.beginPath();cx.ellipse(W*0.25,soil.y+8,W*0.45,40,0,Math.PI,TAU);cx.fill();
+  cx.fillStyle=dk?'#16403e':'#79c47c';cx.beginPath();cx.ellipse(W*0.78,soil.y+10,W*0.5,30,0,Math.PI,TAU);cx.fill();
+  cx.fillStyle=dk?'#133d33':'#5fb25f';cx.fillRect(0,soil.y-4,W,CH);
+  var fh=18*SC,fy=soil.y-fh+2;
+  cx.strokeStyle=dk?'#7c5b3a':'#c59a63';cx.fillStyle=cx.strokeStyle;cx.lineWidth=2;
+  cx.beginPath();cx.moveTo(soil.x,fy+fh*0.3);cx.lineTo(soil.x+soil.w,fy+fh*0.3);cx.moveTo(soil.x,fy+fh*0.7);cx.lineTo(soil.x+soil.w,fy+fh*0.7);cx.stroke();
+  for(var fx=soil.x;fx<=soil.x+soil.w;fx+=34*SC)cx.fillRect(fx-2.5,fy,5,fh);
+  rr(soil.x,soil.y,soil.w,soil.h,14);cx.fillStyle=dk?'#4b3220':'#8a5b36';cx.fill();
+  cx.strokeStyle=dk?'#3d2819':'#76492a';cx.lineWidth=2;
+  for(var fr=soil.y+26*SC;fr<soil.y+soil.h-6;fr+=28*SC){cx.beginPath();cx.moveTo(soil.x+10,fr);cx.lineTo(soil.x+soil.w-10,fr);cx.stroke()}
+  var showCover=tool.indexOf('prop:')===0;
+  if(showCover)S.farm.props.forEach(function(r){cover(pos(r),false)});
+  var items=S.farm.plants.map(function(p){return{k:'p',o:p,y:pos(p).y}}).concat(S.farm.props.map(function(r){return{k:'r',o:r,y:pos(r).y}}));
+  items.sort(function(a,b){return a.y-b.y}).forEach(function(it){
+    var p=it.o,q=pos(p);
+    cx.save();cx.translate(q.x,q.y);
+    if(it.k==='r'){
+      cx.save();cx.scale(SC,SC);
+      cx.fillStyle='rgba(0,0,0,0.2)';cx.beginPath();cx.ellipse(0,1,12,3.4,0,0,TAU);cx.fill();
+      drawProp(p,t,dk);cx.restore();cx.restore();return;
+    }
+    var gg=growOf(p,now),d=dims(p,gg),rdy=isReady(p,now),tr=isTree(p);
+    if(p.w&&now-p.w<1800000){cx.fillStyle='rgba(20,40,90,0.24)';cx.beginPath();cx.ellipse(0,1,d.hw*0.9,6,0,0,TAU);cx.fill()}
+    if(hoverId===p.id){cx.strokeStyle='rgba(255,255,255,0.9)';cx.lineWidth=2;cx.beginPath();cx.ellipse(0,1,d.hw*0.8,6,0,0,TAU);cx.stroke()}
+    cx.save();cx.scale(d.k,d.k);
+    cx.fillStyle='rgba(0,0,0,0.2)';cx.beginPath();cx.ellipse(0,1,tr?30:13,tr?7:3.6,0,0,TAU);cx.fill();
+    if(tr)drawTree(p,gg,t);else drawCrop(p,gg,t);
+    cx.restore();
+    if(rdy){
+      var bob=reduce?0:Math.sin(t/300+p.s*6)*3,cy=-d.h-8+bob;
+      cx.fillStyle='#ffd23f';cx.strokeStyle='rgba(20,33,61,0.7)';cx.lineWidth=1.5;
+      cx.beginPath();cx.moveTo(-7,cy-7);cx.lineTo(7,cy-7);cx.lineTo(0,cy+2);cx.closePath();cx.fill();cx.stroke();
+    }
+    cx.restore();
+  });
+  drawGhosts(t,now);fxDraw(t,now,dk);
+  if(ptr&&tool.indexOf('prop:')===0){cover(ptr,true)}
+  if(ptr&&(tool.indexOf('seed:')===0||tool.indexOf('prop:')===0)){
+    cx.save();cx.setLineDash([5,4]);cx.strokeStyle='rgba(255,255,255,0.95)';cx.lineWidth=2;cx.beginPath();cx.ellipse(ptr.x,ptr.y,16,7,0,0,TAU);cx.stroke();cx.restore();
+  }
+}
+function frame(ts){
+  raf=0;
+  if(document.hidden)return;
+  if(ts-lastT>=32){lastT=ts;draw(ts)}
+  if(!reduce)raf=requestAnimationFrame(frame);
+}
+function kick(){if(!raf&&!reduce&&!document.hidden)raf=requestAnimationFrame(frame)}
+function redraw(){if(reduce||document.hidden)draw(performance.now())}
+function resize(){
+  var w=Math.floor(cv.getBoundingClientRect().width)||W,dpr=Math.min(2,window.devicePixelRatio||1);
+  W=Math.max(260,w);CH=Math.round(Math.max(320,Math.min(500,W*0.46)));
+  cv.style.height=CH+'px';cv.width=Math.round(W*dpr);cv.height=Math.round(CH*dpr);
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  SC=Math.max(0.62,Math.min(1.15,W/860));
+  var sy=Math.round(CH*0.34);
+  soil={x:12,y:sy,w:W-24,h:CH-sy-12};
+  draw(performance.now());
+}
+
+/* interaction */
+function evPos(ev){var r=cv.getBoundingClientRect();return{x:(ev.clientX-r.left)*(W/r.width),y:(ev.clientY-r.top)*(CH/r.height)}}
+function hitList(x,y,now){
+  var out=[];
+  S.farm.plants.forEach(function(p){
+    var q=pos(p),d=dims(p,growOf(p,now));
+    if(x>=q.x-d.hw&&x<=q.x+d.hw&&y>=q.y-d.h&&y<=q.y+10)out.push({p:p,y:q.y,rdy:isReady(p,now)});
+  });
+  out.sort(function(a,b){return b.y-a.y});
+  return out;
+}
+function propHit(x,y){
+  var out=null;
+  S.farm.props.forEach(function(r){
+    var q=pos(r),hw=(r.t==='scarecrow'?22:(r.t==='greenhouse'?26:14))*SC,h=(r.t==='scarecrow'?60:(r.t==='greenhouse'?44:30))*SC;
+    if(x>=q.x-hw&&x<=q.x+hw&&y>=q.y-h&&y<=q.y+8&&(!out||q.y>out.y))out={o:r,y:q.y};
+  });
+  return out;
+}
+function flabel(f){return f.map(function(x){return VAR[x].n.toLowerCase()}).join(' and ')}
+function describe(p,now){
+  var g=growOf(p,now),nm=itemName(p.t);
+  if(isTree(p)){
+    if(g<1)return nm+' sapling, '+Math.floor(g*100)+'% grown. It bears fruit in '+dur(p.at+DAY-now)+'.';
+    var n=(p.fruits||[]).length;
+    if(n){var sp=p.fruits.filter(function(f){return f.length}).length;return nm+': '+n+(n===1?' fruit':' fruits')+' ready'+(sp?' ('+sp+' special)':'')+'. Tap to pick them.'}
+    return nm+': next fruit in '+dur((p.next||now)-now)+'.';
+  }
+  if(g<1)return nm+' growing, '+Math.floor(g*100)+'%. Ready in '+dur(p.at+DAY-now)+'.';
+  var v=p.v||[];
+  return nm+' is ready'+(v.length?' ('+flabel(v)+')':'')+'. Tap to harvest.';
+}
+function toolHint(){
+  if(tool==='shovel')return 'Shovel: tap a plant or tool to remove it. Nothing is refunded.';
+  if(tool==='can')return 'Watering can: tap a plant to save an hour. Each plant can be watered every 4 hours.';
+  if(tool.indexOf('seed:')===0){var id=tool.slice(5);return 'Planting '+itemName(id)+' for '+itemCost(id)+' coins each. Tap the soil. Plants can overlap.'}
+  if(tool.indexOf('fert:')===0){var F=FERTS[tool.slice(5)];return F.n+' ('+F.cost+' coins each use): tap a plant to use it.'}
+  if(tool.indexOf('prop:')===0){var P=PROPS[tool.slice(5)];return P.n+' ('+P.cost+' coins): tap the soil to place it. The shaded area shows where it works.'}
+  return 'Tap anything with a gold arrow to harvest it. Pick a seed, fertilizer or tool from the shop to use it.';
+}
+function updateCaption(){
+  var el=$('#g-cap'),h=null,txt=flashMsg;
+  if(!txt&&hoverId){S.farm.plants.some(function(p){if(p.id===hoverId){h=p;return true}return false});if(h)txt=describe(h,Date.now())}
+  if(!txt)txt=toolHint();
+  if(el.textContent!==txt)el.textContent=txt;
+}
+function flash(msg){
+  flashMsg=msg;clearTimeout(flashT);
+  flashT=setTimeout(function(){flashMsg='';updateCaption()},4500);
+  updateCaption();
+}
+function onMove(ev){
+  ptr=evPos(ev);
+  var now=Date.now(),h=hitList(ptr.x,ptr.y,now),top=h.filter(function(r){return r.rdy})[0]||h[0];
+  hoverId=top?top.p.id:null;
+  var pickTool=tool==='can'||tool.indexOf('fert:')===0||tool==='shovel';
+  cv.style.cursor=pickTool?(top||(tool==='shovel'&&propHit(ptr.x,ptr.y))?'pointer':'default'):(top&&top.rdy?'pointer':((tool.indexOf('seed:')===0||tool.indexOf('prop:')===0)?'crosshair':'default'));
+  updateCaption();redraw();
+}
+function plantAt(id,nx,ny){
+  var cost=itemCost(id);
+  if(S.farm.plants.length>=MAXP)return flash('The plot is full. Harvest or dig something up first.');
+  if(coins()<cost)return flash('You need '+cost+' coins for '+itemName(id)+'. You have '+coins()+'. Finish events to earn more.');
+  var now=Date.now(),x=Math.max(0,Math.min(1,nx)),y=Math.max(0,Math.min(1,ny)),p={id:uid(),t:id,x:x,y:y,at:now,s:Math.random()};
+  if(TREES[id]){p.fruits=[];p.next=now+DAY}else p.v=rollV(boostAt(x,y));
+  S.farm.plants.push(p);S.farm.spent+=cost;dayStat().pl++;
+  flash('Planted '+itemName(id)+' for '+cost+' coins. '+(TREES[id]?'It starts bearing fruit in a day.':'It is ready in a day.'));
+  save();refreshFarm();
+}
+function propAt(id,nx,ny){
+  var P=PROPS[id];
+  if(S.farm.props.length>=MAXPROPS)return flash('You can place up to '+MAXPROPS+' tools. Pick one up with the shovel first.');
+  if(coins()<P.cost)return flash('You need '+P.cost+' coins for a '+P.n+'. You have '+coins()+'.');
+  var now=Date.now();
+  sprinklers(now);
+  S.farm.props.push({id:uid(),t:id,x:Math.max(0,Math.min(1,nx)),y:Math.max(0,Math.min(1,ny)),at:now});
+  S.farm.spent+=P.cost;
+  flash('Placed a '+P.n+'. '+P.d);
+  save();refreshFarm();
+}
+function fertilize(p,id){
+  var F=FERTS[id],now=Date.now(),tree=isTree(p);
+  farmTick(now);
+  var g=growOf(p,now),timeOk=tree?(g<1||p.fruits.length<TREES[p.t].cap):g<1,luckOk=tree?true:!p.lk;
+  var useTime=!!F.hrs&&timeOk,useLuck=!!F.boost&&luckOk;
+  if(!useTime&&!useLuck){
+    if(F.hrs&&!F.boost)return flash(tree?itemName(p.t)+' is already full of fruit.':itemName(p.t)+' is already ready.');
+    if(F.boost&&!F.hrs)return flash(itemName(p.t)+' already has lucky fertilizer.');
+    return flash('That would not help '+itemName(p.t)+' right now.');
+  }
+  if(coins()<F.cost)return flash('You need '+F.cost+' coins for '+F.n+'. You have '+coins()+'.');
+  S.farm.spent+=F.cost;
+  if(useTime){p.at-=F.hrs*HR;if(tree)p.next=(p.next||p.at+DAY)-F.hrs*HR}
+  if(useLuck){
+    if(tree){p.luckB=F.boost;p.luckN=5}
+    else{
+      p.v=p.v||[];
+      VNAT_GOOD.forEach(function(x){if(p.v.indexOf(x)<0&&Math.random()<Math.min(0.9,VAR[x].p*F.boost))p.v.push(x)});
+      p.v=VORDER.filter(function(x){return p.v.indexOf(x)>=0});
+      p.lk=F.boost;
+    }
+  }
+  farmTick(now);
+  flash(F.n+' used on '+itemName(p.t)+'. '+(useTime?F.hrs+' hours saved. ':'')+(useLuck?(tree?'The next 5 fruits get better odds.':'It got a bonus roll for giant, shiny and golden.'):''));
+  save();refreshFarm();
+}
+function water(p){
+  var now=Date.now(),tree=isTree(p);
+  farmTick(now);
+  var g=growOf(p,now);
+  if(tree?(g>=1&&p.fruits.length>=TREES[p.t].cap):(g>=1))return flash(itemName(p.t)+(tree?' is full of fruit already.':' is ready already.'));
+  if(p.w&&now-p.w<4*HR)return flash('Watered recently. Try again in '+dur(p.w+4*HR-now)+'.');
+  p.w=now;p.at-=HR;if(tree)p.next=(p.next||p.at+DAY)-HR;
+  farmTick(now);
+  flash('Watered '+itemName(p.t)+'. One hour saved.');
+  save();refreshFarm();
+}
+function harvest(p){
+  var got=[];
+  if(isTree(p)){(p.fruits||[]).forEach(function(f){addInv(p.t,f);got.push({id:p.t,f:f})});p.fruits=[]}
+  else{var f=p.v||[];addInv(p.t,f);got.push({id:p.t,f:f});S.farm.plants=S.farm.plants.filter(function(q){return q!==p})}
+  return got;
+}
+function report(got){
+  if(!got.length)return;
+  var sp=got.filter(function(x){return mult(x.f)>=2}),d=dayStat();
+  d.hv+=got.length;d.lk=(d.lk||0)+sp.length;
+  flash(got.length===1?'Harvested a '+vname(got[0].f,got[0].id)+'.':'Harvested '+got.length+' items.');
+  sp.slice(0,3).forEach(function(x){toast('Lucky find: '+vname(x.f,x.id)+', worth '+unit(x.id,x.f)+' coins.',{})});
+  if(sp.length)chime();
+  save();refreshFarm();
+}
+function harvestAll(){
+  var now=Date.now();farmTick(now);
+  var rd=S.farm.plants.filter(function(p){return isReady(p,now)}),got=[];
+  if(!rd.length)return flash('Nothing is ready yet.');
+  rd.forEach(function(p){got=got.concat(harvest(p))});
+  report(got);
+}
+function onFarm(pt){
+  var now=Date.now();
+  if(farmTick(now))save();
+  var hits=hitList(pt.x,pt.y,now),rd=hits.filter(function(h){return h.rdy})[0];
+  if(tool==='shovel'){
+    var ph=propHit(pt.x,pt.y),pl=hits[0];
+    if(!ph&&!pl)return flash('Nothing here to dig up.');
+    if(ph&&(!pl||ph.y>=pl.y)){
+      var rm=ph.o;S.farm.props=S.farm.props.filter(function(q){return q!==rm});flash('Picked up the '+PROPS[rm.t].n+'.');
+    }else{
+      var gone=pl.p;S.farm.plants=S.farm.plants.filter(function(q){return q!==gone});flash('Dug up '+itemName(gone.t)+'.');
+    }
+    save();refreshFarm();return;
+  }
+  if(tool.indexOf('fert:')===0){
+    if(!hits[0])return flash('Tap a plant to fertilize it.');
+    return fertilize(hits[0].p,tool.slice(5));
+  }
+  if(tool==='can'){
+    if(!hits[0])return flash('Tap a plant to water it.');
+    return water(hits[0].p);
+  }
+  if(rd)return report(harvest(rd.p));
+  var inSoil=!(pt.x<soil.x||pt.x>soil.x+soil.w||pt.y<soil.y||pt.y>soil.y+soil.h);
+  if(tool.indexOf('seed:')===0){
+    if(!inSoil)return flash('Tap the brown soil to plant.');
+    return plantAt(tool.slice(5),(pt.x-soil.x)/soil.w,(pt.y-soil.y-14)/(soil.h-26));
+  }
+  if(tool.indexOf('prop:')===0){
+    if(!inSoil)return flash('Tap the brown soil to place it.');
+    return propAt(tool.slice(5),(pt.x-soil.x)/soil.w,(pt.y-soil.y-14)/(soil.h-26));
+  }
+  if(hits[0])flash(describe(hits[0].p,now));
+}
+function sell(key,n){
+  var have=S.farm.inv[key]||0;
+  n=n==='all'?have:Math.min(n,have);
+  if(n<=0)return;
+  var total=n*priceOf(key),pk=parseKey(key);
+  S.farm.inv[key]=have-n;if(!S.farm.inv[key])delete S.farm.inv[key];
+  S.farm.sales+=total;dayStat().sold+=total;
+  toast('Sold '+n+' x '+vname(pk.f,pk.id)+' for '+total+' coins.',{});chime();save();refreshFarm();
+}
+function sellEverything(){
+  var tot=0,cnt=0;
+  Object.keys(S.farm.inv).forEach(function(k){tot+=S.farm.inv[k]*priceOf(k);cnt+=S.farm.inv[k]});
+  if(!cnt)return;
+  S.farm.sales+=tot;dayStat().sold+=tot;S.farm.inv={};
+  toast('Sold '+cnt+' items for '+tot+' coins.',{});chime();save();refreshFarm();
+}
+function buyUpgrade(id){
+  var U=UPS[id];
+  if(S.farm.up[id])return;
+  if(coins()<U.cost){pendingBuy=null;renderShop();return flash('You need '+U.cost+' coins for the '+U.n+'. You have '+coins()+'.')}
+  S.farm.up[id]=1;S.farm.spent+=U.cost;pendingBuy=null;
+  toast('Bought the '+U.n+'. '+U.d,{});chime();save();refreshFarm();
+}
+
+/* icons and panels */
+function icon(id,f,sz){
+  var base=CROPS[id]?CROPS[id]:{leaf:'#58b45b',body:TREES[id].fruit,acc:TREES[id].fruit},P=pal(base,f,0);
+  var s='<svg viewBox="0 0 32 32" width="'+sz+'" height="'+sz+'" aria-hidden="true">';
+  if(id==='potato')s+='<ellipse cx="16" cy="18" rx="11" ry="8" transform="rotate(-18 16 18)" fill="'+P.body+'"/><circle cx="12" cy="17" r="1.2" fill="'+P.dark+'"/><circle cx="19" cy="20" r="1.2" fill="'+P.dark+'"/>';
+  else if(id==='carrot')s+='<path d="M6 9 L5 4 M9 8 L10 2 M12 9 L16 4" stroke="'+P.leaf+'" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M5 9 C8 6 14 7 16 10 L27 29 L8 19 C5 16 4 12 5 9Z" fill="'+P.body+'"/>';
+  else if(id==='wheat')s+='<path d="M16 30 V9 M16 15 L10 10 M16 15 L22 10 M16 21 L10 16 M16 21 L22 16" stroke="'+P.leaf+'" stroke-width="1.8" stroke-linecap="round" fill="none"/><g fill="'+P.body+'"><ellipse cx="16" cy="6" rx="2.3" ry="4.2"/><ellipse cx="9.5" cy="9" rx="2.2" ry="3.8" transform="rotate(-30 9.5 9)"/><ellipse cx="22.5" cy="9" rx="2.2" ry="3.8" transform="rotate(30 22.5 9)"/><ellipse cx="9.5" cy="15" rx="2.2" ry="3.8" transform="rotate(-30 9.5 15)"/><ellipse cx="22.5" cy="15" rx="2.2" ry="3.8" transform="rotate(30 22.5 15)"/></g>';
+  else if(id==='turnip')s+='<path d="M16 12 L16 4 M16 12 L10 5 M16 12 L22 5" stroke="'+P.leaf+'" stroke-width="2.2" stroke-linecap="round" fill="none"/><circle cx="16" cy="19" r="9.5" fill="'+P.body+'"/><path d="M6.7 17 A9.5 9.5 0 0 1 25.3 17 Z" fill="'+P.acc+'"/>';
+  else if(id==='lettuce')s+='<circle cx="10.5" cy="19" r="8" fill="'+P.leaf+'"/><circle cx="21.5" cy="19" r="8" fill="'+P.leaf2+'"/><circle cx="16" cy="13.5" r="8.5" fill="'+P.body+'"/><circle cx="16" cy="15" r="4.5" fill="'+P.body2+'"/>';
+  else if(id==='onion')s+='<path d="M13 10 Q12 5 10 2 M16 9 L16 2 M19 10 Q20 5 22 2" stroke="'+P.leaf+'" stroke-width="2" stroke-linecap="round" fill="none"/><ellipse cx="16" cy="19" rx="10" ry="9" fill="'+P.body+'"/><ellipse cx="12.5" cy="16" rx="2.5" ry="5" fill="'+P.acc+'" opacity="0.55"/>';
+  else if(id==='tomato')s+='<circle cx="16" cy="19" r="10.5" fill="'+P.body+'"/><path d="M10 11 L16 14 L22 11 L19 9 L16 11 L13 9 Z" fill="'+P.leaf+'"/><ellipse cx="11.5" cy="16" rx="2.6" ry="1.8" fill="#fff" opacity="0.4"/>';
+  else if(id==='corn')s+='<path d="M16 28 C7 24 7 12 16 3 C25 12 25 24 16 28Z" fill="'+P.leaf+'"/><ellipse cx="16" cy="15" rx="5.5" ry="11" fill="'+P.body+'"/><path d="M13 6 V24 M16 4 V26 M19 6 V24 M11 12 H21 M11 18 H21" stroke="'+P.dark+'" stroke-width="0.8" opacity="0.4" fill="none"/>';
+  else if(id==='strawberry')s+='<path d="M7 12 C7 6 25 6 25 12 C25 20 19 28 16 28 C13 28 7 20 7 12Z" fill="'+P.body+'"/><path d="M10 9 L16 12 L22 9 L19 6 L16 8 L13 6 Z" fill="'+P.leaf+'"/><g fill="#fff" opacity="0.8"><circle cx="12" cy="15" r="0.9"/><circle cx="17" cy="17" r="0.9"/><circle cx="20" cy="13" r="0.9"/><circle cx="14" cy="21" r="0.9"/></g>';
+  else if(id==='pumpkin')s+='<ellipse cx="9.5" cy="19" rx="7" ry="9" fill="'+P.body+'"/><ellipse cx="22.5" cy="19" rx="7" ry="9" fill="'+P.body+'"/><ellipse cx="16" cy="19" rx="7.5" ry="10" fill="'+P.body+'"/><path d="M16 9 Q17 4 21 3" stroke="'+P.leaf+'" stroke-width="3" stroke-linecap="round" fill="none"/>';
+  else if(id==='banana')s+='<path d="M6 9 Q9 27 27 24" stroke="'+P.body+'" stroke-width="6.5" stroke-linecap="round" fill="none"/>';
+  else if(TREES[id]&&TREES[id].shape==='oval')s+='<ellipse cx="16" cy="18" rx="12" ry="9" transform="rotate(-25 16 18)" fill="'+P.body+'"/><ellipse cx="12" cy="14" rx="3" ry="1.8" fill="#fff" opacity="0.4"/>';
+  else s+='<circle cx="16" cy="19" r="10" fill="'+P.body+'"/><ellipse cx="12" cy="14.5" rx="3" ry="2" fill="#fff" opacity="0.4"/><path d="M16 9 Q17 5 20 4" stroke="#5a3b12" stroke-width="1.6" fill="none" stroke-linecap="round"/><ellipse cx="21" cy="6.5" rx="4" ry="2" transform="rotate(-25 21 6.5)" fill="#3f9b4f"/>';
+  return s+'</svg>';
+}
+function fertIcon(id,sz){
+  var col={quick:'#9a7b4f',rapid:'#d98a2b',lucky:'#2f9a6b',miracle:'#d4a000'}[id];
+  return '<svg viewBox="0 0 32 32" width="'+sz+'" height="'+sz+'" aria-hidden="true"><path d="M8 11 L24 11 L26 29 L6 29 Z" fill="'+col+'"/><path d="M11 11 L14 5 L18 5 L21 11" fill="none" stroke="#5a4630" stroke-width="2" stroke-linejoin="round"/><rect x="10" y="16" width="12" height="9" rx="2" fill="#fff" opacity="0.88"/><path d="M16 23 C12.5 22 12.5 18.5 16 17.5 C19.5 18.5 19.5 22 16 23Z" fill="'+col+'"/></svg>';
+}
+function toolIcon(id,sz){
+  var s='<svg viewBox="0 0 32 32" width="'+sz+'" height="'+sz+'" aria-hidden="true">';
+  if(id==='can')s+='<path d="M7 12 H21 L20 27 H8 Z" fill="#4f7cb8"/><path d="M21 15 L29 8 L30 11 L22 19 Z" fill="#4f7cb8"/><path d="M8 12 C8 5 20 5 20 12" fill="none" stroke="#2f5a8e" stroke-width="2"/><circle cx="29" cy="8.5" r="1.4" fill="#9ed0ff"/>';
+  else if(id==='sprinkler')s+='<rect x="14" y="14" width="4" height="14" fill="#8a98a8"/><circle cx="16" cy="12" r="4.5" fill="#4f7cb8"/><g fill="#9ed0ff"><circle cx="7" cy="8" r="1.6"/><circle cx="10" cy="4" r="1.6"/><circle cx="25" cy="8" r="1.6"/><circle cx="22" cy="4" r="1.6"/><circle cx="16" cy="3" r="1.6"/></g>';
+  else if(id==='scarecrow')s+='<path d="M16 8 V30 M4 17 H28" stroke="#7a5530" stroke-width="3" stroke-linecap="round"/><path d="M11 14 H21 L20 25 H12 Z" fill="#c75050"/><circle cx="16" cy="9" r="4" fill="#e8c98a"/><ellipse cx="16" cy="5.5" rx="7" ry="1.8" fill="#6b4a2a"/><ellipse cx="16" cy="3.5" rx="3.6" ry="2.6" fill="#6b4a2a"/>';
+  else if(id==='greenhouse')s+='<rect x="5" y="14" width="22" height="13" fill="#bfe9ff" stroke="#6a9fbf" stroke-width="1.5"/><path d="M3 14 L16 5 L29 14 Z" fill="#d6f1ff" stroke="#6a9fbf" stroke-width="1.5"/><path d="M16 5 V27 M10.5 14 V27 M21.5 14 V27" stroke="#6a9fbf" stroke-width="1.2"/><rect x="5" y="25" width="22" height="3" fill="#5b8a5e"/>';
+  else s+='<path d="M3 12 L8 4 H24 L29 12 Z" fill="#d1428a"/><path d="M8 4 L6 12 M16 4 V12 M24 4 L26 12" stroke="#fff" stroke-width="2" opacity="0.8"/><rect x="5" y="12" width="22" height="3" fill="#7a5530"/><rect x="6" y="15" width="3" height="13" fill="#7a5530"/><rect x="23" y="15" width="3" height="13" fill="#7a5530"/><rect x="6" y="22" width="20" height="3" fill="#a9794a"/>';
+  return s+'</svg>';
+}
+function keepFocus(el,fn){
+  var a=document.activeElement,id=(a&&el.contains(a))?a.getAttribute('data-fid'):null;
+  fn();
+  if(id){var n=el.querySelector('[data-fid="'+id+'"]');if(n&&!n.disabled)n.focus()}
+}
+function toolLabel(){
+  if(tool.indexOf('seed:')===0)return itemName(tool.slice(5))+', '+itemCost(tool.slice(5))+' coins';
+  if(tool.indexOf('fert:')===0)return FERTS[tool.slice(5)].n+', '+FERTS[tool.slice(5)].cost+' coins per use';
+  if(tool.indexOf('prop:')===0)return PROPS[tool.slice(5)].n+', '+PROPS[tool.slice(5)].cost+' coins';
+  return '';
+}
+function renderCoins(){
+  $('#g-coins').textContent=coins();
+  $('#g-coins-sub').textContent=S.farm.plants.length+' of '+MAXP+' plots used';
+}
+function renderTools(){
+  var el=$('#g-tools'),now=Date.now(),rd=S.farm.plants.filter(function(p){return isReady(p,now)}).length;
+  keepFocus(el,function(){
+    var h='<button type="button" class="btn small'+(tool==='hand'?' on':'')+'" data-a="tool" data-t="hand" data-fid="t-hand" aria-pressed="'+(tool==='hand')+'">Hand</button>'+
+      '<button type="button" class="btn small'+(tool==='shovel'?' on':'')+'" data-a="tool" data-t="shovel" data-fid="t-shovel" aria-pressed="'+(tool==='shovel')+'">Shovel</button>';
+    if(S.farm.up.can)h+='<button type="button" class="btn small'+(tool==='can'?' on':'')+'" data-a="tool" data-t="can" data-fid="t-can" aria-pressed="'+(tool==='can')+'">Watering can</button>';
+    h+='<button type="button" class="btn small pri" data-a="harvestall" data-fid="t-all"'+(rd?'':' disabled')+'>Harvest all ('+rd+' ready)</button>';
+    if(tool.indexOf('seed:')===0)h+='<button type="button" class="btn small" data-a="plantone" data-fid="t-one">Plant 1 in a random spot</button>';
+    var lab=toolLabel();
+    if(lab)h+='<span class="inhand">In hand: '+esc(lab)+'</span>';
+    el.innerHTML=h;
+  });
+}
+function renderShop(){
+  var el=$('#g-shop'),c=coins();
+  function box(t,id,name,cost,lines,ico,extra){
+    var sel=tool===t;
+    return '<button type="button" class="item'+(sel?' sel':'')+(c<cost&&extra!=='owned'?' poor':'')+(extra==='owned'?' owned':'')+'" data-a="'+(extra?'buyup':'pick')+'" data-t="'+t+'" data-id="'+id+'" data-fid="pick-'+id+'" aria-pressed="'+sel+'"'+(extra==='owned'?' disabled':'')+'>'+ico+
+      '<b>'+esc(name)+'</b><span class="cost">'+(extra==='owned'?'Owned':cost+' coins')+'</span>'+lines.map(function(l){return '<small>'+esc(l)+'</small>'}).join('')+'</button>';
+  }
+  function seedCard(id){
+    var it=CROPS[id]||TREES[id],tree=!!TREES[id];
+    return box('seed:'+id,id,it.n,it.cost,[tree?'Fruit from day 1, then every '+(it.every/HR)+' h':'Ready in 24 h',(tree?'Each fruit sells for ':'Sells for ')+it.sell],icon(id,[],30));
+  }
+  var h='<h3>Shop</h3><div class="tabs" role="group" aria-label="Shop sections">'+
+    [['seeds','Seeds'],['ferts','Fertilizer'],['tools','Tools']].map(function(t){return '<button type="button" class="btn small'+(shopTab===t[0]?' on':'')+'" data-a="shoptab" data-s="'+t[0]+'" data-fid="tab-'+t[0]+'" aria-pressed="'+(shopTab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
+  if(shopTab==='seeds'){
+    h+='<p class="hint" style="margin:10px 0 0">Pick one, then tap the soil to plant it. Plants can overlap.</p>'+
+      '<h4 class="shopsub">Crops</h4><div class="shopgrid">'+CROP_IDS.map(seedCard).join('')+'</div>'+
+      '<h4 class="shopsub">Fruit trees</h4><div class="shopgrid">'+TREE_IDS.map(seedCard).join('')+'</div>';
+  }else if(shopTab==='ferts'){
+    h+='<p class="hint" style="margin:10px 0 0">Pick one, then tap a plant to use it. You pay each time. On trees, time savers bring fruit sooner and lucky mixes improve the next 5 fruits.</p><div class="shopgrid" style="margin-top:12px">'+
+      FERT_IDS.map(function(id){var F=FERTS[id];return box('fert:'+id,id,F.n,F.cost,[F.d],fertIcon(id,30))}).join('')+'</div>';
+  }else{
+    h+='<p class="hint" style="margin:10px 0 0">Sprinklers, scarecrows and greenhouses are placed on the soil (up to '+MAXPROPS+'). Each covers the shaded oval around it.</p><div class="shopgrid" style="margin-top:12px">'+
+      (S.farm.up.can?box('can','can','Watering can',UPS.can.cost,[UPS.can.d],toolIcon('can',30),'owned'):box('can','can','Watering can',UPS.can.cost,[UPS.can.d],toolIcon('can',30),'buy'))+
+      ['sprinkler','scarecrow','greenhouse'].map(function(id){var P=PROPS[id];return box('prop:'+id,id,P.n,P.cost,[P.d],toolIcon(id,30))}).join('')+
+      (S.farm.up.stall?box('stall','stall','Market stall',UPS.stall.cost,[UPS.stall.d],toolIcon('stall',30),'owned'):box('stall','stall','Market stall',UPS.stall.cost,[UPS.stall.d],toolIcon('stall',30),'buy'))+'</div>';
+  }
+  keepFocus(el,function(){
+    el.innerHTML=h;
+    if(pendingBuy){var b=el.querySelector('[data-id="'+pendingBuy+'"]');if(b){b.classList.add('sel');b.querySelector('.cost').textContent='Tap again to buy for '+UPS[pendingBuy].cost}}
+  });
+}
+function renderBarn(){
+  var el=$('#g-barn'),inv=S.farm.inv,total=0;
+  var keys=Object.keys(inv).filter(function(k){return inv[k]>0}).sort(function(a,b){return priceOf(b)-priceOf(a)});
+  keys.forEach(function(k){total+=inv[k]*priceOf(k)});
+  keepFocus(el,function(){
+    var h='<h3>Barn</h3><p class="hint" style="margin:0">Good mutations multiply the price and bad ones cut it. Combined mutations multiply together. See the mutation guide below.'+(S.farm.up.stall?' Your market stall adds 15%.':'')+(boomOn()?' A market boom adds 25% right now.':'')+'</p>';
+    if(!keys.length)h+='<p class="empty" style="margin-top:12px">Nothing in the barn yet. Plant a seed, wait a day and harvest it.</p>';
+    else{
+      h+='<div class="gtools" style="margin:10px 0 0"><button type="button" class="btn pri small" data-a="sellall" data-fid="sellall">Sell everything for '+total+' coins</button></div><ul class="barn">';
+      keys.forEach(function(k){
+        var pk=parseKey(k),n=inv[k],pr=priceOf(k);
+        var chips=pk.f.map(function(x){return '<span class="vchip'+(VAR[x].bad?' bad':'')+'" style="--v:'+VAR[x].col+'"><i></i>'+VAR[x].n+'</span>'}).join('');
+        h+='<li class="bi'+(pk.f.some(function(x){return VRARE.indexOf(x)>=0})?' rare':'')+'">'+icon(pk.id,pk.f,32)+'<div style="min-width:0"><b>'+esc(vname(pk.f,pk.id))+'</b>'+(chips?'<div class="vs">'+chips+'</div>':'')+
+          '<div class="sub">x'+n+', '+pr+' coins each</div></div><div class="acts"><button type="button" class="btn small" data-a="sell1" data-k="'+esc(k)+'" data-fid="s1-'+esc(k)+'">Sell 1</button>'+
+          (n>1?'<button type="button" class="btn small" data-a="sellkey" data-k="'+esc(k)+'" data-fid="sk-'+esc(k)+'">Sell all '+n+' for '+(n*pr)+'</button>':'')+'</div></li>';
+      });
+      h+='</ul>';
+    }
+    el.innerHTML=h;
+  });
+}
+function refreshFarm(){
+  cv.setAttribute('aria-label','Your farm plot with '+S.farm.plants.length+' plants and '+S.farm.props.length+' tools');
+  checkQuests();renderHdr();renderCoins();renderTools();renderShop();renderBarn();renderQuests();updateCaption();redraw();
+}
+function renderGarden(){
+  $('#g-odds').textContent='Every crop and every fruit has a '+Math.round(VAR.giant.p*100)+'% chance to be giant, '+Math.round(VAR.shiny.p*100)+'% shiny and '+Math.round(VAR.golden.p*100)+'% golden. They can stack.';
+  renderGuide();renderLog();refreshFarm();
+}
+function initFarm(){
+  resize();
+  cv.addEventListener('click',function(ev){onFarm(evPos(ev))});
+  cv.addEventListener('pointermove',onMove);
+  cv.addEventListener('pointerleave',function(){ptr=null;hoverId=null;cv.style.cursor='default';updateCaption();redraw()});
+  if(window.ResizeObserver)new ResizeObserver(function(){if(Math.abs(Math.floor(cv.getBoundingClientRect().width)-W)>1)resize()}).observe(cv.parentNode);
+  else window.addEventListener('resize',resize);
+  try{new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})}catch(e){}
+  try{var mq=matchMedia('(prefers-color-scheme: dark)');if(mq.addEventListener)mq.addEventListener('change',redraw)}catch(e){}
+  evInit();setInterval(evTick,1000);
+  kick();
+}
+
+/* ---------- weather and events ---------- */
+function rnd(a,b){return a+Math.random()*(b-a)}
+function pickN(a,n){var c=a.slice(),out=[];while(c.length&&out.length<n)out.push(c.splice(Math.floor(Math.random()*c.length),1)[0]);return out}
+function pctPick(list,share,max){return list.length?pickN(list,Math.min(max||99,Math.max(1,Math.round(list.length*share)))):[]}
+function prot(p){return S.farm.props.some(function(r){return r.t==='greenhouse'&&near(r,p)})}
+function kill(list,kind){
+  var now=Date.now();
+  list.forEach(function(p){ghosts.push({o:p,start:now,kind:kind,g:growOf(p,now)})});
+  S.farm.plants=S.farm.plants.filter(function(p){return list.indexOf(p)<0});
+}
+function mutate(p,flag){
+  if(isTree(p)){
+    var fr=(p.fruits||[]).filter(function(x){return x.indexOf(flag)<0});
+    if(fr.length){
+      pickN(fr,3).forEach(function(x){x.push(flag)});
+      p.fruits.forEach(function(x){var s=VORDER.filter(function(k){return x.indexOf(k)>=0});x.length=0;s.forEach(function(k){x.push(k)})});
+    }else p.pend=(p.pend||[]).concat([flag,flag]);
+  }else{
+    p.v=p.v||[];
+    if(p.v.indexOf(flag)<0){p.v.push(flag);p.v=VORDER.filter(function(x){return p.v.indexOf(x)>=0})}
+  }
+}
+function safeNote(){var k=S.farm.plants.filter(prot).length;return k?' The greenhouse kept '+k+(k===1?' plant':' plants')+' safe.':''}
+var EFFECT={
+  rain:function(now){
+    var n=0;
+    S.farm.plants.forEach(function(p){
+      var g=growOf(p,now);
+      if(isTree(p)?(g<1||p.fruits.length<TREES[p.t].cap):g<1){p.at-=2*HR;if(isTree(p))p.next=(p.next||p.at+DAY)-2*HR;n++}
+    });
+    farmTick(now);
+    return n?'The farm got a good soaking. '+n+(n===1?' plant grew':' plants grew')+' 2 hours.':'Rain fell, but nothing needed it.';
+  },
+  boom:function(now){S.farm.ev.boom=now+30*60000;return 'Everything sells for 25% more for 30 minutes.'},
+  rainbow:function(now){
+    var t=pickN(S.farm.plants,3);t.forEach(function(p){mutate(p,'rainbow')});
+    return t.length?t.length+(t.length===1?' plant':' plants')+' will turn Rainbow.':'A rainbow arched over an empty field.';
+  },
+  meteor:function(now){
+    var t=pickN(S.farm.plants,2);t.forEach(function(p){mutate(p,'starlit')});
+    return t.length?t.length+(t.length===1?' plant was':' plants were')+' touched by starlight and will be Starlit.':'Meteors streaked over an empty field.';
+  },
+  thunder:function(now){
+    var tg=pickN(S.farm.plants,3),ok=0,dead=[];
+    tg.forEach(function(p){
+      var q=pos(p);fx.strikes.push({x:q.x,y:q.y});
+      if(prot(p)||Math.random()<0.55){mutate(p,'charged');ok++}else dead.push(p);
+    });
+    kill(dead,'burnt');
+    return tg.length?ok+' struck '+(ok===1?'plant turned':'plants turned')+' Charged. '+dead.length+' burned up.'+safeNote():'Lightning crackled over an empty field.';
+  },
+  tornado:function(now){
+    var v=pctPick(S.farm.plants.filter(function(p){return !prot(p)}),0.25,12);
+    kill(v,'tornado');
+    return (v.length?'It tore up '+v.length+(v.length===1?' plant.':' plants.'):'It passed through without hurting anything.')+safeNote();
+  },
+  flood:function(now){
+    var v=pctPick(S.farm.plants.filter(function(p){return !isTree(p)&&!prot(p)}),0.3);
+    kill(v,'flood');
+    var s=0;
+    S.farm.plants.forEach(function(p){if(!isTree(p)&&growOf(p,now)<1){p.at-=3*HR;s++}});
+    farmTick(now);
+    return (v.length?'The water washed away '+v.length+(v.length===1?' crop. ':' crops. '):'No crops were lost. ')+(s?'Rich silt sped up '+s+' growing '+(s===1?'crop':'crops')+' by 3 hours.':'')+safeNote();
+  },
+  hail:function(now){
+    var n=0;
+    S.farm.plants.forEach(function(p){if(!prot(p)&&Math.random()<0.3){mutate(p,'bruised');n++}});
+    return (n?'Hail bruised '+n+(n===1?' plant.':' plants.'):'The hail missed everything.')+safeNote();
+  },
+  locusts:function(now){
+    var v=pctPick(S.farm.plants.filter(function(p){return !isTree(p)&&!prot(p)}),0.2);
+    kill(v,'fade');
+    var b=0;
+    S.farm.plants.forEach(function(p){if(!prot(p)&&Math.random()<0.35){mutate(p,'buggy');b++}});
+    return (v.length?'Locusts devoured '+v.length+(v.length===1?' crop. ':' crops. '):'')+(b?b+(b===1?' plant is':' plants are')+' now Buggy.':'The swarm moved on.')+safeNote();
+  },
+  cold:function(now){
+    var v=pctPick(S.farm.plants.filter(function(p){return !isTree(p)&&!prot(p)}),0.2);
+    kill(v,'fade');
+    var n=0;
+    S.farm.plants.forEach(function(p){if(!prot(p)&&Math.random()<0.35){mutate(p,'frosted');n++}});
+    return (v.length?'Frost killed '+v.length+(v.length===1?' crop. ':' crops. '):'')+(n?n+(n===1?' plant turned':' plants turned')+' Frosted.':'Nothing was frosted.')+safeNote();
+  }
+};
+function pickEvent(){
+  var ids=Object.keys(EVENTS),tot=0,r;
+  ids.forEach(function(k){tot+=EVENTS[k].w});
+  r=Math.random()*tot;
+  for(var i=0;i<ids.length;i++){r-=EVENTS[ids[i]].w;if(r<0)return ids[i]}
+  return ids[0];
+}
+function fireEvent(id){
+  var now=Date.now(),E=EVENTS[id];
+  fx={id:id,start:now,dur:E.dur,strikes:[]};
+  var msg=EFFECT[id](now);
+  S.farm.log.unshift({ts:now,t:id,m:E.n+': '+msg});
+  S.farm.log=S.farm.log.slice(0,8);
+  bannerMsg=E.n+'. '+msg;bannerKind=E.kind;bannerUntil=now+25000;
+  toast(E.n+': '+msg,{});
+  if(E.kind!=='bad')chime();
+  save();refreshFarm();renderLog();
+}
+function evInit(){
+  var now=Date.now(),e=S.farm.ev;
+  e.warn=null;
+  if(!e.next||e.next<now)e.next=now+rnd(WARM_MIN,WARM_MAX);
+  lastEvT=now;lastBoom=boomOn(now);
+  save();
+}
+function evTick(){if(!authed)return;
+  var now=Date.now(),e=S.farm.ev,id;
+  if(lastEvT&&now-lastEvT>600000){
+    if(e.warn)e.warn=null;
+    e.next=Math.max(e.next,now+rnd(WARM_MIN,WARM_MAX));
+    save();
+  }
+  lastEvT=now;
+  if(e.warn){
+    if(now>=e.warn.at){id=e.warn.id;e.warn=null;e.next=now+rnd(EV_MIN,EV_MAX);fireEvent(id)}
+    else document.title='Warning: '+EVENTS[e.warn.id].n+' in '+Math.ceil((e.warn.at-now)/1000)+' s | Forget-Me-Not';
+  }else if(now>=e.next){
+    id=pickEvent();
+    if(EVENTS[id].warn){
+      e.warn={id:id,at:now+EVENTS[id].warn};
+      toast(EVENTS[id].n+' warning! It arrives in '+Math.round(EVENTS[id].warn/1000)+' seconds.',{remind:true});
+      chime();save();
+    }else{e.next=now+rnd(EV_MIN,EV_MAX);fireEvent(id)}
+  }
+  var bo=boomOn(now);
+  if(bo!==lastBoom){lastBoom=bo;renderBarn()}
+  renderBanner(now);
+}
+function renderBanner(now){
+  var el=$('#g-banner'),e=S.farm.ev,txt='',kind='',btn=$('#b-btn'),rd=0,showBtn=false;
+  if(e.warn){
+    var E=EVENTS[e.warn.id];
+    txt=E.n+' warning: arrives in '+Math.max(0,Math.ceil((e.warn.at-now)/1000))+' s. '+E.tip;kind='bad';
+    rd=S.farm.plants.filter(function(p){return isReady(p,now)}).length;showBtn=rd>0;
+  }else if(boomOn(now)){txt='Market boom: everything sells for 25% more for '+dur(e.boom-now)+'.';kind='good'}
+  else if(bannerUntil>now){txt=bannerMsg;kind=bannerKind}
+  var key=txt+'|'+kind+'|'+showBtn+'|'+rd;
+  if(key===bannerCache)return;
+  bannerCache=key;
+  el.hidden=!txt;el.className='banner'+(kind?' '+kind:'');
+  $('#b-text').textContent=txt;
+  btn.hidden=!showBtn;btn.textContent='Harvest all now ('+rd+')';
+}
+function renderLog(){
+  var el=$('#g-log'),now=Date.now();
+  el.innerHTML=S.farm.log.length?S.farm.log.map(function(l){return '<li>'+esc(l.m)+' <small>('+dur(now-l.ts)+' ago)</small></li>'}).join(''):'<li>No weather yet. Storms, rain and other events show up here.</li>';
+}
+function renderGuide(){
+  var rows=VORDER.map(function(k){
+    var v=VAR[k],mm=v.m>=1?'x'+v.m:'x'+v.m;
+    return '<tr><td><span class="vchip'+(v.bad?' bad':'')+'" style="--v:'+v.col+'"><i></i>'+v.n+'</span></td><td>'+mm+' price</td><td>'+esc(v.how)+'</td></tr>';
+  }).join('');
+  var ev=Object.keys(EVENTS).map(function(k){
+    var E=EVENTS[k];return '<tr><td><b>'+esc(E.n)+'</b></td><td>'+({good:'Helps',bad:'Harms',mixed:'Mixed',special:'Special'}[E.kind])+'</td><td>'+esc(E.tip||'Arrives without warning.')+'</td></tr>';
+  }).join('');
+  $('#g-guide').innerHTML='<table class="gtable"><thead><tr><th>Mutation</th><th>Value</th><th>How you get it</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<p class="hint" style="margin:12px 0 0">Events happen every few hours while this page is open. Dangerous ones give a warning first. They never hit while you are away.</p>'+
+    '<table class="gtable" style="margin-top:8px"><thead><tr><th>Event</th><th>Effect</th><th>Notes</th></tr></thead><tbody>'+ev+'</tbody></table>';
+}
+function drawGhosts(t,now){
+  ghosts=ghosts.filter(function(g){return now-g.start<2800});
+  ghosts.forEach(function(g){
+    var a=(now-g.start)/2800,q=pos(g.o),d=dims(g.o,g.g),dx=0,dy=0,rot=0;
+    if(g.kind==='tornado'){dx=Math.sin(a*12)*30*a;dy=-a*140;rot=a*9}
+    else if(g.kind==='flood'){dx=a*70;dy=a*8;rot=a*0.6}
+    else if(g.kind==='burnt'){dy=-a*8}
+    else dy=a*6;
+    cx.save();cx.globalAlpha=Math.max(0,1-a);cx.translate(q.x+dx,q.y+dy);cx.rotate(rot);cx.scale(d.k,d.k);
+    if(isTree(g.o))drawTree(g.o,g.g,t);else drawCrop(g.o,g.g,t);
+    cx.restore();
+  });
+}
+function fxDraw(t,now,dk){
+  var w=S.farm.ev.warn,i;
+  if(w){
+    var left=Math.max(0,w.at-now),ramp=1-Math.min(1,left/EVENTS[w.id].warn);
+    cx.fillStyle='rgba(20,28,60,'+(0.08+0.22*ramp).toFixed(2)+')';cx.fillRect(0,0,W,CH);
+  }
+  if(!fx)return;
+  var a=(now-fx.start)/fx.dur;
+  if(a>=1){fx=null;return}
+  var id=fx.id;
+  if(id==='rain'){
+    cx.fillStyle='rgba(50,80,130,'+(0.14*Math.sin(a*Math.PI)).toFixed(2)+')';cx.fillRect(0,0,W,CH);
+    cx.strokeStyle='rgba(200,225,255,0.75)';cx.lineWidth=1.2;cx.beginPath();
+    for(i=0;i<110;i++){var x=(i*97+t*0.12)%W,y=(i*53+t*0.8)%CH;cx.moveTo(x,y);cx.lineTo(x-3,y+9)}
+    cx.stroke();
+  }else if(id==='boom'){
+    for(i=0;i<18;i++){star((i*113)%W,CH-((a*CH*1.3+i*29)%CH),2.5+(i%3),'#ffd23f')}
+  }else if(id==='rainbow'){
+    var al=Math.min(1,a*4)*Math.min(1,(1-a)*4);
+    cx.lineWidth=7;
+    for(i=0;i<7;i++){cx.strokeStyle='hsla('+(i*48)+',85%,60%,'+(0.6*al).toFixed(2)+')';cx.beginPath();cx.arc(W/2,soil.y+70,W*0.34-i*7,Math.PI,TAU);cx.stroke()}
+  }else if(id==='meteor'){
+    for(i=0;i<5;i++){
+      var p0=(a*1.2+i*0.17)%1,mx=W*(0.15+i*0.18)+p0*W*0.25,my=-10+p0*soil.y*1.1;
+      var gr=cx.createLinearGradient(mx-40,my-30,mx,my);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(255,245,200,0.95)');
+      cx.strokeStyle=gr;cx.lineWidth=2.4;cx.beginPath();cx.moveTo(mx-40,my-30);cx.lineTo(mx,my);cx.stroke();
+    }
+  }else if(id==='thunder'){
+    cx.fillStyle='rgba(20,25,50,'+(0.25*Math.sin(a*Math.PI)).toFixed(2)+')';cx.fillRect(0,0,W,CH);
+    if(a<0.6&&Math.sin(a*60)>0.7){cx.fillStyle='rgba(255,255,255,0.35)';cx.fillRect(0,0,W,CH)}
+    cx.strokeStyle='#fff7b0';cx.lineWidth=2.4;
+    (fx.strikes||[]).forEach(function(s,k){
+      if(a<0.5&&Math.sin(a*50+k)>-0.3){cx.beginPath();cx.moveTo(s.x,0);for(var j=1;j<=7;j++)cx.lineTo(s.x+(j%2?-9:9)*(1-j/7),s.y*j/7);cx.stroke()}
+    });
+  }else if(id==='tornado'){
+    var fxX=W*(0.08+0.84*a);
+    cx.fillStyle='rgba(60,60,72,0.14)';cx.fillRect(0,0,W,CH);
+    for(i=0;i<9;i++){var yy=CH-8-i*(CH*0.88/9),rx=14+i*10;cx.fillStyle='rgba(70,70,84,'+(0.8-i*0.05).toFixed(2)+')';cx.beginPath();cx.ellipse(fxX+Math.sin(t/170+i)*8,yy,rx,9,0,0,TAU);cx.fill()}
+    cx.fillStyle='#6b5333';
+    for(i=0;i<14;i++){var an=t/120+i*0.9,hh=i/14;cx.fillRect(fxX+Math.cos(an)*(20+hh*80),CH-20-hh*CH*0.8+Math.sin(an)*5,3,3)}
+  }else if(id==='flood'){
+    var lvl=soil.h*0.55*Math.sin(a*Math.PI);
+    cx.save();rr(soil.x,soil.y,soil.w,soil.h,14);cx.clip();
+    cx.fillStyle='rgba(60,130,200,0.5)';cx.beginPath();cx.moveTo(soil.x,soil.y+soil.h);
+    for(i=0;i<=24;i++)cx.lineTo(soil.x+soil.w*i/24,soil.y+soil.h-lvl+Math.sin(t/260+i*0.9)*3);
+    cx.lineTo(soil.x+soil.w,soil.y+soil.h);cx.closePath();cx.fill();cx.restore();
+  }else if(id==='hail'){
+    cx.fillStyle='rgba(60,70,90,'+(0.2*Math.sin(a*Math.PI)).toFixed(2)+')';cx.fillRect(0,0,W,CH);
+    cx.fillStyle='rgba(255,255,255,0.9)';
+    for(i=0;i<70;i++){cx.beginPath();cx.arc((i*131)%W,(t*0.9+i*47)%CH,2.3,0,TAU);cx.fill()}
+  }else if(id==='locusts'){
+    cx.fillStyle='rgba(60,45,15,0.9)';
+    for(i=0;i<46;i++){
+      var lx=(a*1.4-0.2)*W+Math.sin(i*3.1)*W*0.25+Math.sin(t/140+i)*10,ly=soil.y*0.3+((i*37)%100)/100*(CH*0.6)+Math.cos(t/120+i)*8;
+      cx.beginPath();cx.ellipse(lx,ly,3.2,1.6,Math.sin(t/90+i),0,TAU);cx.fill();
+    }
+  }else if(id==='cold'){
+    cx.fillStyle='rgba(160,205,255,'+(0.2*Math.sin(a*Math.PI)).toFixed(2)+')';cx.fillRect(0,0,W,CH);
+    cx.fillStyle='rgba(255,255,255,0.85)';
+    for(i=0;i<60;i++){cx.beginPath();cx.arc((i*89+Math.sin(t/900+i)*14)%W,(t*0.06+i*41)%CH,1.8,0,TAU);cx.fill()}
+  }
+}
+function renderFoot(){
+  var hasSample=S.events.some(function(e){return e.sample});
+  $('#foot').innerHTML='<span>'+esc(syncMsg)+'</span><button class="btn" data-a="sound" aria-pressed="'+!!S.sound+'">Reminder chime: '+(S.sound?'On':'Off')+'</button>'+(hasSample?'<button class="btn" data-a="clearsamples">Remove the example events</button>':'')+(me?'<button class="btn" data-a="signout">Sign out ('+esc(me.user)+')</button>':'');
+}
+function renderAll(){renderHdr();renderNext();renderCal();renderDay();renderQuests();renderGarden();renderFoot()}
+
+/* ---------- form ---------- */
+function fill(id,opts){$(id).innerHTML=opts.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'}).join('')}
+fill('#f-cat',Object.keys(CATS).map(function(k){return[k,CATS[k].n]}));
+fill('#f-lead',LEADS);fill('#f-repeat',REPEATS);
+function openForm(id){
+  editId=id||null;
+  var e=id?S.events.find(function(x){return x.id===id}):null,now=new Date();
+  $('#form-title').textContent=e?'Edit event':'Add an event';
+  $('#f-title').value=e?e.title:'';
+  $('#f-date').value=e?e.date:sel;
+  var st,en;
+  if(e){st=e.start;en=e.end}
+  else if(sel===ymd(now)){var h=Math.min(now.getHours()+1,22);st=pad(h)+':00';en=pad(h+1)+':00'}
+  else{st='09:00';en='10:00'}
+  $('#f-start').value=st;$('#f-end').value=en;
+  $('#f-cat').value=e?e.cat:'meeting';
+  $('#f-lead').value=String(e?e.lead:15);
+  $('#f-repeat').value=e?e.repeat:'none';
+  setDays(e&&e.days?e.days:[1,2,3,4,5]);syncDays();
+  $('#f-notes').value=e?e.notes:'';
+  $('#f-err').textContent='';
+  $('#form-card').hidden=false;
+  $('#form-card').scrollIntoView({block:'nearest',behavior:'smooth'});
+  $('#f-title').focus({preventScroll:true});
+}
+$('#f-days').innerHTML=PICKDAYS.map(function(p){return '<label class="pd"><input type="checkbox" name="pd" value="'+p[0]+'">'+p[1]+'</label>'}).join('');
+function getDays(){return Array.prototype.slice.call(document.querySelectorAll('#f-days input:checked')).map(function(i){return Number(i.value)})}
+function setDays(arr){Array.prototype.forEach.call(document.querySelectorAll('#f-days input'),function(i){i.checked=arr.indexOf(Number(i.value))>=0})}
+function syncDays(){$('#days-field').hidden=$('#f-repeat').value!=='custom'}
+$('#f-repeat').addEventListener('change',syncDays);
+function repLabel(e){
+  if(e.repeat==='none')return '';
+  if(e.repeat==='custom'){
+    var names=PICKDAYS.filter(function(p){return (e.days||[]).indexOf(p[0])>=0}).map(function(p){return p[1]});
+    return 'Every '+(names.join(', ')||'chosen day');
+  }
+  return REPEATS.filter(function(r){return r[0]===e.repeat})[0][1];
+}
+function closeForm(){$('#form-card').hidden=true;editId=null}
+$('#form').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  var title=$('#f-title').value.trim(),date=$('#f-date').value,st=$('#f-start').value,en=$('#f-end').value;
+  function err(m){$('#f-err').textContent=m}
+  if(!title)return err('Give it a name so you recognize it later.');
+  if(!date)return err('Pick a date.');
+  if(!st||!en)return err('Set a start and an end time.');
+  if(toMin(en)<=toMin(st))return err('The end time has to be after the start time.');
+  if($('#f-repeat').value==='custom'&&!getDays().length)return err('Pick at least one day to repeat on.');
+  var vals={title:title,date:date,start:st,end:en,cat:$('#f-cat').value,lead:Number($('#f-lead').value),repeat:$('#f-repeat').value,days:$('#f-repeat').value==='custom'?getDays():[],notes:$('#f-notes').value.trim()};
+  if(editId){var e=S.events.find(function(x){return x.id===editId});if(e){Object.assign(e,vals);e.sample=false}}
+  else{vals.id=uid();vals.created=ymd(new Date());S.events.push(vals)}
+  sel=date;var d=fromYmd(date);view={y:d.getFullYear(),m:d.getMonth()};
+  closeForm();
+  var prev=Object.keys(S.bonus).length;
+  checkQuests();
+  if(!editId&&Object.keys(S.bonus).length===prev)toast('Saved. You will be reminded '+leadLabel(vals.lead).toLowerCase()+'.',{});
+  save();renderAll();tick();
+});
+
+/* ---------- clicks ---------- */
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-a]');if(!b)return;
+  var a=b.dataset.a;
+  if(pendingBuy&&a!=='buyup'){pendingBuy=null;renderShop()}
+  if(a==='prev'||a==='next'){var d=new Date(view.y,view.m+(a==='next'?1:-1),1);view={y:d.getFullYear(),m:d.getMonth()};renderCal()}
+  else if(a==='today'){var n=new Date();view={y:n.getFullYear(),m:n.getMonth()};sel=ymd(n);renderCal();renderDay()}
+  else if(a==='sel'||a==='goto'){sel=b.dataset.d;var d2=fromYmd(sel);view={y:d2.getFullYear(),m:d2.getMonth()};confirmDel=null;renderCal();renderDay();if(a==='goto')$('#day').scrollIntoView({block:'nearest',behavior:'smooth'})}
+  else if(a==='add')openForm(null);
+  else if(a==='edit')openForm(b.dataset.id);
+  else if(a==='closeform')closeForm();
+  else if(a==='done')markDone(b.dataset.k);
+  else if(a==='undo')undo(b.dataset.k);
+  else if(a==='del'){confirmDel=b.dataset.id;renderDay()}
+  else if(a==='delno'){confirmDel=null;renderDay()}
+  else if(a==='delyes'){S.events=S.events.filter(function(e){return e.id!==b.dataset.id});confirmDel=null;save();renderAll()}
+  else if(a==='sound'){S.sound=!S.sound;if(S.sound)chime();save();renderFoot()}
+  else if(a==='pparse'){var tx=$('#p-text').value;if(!tx.trim()){pasteItems=[];renderPaste('Paste some text first.');return}pasteItems=parsePaste(tx);renderPaste(pasteItems.length?'':'I could not find a time or a date in that text. Try a line like: Dentist Nov 3 at 2:30pm.')}
+  else if(a==='pexample'){$('#p-text').value=PM_EXAMPLE;pasteItems=parsePaste(PM_EXAMPLE);renderPaste()}
+  else if(a==='padd')addPasted();
+  else if(a==='pcancel'){pasteItems=[];renderPaste()}
+  else if(a==='cpreset')setPreset(+b.dataset.i);
+  else if(a==='signout')signOut();
+  else if(a==='clearsamples'){S.events=S.events.filter(function(e){return !e.sample});save();renderAll()}
+  else if(a==='tool'){tool=b.dataset.t;refreshFarm()}
+  else if(a==='pick'){tool=(tool===b.dataset.t)?'hand':b.dataset.t;refreshFarm()}
+  else if(a==='shoptab'){shopTab=b.dataset.s;pendingBuy=null;renderShop()}
+  else if(a==='buyup'){if(pendingBuy===b.dataset.id)buyUpgrade(b.dataset.id);else{pendingBuy=b.dataset.id;renderShop()}}
+  else if(a==='harvestall')harvestAll();
+  else if(a==='plantone'&&tool.indexOf('seed:')===0)plantAt(tool.slice(5),Math.random(),Math.random());
+  else if(a==='sell1')sell(b.dataset.k,1);
+  else if(a==='sellkey')sell(b.dataset.k,'all');
+  else if(a==='sellall')sellEverything();
+});
+document.addEventListener('keydown',function(ev){if(ev.key!=='Escape')return;if(!$('#form-card').hidden)closeForm();else if(tool!=='hand'){tool='hand';refreshFarm()}});
+
+/* ---------- paste to add ---------- */
+var pasteItems=[];
+var PM_MONTHS='january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept|sep|oct|nov|dec';
+var PM_WD='sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tues|tue|wed|thurs|thur|thu|fri|sat';
+var MARK='\u0001';
+var PM_EXAMPLE='Biology lecture, Mon/Wed/Fri 9:00-10:15 AM, Room 204\nDentist appointment Nov 3 at 2:30pm (bring insurance card)\nTeam stand-up tomorrow 10am - Zoom link in the email\n\nName: Study group\nDate: Thursday\nTime: 6 to 7:30 PM\nInfo: Library, 2nd floor';
+
+function monIdx(w){return ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(w.slice(0,3).toLowerCase())}
+function dowIdx(w){return ['sun','mon','tue','wed','thu','fri','sat'].indexOf(w.slice(0,3).toLowerCase())}
+function validYMD(y,m,d){var x=new Date(y,m,d);return x.getFullYear()===y&&x.getMonth()===m&&x.getDate()===d}
+function merOf(x){return x?(x.charAt(0).toLowerCase()==='p'?'pm':'am'):''}
+function to24(h,mi,mer){if(mer==='pm'&&h<12)h+=12;if(mer==='am'&&h===12)h=0;return h*60+mi}
+function guessH(h){return (h>=1&&h<=6)?h+12:h}
+function hhmm(min){min=Math.max(0,Math.min(1439,Math.round(min)));return pad(Math.floor(min/60))+':'+pad(min%60)}
+function dayStart(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
+
+/* find the first match of a global regex that passes a check */
+function findValid(re,s,ok){
+  var m;re.lastIndex=0;
+  while((m=re.exec(s))){if(!ok||ok(m))return m;if(m[0].length===0)re.lastIndex++}
+  return null;
+}
+function cutAt(s,m){return s.slice(0,m.index)+MARK+s.slice(m.index+m[0].length)}
+
+function takeTimes(str){
+  var s=str.replace(/\bnoon\b/ig,'12:00 pm').replace(/\bmidnight\b/ig,'12:00 am'),res={start:null,end:null,s:s},m;
+  var RANGE=/(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\s*(?:-|–|—|to|until|till)\s*(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/gi;
+  m=findValid(RANGE,s,function(x){
+    var h1=+x[1],h2=+x[4];
+    if(!(x[3]||x[6]||x[2]||x[5]))return false;
+    if((x[3]||x[6])&&(h1>12||h2>12||h1<1||h2<1))return false;
+    return h1<=23&&h2<=23&&(!x[2]||+x[2]<60)&&(!x[5]||+x[5]<60);
+  });
+  if(m){
+    var h1=+m[1],i1=+(m[2]||0),a1=merOf(m[3]),h2=+m[4],i2=+(m[5]||0),a2=merOf(m[6]),s1,e1;
+    if(a1||a2){
+      if(!a1)a1=to24(h1,i1,a2)>to24(h2,i2,a2)?(a2==='pm'?'am':'pm'):a2;
+      if(!a2)a2=to24(h2,i2,a1)<=to24(h1,i1,a1)?(a1==='pm'?'am':'pm'):a1;
+      s1=to24(h1,i1,a1);e1=to24(h2,i2,a2);
+    }else{
+      s1=guessH(h1)*60+i1;e1=guessH(h2)*60+i2;
+      if(e1<=s1&&e1<720)e1+=720;
+    }
+    res.start=hhmm(s1);res.end=hhmm(e1>s1?e1:s1+60);res.s=cutAt(s,m);
+    return res;
+  }
+  var SING=/(?:\b(?:at|@)\s*)?\b(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)(?![a-z])/gi;
+  m=findValid(SING,s,function(x){return +x[1]>=1&&+x[1]<=12&&(!x[2]||+x[2]<60)});
+  if(m){res.start=hhmm(to24(+m[1],+(m[2]||0),merOf(m[3])));res.s=cutAt(s,m)}
+  else{
+    var C24=/\b(\d{1,2}):([0-5]\d)\b/g;
+    m=findValid(C24,s,function(x){return +x[1]<=23});
+    if(m){var hh=+m[1];res.start=hhmm((hh<=12?guessH(hh):hh)*60+(+m[2]));res.s=cutAt(s,m)}
+  }
+  return res;
+}
+
+function takeDate(str){
+  var s=str,info={iso:null,rel:null,dow:null,next:false,repeat:'none',days:[],weekend:false},m,i;
+  function cut(re){var x=s.match(re);if(x)s=cutAt(s,x);return x}
+  var D={mon:1,tue:2,wed:3,thu:4,fri:5,sat:6,sun:0};
+  /* repeating patterns */
+  m=cut(/\b(MWF|MTWTF|MTWRF|MTWT|MTW|MW|WF|MF|TTh|TuTh|TR)\b/);
+  if(m){
+    var code=m[1],k=0;
+    while(k<code.length){
+      var two=code.substr(k,2);
+      if(two==='Th'||two==='Tu'){info.days.push(two==='Th'?4:2);k+=2;continue}
+      var ch=code.charAt(k);
+      info.days.push({M:1,T:2,W:3,R:4,F:5}[ch]);k++;
+    }
+    info.repeat='custom';
+  }
+  if(!info.repeat||info.repeat==='none'){
+    m=cut(new RegExp('\\b('+PM_WD+')s?\\b\\s*(?:-|\\u2013|\\u2014|to|through|thru)\\s*\\b('+PM_WD+')s?\\b','i'));
+    if(m){
+      var a=dowIdx(m[1]),b=dowIdx(m[2]);
+      for(i=a;i!==(b+1)%7;i=(i+1)%7){info.days.push(i);if(info.days.length>7)break}
+      info.repeat='custom';
+    }
+  }
+  if(info.repeat==='none'){
+    var LIST=new RegExp('\\b('+PM_WD+')s?\\b(?:\\s*(?:,|/|&|\\+|and|or)\\s*('+PM_WD+')s?\\b)+','i');
+    m=cut(LIST);
+    if(m){
+      var words=m[0].match(new RegExp('\\b('+PM_WD+')','gi'))||[];
+      words.forEach(function(w){var d=dowIdx(w);if(info.days.indexOf(d)<0)info.days.push(d)});
+      info.repeat='custom';
+    }
+  }
+  if(info.repeat==='none'){
+    m=cut(/\b(?:every\s+)?(sundays|mondays|tuesdays|wednesdays|thursdays|fridays|saturdays)\b/i)||cut(new RegExp('\\bevery\\s+('+PM_WD+')\\b','i'));
+    if(m){info.dow=dowIdx(m[1]);info.repeat='weekly'}
+  }
+  if(info.repeat==='none'){
+    if(cut(/\b(?:every\s*day|daily|each day)\b/i))info.repeat='daily';
+    else if(cut(/\b(?:every\s+weekday|weekdays)\b/i))info.repeat='weekdays';
+    else if(cut(/\b(?:weekly|every\s+week)\b/i))info.repeat='weekly';
+  }
+  if(info.repeat==='custom'){
+    info.weekend=info.days.some(function(d){return d===0||d===6});
+    info.days=info.days.filter(function(d){return d>=1&&d<=5}).sort();
+    if(!info.days.length){info.repeat='weekly';info.dow=1}
+    else if(info.days.length===1){info.repeat='weekly';info.dow=info.days[0]}
+    else if(info.days.join()==='1,2,3,4,5'){info.repeat='weekdays'}
+  }
+  /* explicit dates */
+  var now=new Date(),yr=now.getFullYear();
+  m=cut(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  if(m&&validYMD(+m[1],m[2]-1,+m[3]))info.iso={y:+m[1],m:m[2]-1,d:+m[3]};
+  else if(m){s=s.replace(MARK,m[0])}
+  if(!info.iso){
+    m=cut(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+    if(m){
+      var mo=+m[1],dd=+m[2];if(mo>12&&dd<=12){var t=mo;mo=dd;dd=t}
+      var yy=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):0;
+      if(mo>=1&&mo<=12&&validYMD(yy||yr,mo-1,dd))info.iso={y:yy||0,m:mo-1,d:dd};
+      else s=s.replace(MARK,m[0]);
+    }
+  }
+  if(!info.iso){
+    m=cut(new RegExp('\\b('+PM_MONTHS+')\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s*(\\d{4}))?\\b','i'));
+    if(!m)m=(function(){var x=s.match(new RegExp('\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?('+PM_MONTHS+')\\b\\.?(?:,?\\s*(\\d{4}))?','i'));if(x){s=cutAt(s,x);return[x[0],x[2],x[1],x[3]]}return null})();
+    if(m&&validYMD(+m[3]||yr,monIdx(m[1]),+m[2]))info.iso={y:+m[3]||0,m:monIdx(m[1]),d:+m[2]};
+  }
+  if(!info.iso){
+    m=cut(/\b(today|tonight|tomorrow|tmrw|tmr)\b/i);
+    if(m)info.rel=/^to(day|night)$/i.test(m[1])?'today':'tomorrow';
+  }
+  if(!info.iso&&!info.rel&&info.dow===null){
+    m=cut(new RegExp('\\b(?:(next|this|coming)\\s+)?('+PM_WD+')\\b','i'));
+    if(m){info.dow=dowIdx(m[2]);info.next=/^next$/i.test(m[1]||'')}
+  }
+  return {s:s,info:info};
+}
+
+function nextDow(dow,from,startMin,allowToday){
+  var d=dayStart(from),diff=(dow-d.getDay()+7)%7;
+  if(diff===0&&allowToday&&startMin!==null){
+    var n=new Date();
+    if(ymd(d)===ymd(n)&&n.getHours()*60+n.getMinutes()>startMin)diff=7;
+  }
+  d.setDate(d.getDate()+diff);return d;
+}
+function finalDate(info,ctx,startMin){
+  var now=new Date(),today=dayStart(now),tomorrow=addDays(today,1),d=null;
+  if(info.iso){
+    var y=info.iso.y;
+    if(y){d=new Date(y,info.iso.m,info.iso.d)}
+    else{d=new Date(today.getFullYear(),info.iso.m,info.iso.d);if(d<addDays(today,-30))d=new Date(today.getFullYear()+1,info.iso.m,info.iso.d)}
+  }else if(info.repeat==='custom'){
+    var best=null;
+    info.days.forEach(function(w){var c=nextDow(w,today,startMin,true);if(!best||c<best)best=c});
+    d=best;
+  }else if(info.repeat==='weekly'&&info.dow!==null)d=nextDow(info.dow,today,startMin,true);
+  else if(info.repeat==='weekdays'){
+    d=today;
+    if(d.getDay()===0||d.getDay()===6||(startMin!==null&&ymd(d)===ymd(now)&&now.getHours()*60+now.getMinutes()>startMin&&false))d=nextDow(1,today,null,false);
+  }else if(info.repeat==='daily')d=today;
+  else if(info.rel==='today')d=today;
+  else if(info.rel==='tomorrow')d=tomorrow;
+  else if(info.dow!==null)d=info.next?nextDow(info.dow,tomorrow,null,false):nextDow(info.dow,today,startMin,true);
+  else if(ctx&&ctx.date)d=fromYmd(ctx.date);
+  return d?ymd(d):null;
+}
+
+var CAT_WORDS=[
+  ['class',/\b(class|lecture|lab|seminar|course|professor|prof|tutorial|recitation|section|exam|midterm|final|quiz|school|period)\b/i],
+  ['meeting',/\b(meeting|stand-?up|sync|call|interview|1:1|one-on-one|zoom|teams|conference|review|check-?in|webinar)\b/i],
+  ['focus',/\b(study|homework|assignment|project|essay|paper|focus|practice|deadline|due|work on|revise|reading)\b/i],
+  ['personal',/\b(doctor|dentist|appointment|gym|workout|therapy|haircut|checkup|pharmacy|errand|dinner with|lunch with)\b/i],
+  ['event',/\b(birthday|party|concert|game|match|trip|wedding|festival|show|dinner|recital|graduation|ceremony)\b/i]
+];
+function guessCat(text){
+  for(var i=0;i<CAT_WORDS.length;i++)if(CAT_WORDS[i][1].test(text))return CAT_WORDS[i][0];
+  return 'event';
+}
+
+function tidy(r){
+  r=r.replace(/(?:\b(?:on|at|from|starting|starts|beginning|every|each|until|till|by|between|during)\b[\s,]*)+(?=\u0001)/gi,'');
+  r=r.replace(/\u0001(?:[\s,;:@|\-–—]|and|to)*(?=\u0001)/gi,'');
+  r=r.replace(/[()\[\]]/g,'|');
+  return r.split(/\u0001|\||;|\s[-–—]\s|,(?=\s)/).map(function(p){
+    return p.replace(/^[\s:@\-–—,.]+|[\s:@\-–—,]+$/g,'').replace(/^(?:at|on|from|in|the)\s+$/i,'').trim();
+  }).filter(function(p){return /[A-Za-z0-9]/.test(p)});
+}
+
+function buildItem(info,times,parts,ctx,srcLine,forcedTitle,forcedNotes){
+  var startMin=times.start?toMin(times.start):null,date=finalDate(info,ctx,startMin),flags=[];
+  var title=forcedTitle||parts[0]||'',notes=forcedNotes!==undefined?forcedNotes:parts.slice(1).join('; ');
+  if(!title&&notes){title=notes;notes=''}
+  if(title.length>80){notes=(title.slice(80)+(notes?'; '+notes:'')).trim();title=title.slice(0,80).trim()}
+  if(!title){title='Untitled event';flags.push('No name found.')}
+  var start=times.start,end=times.end;
+  if(!start){start='09:00';end='10:00';flags.push('No time found. I set 9:00 AM, please check.')}
+  else if(!end){var em=toMin(start)+60;end=hhmm(em>1439?1439:em)}
+  if(!date){date=sel;flags.push('No date found. I used the day selected on the calendar.')}
+  if(date<ymd(new Date())&&info.repeat==='none')flags.push('This date is in the past.');
+  if(info.weekend)flags.push('Repeats are only offered Monday to Friday, so weekends were skipped.');
+  var rep=info.repeat==='custom'?'custom':info.repeat;
+  return{inc:true,title:title,date:date,start:start,end:end,cat:guessCat(title+' '+notes+' '+srcLine),lead:15,repeat:rep,days:info.repeat==='custom'?info.days:(rep==='custom'?[1,2,3,4,5]:[]),notes:notes,flags:flags};
+}
+
+var LBL_NAME=/^\s*(?:name|title|event|what|subject)\s*[:\-–]\s*(.+)$/i;
+var LBL_DATE=/^\s*(?:date|day)\s*[:\-–]\s*(.+)$/i;
+var LBL_TIME=/^\s*(?:time|when|starts?|start time)\s*[:\-–]\s*(.+)$/i;
+var LBL_NOTE=/^\s*(info|information|notes?|details?|description|about|where|location|room|link|agenda|who)\s*[:\-–]\s*(.+)$/i;
+
+function parseBlock(lines,out,ctx){
+  var labeled=lines.filter(function(l){return LBL_NAME.test(l)||LBL_DATE.test(l)||LBL_TIME.test(l)}).length>=2||lines.some(function(l){return LBL_NAME.test(l)})&&lines.some(function(l){return LBL_DATE.test(l)||LBL_TIME.test(l)||LBL_NOTE.test(l)});
+  if(labeled){
+    var name='',dateTxt='',timeTxt='',notes=[],m;
+    lines.forEach(function(l){
+      if((m=l.match(LBL_NAME)))name=m[1].trim();
+      else if((m=l.match(LBL_DATE)))dateTxt+=' '+m[1];
+      else if((m=l.match(LBL_TIME)))timeTxt+=' '+m[1];
+      else if((m=l.match(LBL_NOTE)))notes.push(/^(where|location|room)$/i.test(m[1])?m[2].trim():(/^(who|link|agenda)$/i.test(m[1])?m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase()+': '+m[2].trim():m[2].trim()));
+      else if(l.trim())notes.push(l.trim());
+    });
+    var td=takeDate(dateTxt+' '+timeTxt),tt=takeTimes(td.s);
+    out.push(buildItem(td.info,tt,[],ctx,lines.join(' '),name,notes.join('; ')));
+    return;
+  }
+  var prev=null;
+  lines.forEach(function(raw){
+    var line=raw.replace(/^\s*(?:[-*•>]+|\d+[.)])\s+/,'').replace(/ /g,' ').trim();
+    if(!line)return;
+    var td=takeDate(line),tt=takeTimes(td.s),inf=td.info;
+    var hasDate=inf.iso||inf.rel||inf.dow!==null||inf.repeat!=='none',hasTime=!!tt.start;
+    var parts=tidy(tt.s);
+    if(!hasDate&&!hasTime){
+      if(prev&&(/^\s/.test(raw)||LBL_NOTE.test(line))){
+        var nm=line.match(LBL_NOTE);prev.notes=(prev.notes?prev.notes+'; ':'')+(nm?nm[2].trim():line);
+      }
+      return;
+    }
+    if(hasDate&&!hasTime&&!parts.length){
+      var d=finalDate(inf,ctx,null);if(d)ctx.date=d;prev=null;return;
+    }
+    if(hasDate&&!hasTime&&parts.length<=1&&parts.join(' ').split(/\s+/).length<=2&&/^(mon|tue|wed|thu|fri|sat|sun)/i.test(line)&&!/\d/.test(line)&&!parts.length){return}
+    var it=buildItem(inf,tt,parts,ctx,line);
+    out.push(it);prev=it;
+  });
+}
+function parsePaste(text){
+  var out=[],ctx={date:null};
+  var blocks=text.replace(/\r/g,'').split(/\n\s*\n/);
+  blocks.forEach(function(b){parseBlock(b.split('\n'),out,ctx)});
+  return out.slice(0,50);
+}
+
+/* ---------- preview and add ---------- */
+function pCatOpts(v){return Object.keys(CATS).map(function(k){return '<option value="'+k+'"'+(k===v?' selected':'')+'>'+CATS[k].n+'</option>'}).join('')}
+function pRepOpts(v){return REPEATS.map(function(r){return '<option value="'+r[0]+'"'+(r[0]===v?' selected':'')+'>'+esc(r[1])+'</option>'}).join('')}
+function pLeadOpts(v){return LEADS.map(function(r){return '<option value="'+r[0]+'"'+(r[0]===v?' selected':'')+'>'+esc(r[1])+'</option>'}).join('')}
+function pDaysText(it){
+  if(it.repeat!=='custom')return '';
+  return PICKDAYS.filter(function(p){return it.days.indexOf(p[0])>=0}).map(function(p){return p[1]}).join(', ');
+}
+function pCount(){return pasteItems.filter(function(i){return i.inc}).length}
+function renderPaste(msg){
+  var el=$('#p-out');
+  if(!pasteItems.length){el.innerHTML=msg?'<p class="empty" style="margin-top:12px" role="status">'+esc(msg)+'</p>':'';return}
+  var h='<p class="hint" style="margin:14px 0 0">I found '+pasteItems.length+(pasteItems.length===1?' event.':' events.')+' Check each one, fix anything that looks wrong, and untick any you do not want.</p>';
+  h+='<div class="field" style="margin-top:10px;max-width:260px"><label for="p-lead">Remind me for all of them</label><select id="p-lead">'+pLeadOpts(15)+'</select></div><ul class="plist">';
+  pasteItems.forEach(function(it,i){
+    var k='pi'+i;
+    h+='<li class="prow'+(it.inc?'':' off')+'" data-i="'+i+'"><div class="prow-top"><input type="checkbox" id="'+k+'-inc" data-f="inc" aria-label="Add event '+(i+1)+'"'+(it.inc?' checked':'')+'>'+
+      '<input type="text" id="'+k+'-title" data-f="title" aria-label="Name of event '+(i+1)+'" maxlength="80" value="'+esc(it.title)+'"></div>'+
+      '<div class="pgrid"><div class="field"><label for="'+k+'-date">Date</label><input type="date" id="'+k+'-date" data-f="date" value="'+esc(it.date)+'"></div>'+
+      '<div class="field"><label for="'+k+'-start">Starts</label><input type="time" id="'+k+'-start" data-f="start" value="'+esc(it.start)+'"></div>'+
+      '<div class="field"><label for="'+k+'-end">Ends</label><input type="time" id="'+k+'-end" data-f="end" value="'+esc(it.end)+'"></div>'+
+      '<div class="field"><label for="'+k+'-cat">Type</label><select id="'+k+'-cat" data-f="cat">'+pCatOpts(it.cat)+'</select></div>'+
+      '<div class="field"><label for="'+k+'-rep">Repeats</label><select id="'+k+'-rep" data-f="repeat">'+pRepOpts(it.repeat)+'</select></div></div>'+
+      '<div class="pdays" id="'+k+'-days"'+(it.repeat==='custom'?'':' hidden')+'>On '+esc(pDaysText(it))+'</div>'+
+      '<div class="field"><label for="'+k+'-notes">Info</label><input type="text" id="'+k+'-notes" data-f="notes" maxlength="300" value="'+esc(it.notes)+'"></div>'+
+      it.flags.map(function(f){return '<div class="pflag">'+esc(f)+'</div>'}).join('')+'</li>';
+  });
+  h+='</ul><p class="err" id="p-err" role="alert"></p><div class="formacts"><button type="button" class="btn pri" id="p-add" data-a="padd">Add '+pCount()+(pCount()===1?' event':' events')+'</button><button type="button" class="btn" data-a="pcancel">Cancel</button></div>';
+  el.innerHTML=h;
+}
+function onPasteEdit(ev){
+  var t=ev.target,row=t.closest&&t.closest('.prow');
+  if(!row||!t.dataset.f)return;
+  var it=pasteItems[+row.dataset.i];if(!it)return;
+  var f=t.dataset.f;
+  if(f==='inc'){it.inc=t.checked;row.classList.toggle('off',!t.checked);var b=$('#p-add');if(b){var n=pCount();b.textContent='Add '+n+(n===1?' event':' events');b.disabled=n===0}return}
+  it[f]=t.value;
+  if(f==='repeat'){
+    if(t.value==='custom'&&!(it.days&&it.days.length))it.days=[1,2,3,4,5];
+    var dv=$('#pi'+row.dataset.i+'-days');dv.hidden=t.value!=='custom';dv.textContent='On '+pDaysText(it);
+  }
+}
+function addPasted(){
+  var err=$('#p-err'),lead=Number(($('#p-lead')||{}).value||15),made=0,dup=0,i;
+  var rows=pasteItems.filter(function(x){return x.inc});
+  for(i=0;i<rows.length;i++){
+    var it=rows[i],n=pasteItems.indexOf(it)+1;
+    if(!it.title.trim()){err.textContent='Event '+n+' needs a name.';return}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(it.date)){err.textContent='Event '+n+' needs a date.';return}
+    if(!it.start||!it.end){err.textContent='Event '+n+' needs a start and end time.';return}
+    if(toMin(it.end)<=toMin(it.start)){err.textContent='Event '+n+' ends before it starts. Change the end time.';return}
+  }
+  var first=null,today=ymd(new Date());
+  rows.forEach(function(it){
+    var same=S.events.some(function(e){return e.title===it.title.trim()&&e.date===it.date&&e.start===it.start});
+    if(same){dup++;return}
+    S.events.push({id:uid(),title:it.title.trim(),date:it.date,start:it.start,end:it.end,cat:it.cat,lead:lead,repeat:it.repeat,days:it.repeat==='custom'?(it.days&&it.days.length?it.days:[1,2,3,4,5]):[],notes:(it.notes||'').trim(),created:today});
+    made++;if(!first||it.date<first)first=it.date;
+  });
+  if(!made){err.textContent=dup?'Those events are already on your calendar.':'Tick at least one event to add.';return}
+  sel=first;var d=fromYmd(first);view={y:d.getFullYear(),m:d.getMonth()};
+  pasteItems=[];$('#p-text').value='';
+  checkQuests();save();renderAll();tick();
+  toast('Added '+made+(made===1?' event':' events')+' to your calendar.'+(dup?' Skipped '+dup+' that already existed.':''),{});
+  renderPaste('Added '+made+(made===1?' event':' events')+'. Paste more any time.');
+}
+$('#p-out').addEventListener('input',onPasteEdit);
+$('#p-out').addEventListener('change',onPasteEdit);
+
+/* ---------- custom colors ---------- */
+var PRESETS=[
+  ['Default',null],
+  ['Candy',{meeting:'#ff4d8d',class:'#12b5cb',focus:'#ff9f1c',event:'#9b5de5',personal:'#2ec4b6'}],
+  ['Sunset',{meeting:'#e63946',class:'#f4a261',focus:'#e9c46a',event:'#b5179e',personal:'#6a4c93'}],
+  ['Forest',{meeting:'#2a6f97',class:'#2d6a4f',focus:'#b08968',event:'#9c6644',personal:'#6b705c'}],
+  ['Ocean',{meeting:'#0077b6',class:'#00a896',focus:'#48cae4',event:'#5e60ce',personal:'#3a86ff'}]
+];
+var DEFAULT_HEX={meeting:'#4a63e8',class:'#1b9a72',focus:'#d9801f',event:'#d1428a',personal:'#8a63d2'};
+function okHex(v){return typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)}
+function applyColors(){
+  var root=document.documentElement,c=S.colors||{};
+  Object.keys(CATS).forEach(function(k){
+    if(okHex(c[k]))root.style.setProperty(CATS[k].v,c[k]);else root.style.removeProperty(CATS[k].v);
+  });
+}
+function curHex(k){return okHex((S.colors||{})[k])?S.colors[k]:DEFAULT_HEX[k]}
+function renderColors(){
+  var el=$('#colors');if(!el)return;
+  var h='<h2>Event colors</h2><p class="hint" style="margin:4px 0 10px">Pick a color for each kind of event, or start from a set.</p><div class="presets" role="group" aria-label="Color sets">';
+  PRESETS.forEach(function(p,i){
+    var sw=Object.keys(CATS).map(function(k){return '<i style="background:'+(p[1]?p[1][k]:DEFAULT_HEX[k])+'"></i>'}).join('');
+    h+='<button type="button" class="preset" data-a="cpreset" data-i="'+i+'" aria-label="Use the '+p[0]+' colors"><span class="sw">'+sw+'</span>'+p[0]+'</button>';
+  });
+  h+='</div><div class="crow">';
+  Object.keys(CATS).forEach(function(k){
+    h+='<label class="cpick"><input type="color" data-ck="'+k+'" value="'+curHex(k)+'"><span class="dot" style="background:var('+CATS[k].v+')"></span>'+CATS[k].n+'</label>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+$('#colors').addEventListener('input',function(ev){
+  var k=ev.target.dataset&&ev.target.dataset.ck;if(!k||!okHex(ev.target.value))return;
+  S.colors=Object.assign({},S.colors||{});S.colors[k]=ev.target.value;
+  applyColors();save();renderCal();renderDay();renderNext();
+  var d=ev.target.parentNode.querySelector('.dot');if(d)d.style.background='var('+CATS[k].v+')';
+});
+function setPreset(i){
+  var p=PRESETS[i];if(!p)return;
+  S.colors=p[1]?Object.assign({},p[1]):{};
+  applyColors();save();renderColors();renderCal();renderDay();renderNext();
+  toast(p[0]+' colors on.',{});
+}
+
+/* ---------- Firebase login and storage ---------- */
+var SES_KEY='forget-me-not.lastuser',authed=false,me=null,gateMode='in',uidNow=null,fbOK=false;
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function fbErr(e){
+  var c=(e&&e.code)||'';
+  var m={'auth/invalid-email':'That email address does not look right.','auth/email-already-in-use':'That email already has an account. Log in instead.','auth/weak-password':'Password needs at least 8 characters.','auth/user-not-found':'No account with that email. Check it, or create an account.','auth/wrong-password':'Wrong password. Try again.','auth/invalid-credential':'Wrong email or password. Try again.','auth/too-many-requests':'Too many tries. Wait a minute, then try again.','auth/network-request-failed':'Could not reach Firebase. Check your connection.','auth/operation-not-allowed':'Email and password sign-in is not turned on in the Firebase console yet.','permission-denied':'Firestore refused the request. Check the security rules.'}[c];
+  return m||('Something went wrong ('+(c||'unknown')+').');
+}
+function showGate(msg){
+  authed=false;me=null;uidNow=null;
+  $('.wrap').hidden=true;$('#gate').hidden=false;$('#toasts').innerHTML='';
+  setGateMode(lsGet(SES_KEY)?'in':'up');
+  if(msg)$('#g-err').textContent=msg;
+}
+function setGateMode(m){
+  gateMode=m;var up=m==='up';
+  $('#g-title').textContent=up?'Create your account':'Welcome back';
+  $('#g-sub').textContent=up?'Pick a username, then your email and a password.':'Log in to open your calendar.';
+  $('#g-userf').hidden=!up;$('#g-pw2f').hidden=!up;
+  $('#g-submit').textContent=up?'Create account':'Log in';
+  $('#g-switch').innerHTML=(up?'Already have an account? <button type="button" class="linkbtn" data-g="in">Log in</button>':'New here? <button type="button" class="linkbtn" data-g="up">Create an account</button> &middot; <button type="button" class="linkbtn" data-g="reset">Forgot password?</button>');
+  $('#g-err').textContent='';
+  $('#g-pw').autocomplete=up?'new-password':'current-password';
+}
+function userKey(uid){return 'forget-me-not.v1.'+uid}
+async function loadUser(uid){
+  var st=null;
+  try{
+    var snap=await FB.getDoc(FB.doc(FB.db,'forgetmenot',uid));
+    if(snap.exists()&&snap.data().json){st=JSON.parse(snap.data().json);fbOK=true}
+    else fbOK=true;
+  }catch(e){fbOK=false;setSync('Saved on this device only')}
+  if(!st){try{var r=lsGet(userKey(uid));if(r)st=JSON.parse(r)}catch(e){}}
+  var base=blank();
+  if(st){S=Object.assign(base,st)}else{S=base;seed(S)}
+  LSKEY=userKey(uid);normFarm();
+  try{localStorage.setItem(LSKEY,JSON.stringify(S))}catch(e){}
+}
+function flush(){
+  if(!uidNow||!window.FB)return;
+  var body=JSON.stringify(S);
+  chain=chain.then(function(){return FB.setDoc(FB.doc(FB.db,'forgetmenot',uidNow),{json:body,updated:FB.serverTimestamp()})}).then(function(){setSync('Saved to your account')},function(){setSync('Saved on this device only')});
+}
+async function enter(user){
+  uidNow=user.uid;
+  var name=user.displayName||(user.email||'').split('@')[0];
+  $('#gate-form').querySelector('button[type=submit]').disabled=true;
+  await loadUser(user.uid);
+  authed=true;me={email:user.email,user:name};lsSet(SES_KEY,user.email);
+  $('#gate-form').querySelector('button[type=submit]').disabled=false;
+  $('#gate').hidden=true;$('.wrap').hidden=false;
+  $('#g-pw').value='';$('#g-pw2').value='';
+  setSync(fbOK?'Saved to your account':'Saved on this device only');
+  applyColors();renderColors();renderAll();tick();
+  try{window.dispatchEvent(new Event('resize'))}catch(e){}
+  if(typeof kick==='function')kick();
+}
+function signOut(){
+  flush();
+  chain.then(function(){return FB.signOut(FB.auth)}).then(function(){S=blank();normFarm();LSKEY='forget-me-not.v1';showGate()});
+}
+async function gateSubmit(ev){
+  ev.preventDefault();
+  var err=$('#g-err'),email=$('#g-email').value.trim(),pw=$('#g-pw').value,up=gateMode==='up',btn=$('#g-submit');
+  if(!window.FB){err.textContent='Firebase has not loaded yet. Check your connection and reload.';return}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){err.textContent='Enter a valid email address.';$('#g-email').focus();return}
+  try{
+    btn.disabled=true;err.textContent='';
+    if(up){
+      var u=$('#g-user').value.trim();
+      if(u.length<2||u.length>24||!/^[A-Za-z0-9_.\- ]+$/.test(u)){err.textContent='Username needs 2 to 24 letters, numbers, spaces, dots, dashes or underscores.';$('#g-user').focus();btn.disabled=false;return}
+      if(pw.length<8){err.textContent='Password needs at least 8 characters.';$('#g-pw').focus();btn.disabled=false;return}
+      if(pw!==$('#g-pw2').value){err.textContent='The two passwords do not match.';$('#g-pw2').focus();btn.disabled=false;return}
+      var cred=await FB.createUserWithEmailAndPassword(FB.auth,email,pw);
+      await FB.updateProfile(cred.user,{displayName:u});
+      await enter(cred.user);
+    }else{
+      var c2=await FB.signInWithEmailAndPassword(FB.auth,email,pw);
+      await enter(c2.user);
+    }
+  }catch(e){err.textContent=fbErr(e)}
+  btn.disabled=false;
+}
+async function gateReset(){
+  var err=$('#g-err'),email=$('#g-email').value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){err.textContent='Type your email above, then press Forgot password.';$('#g-email').focus();return}
+  try{await FB.sendPasswordResetEmail(FB.auth,email);err.style.color='var(--leaf)';err.textContent='Reset email sent. Check your inbox.'}
+  catch(e){err.style.color='';err.textContent=fbErr(e)}
+}
+$('#gate-form').addEventListener('submit',gateSubmit);
+$('#gate').addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('[data-g]');if(!b)return;
+  $('#g-err').style.color='';
+  if(b.dataset.g==='reset')gateReset();else setGateMode(b.dataset.g);
+});
+$('#g-show').addEventListener('change',function(){var t=this.checked?'text':'password';$('#g-pw').type=t;$('#g-pw2').type=t});
+function startAuth(){
+  showGate();
+  var tries=0;
+  (function wait(){
+    if(window.FB){
+      FB.onAuthStateChanged(FB.auth,function(u){if(u&&!authed)enter(u);else if(!u&&authed)showGate()});
+    }else if(window.FBfail){$('#g-err').textContent='Could not load Firebase. Check your connection and reload.'}
+    else if(tries++<200)setTimeout(wait,100);
+  })();
+}
+
+/* ---------- boot ---------- */
+initFarm();applyColors();renderColors();
+startAuth();
+setInterval(tick,15000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden){tick();kick()}});
+
+})();
+</script>
