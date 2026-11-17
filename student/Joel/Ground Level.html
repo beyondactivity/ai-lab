@@ -1,0 +1,657 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ground Level</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: transit-signage header over a street-level skyline; the desk (choices) sits under the scene, ledger-style stats beside it. */
+:root{
+  --bg:#E3E7EB; --panel:#F5F7F9; --ink:#14202B; --muted:#586777; --line:#C4CCD4;
+  --blue:#1B5FC1; --blue-ink:#FFFFFF; --alert:#CC4118; --good:#23804F; --warn:#A8690F;
+  --sky-a:#B7C9DE; --sky-b:#EDDAC5; --far:#9DB0C4; --near:#60728A; --win:#F3D98B;
+  --street:#2B3640; --beam:#FFF1A8; --boom:#F26A3D; --smoke:#6B7782; --wall:#D9DFE5; --night:#0B1630;
+  --font-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F151B; --panel:#18212A; --ink:#E7ECF1; --muted:#93A1AF; --line:#2B3744;
+  --blue:#6FA3FF; --blue-ink:#0B1220; --alert:#FF7A4D; --good:#4FC08A; --warn:#E3B04B;
+  --sky-a:#1A2740; --sky-b:#3A2A33; --far:#27374D; --near:#1B2837; --win:#E8C46A;
+  --street:#0A0E12; --beam:#FFE9A0; --boom:#FF7A3D; --smoke:#4B5662; --wall:#2A3A4C; --night:#050A18; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F151B; --panel:#18212A; --ink:#E7ECF1; --muted:#93A1AF; --line:#2B3744;
+  --blue:#6FA3FF; --blue-ink:#0B1220; --alert:#FF7A4D; --good:#4FC08A; --warn:#E3B04B;
+  --sky-a:#1A2740; --sky-b:#3A2A33; --far:#27374D; --near:#1B2837; --win:#E8C46A;
+  --street:#0A0E12; --beam:#FFE9A0; --boom:#FF7A3D; --smoke:#4B5662; --wall:#2A3A4C; --night:#050A18; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;letter-spacing:.01em;margin:0;text-wrap:balance;line-height:1.05}
+h2{font-size:30px}
+h3{font-size:19px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+.strip{margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:12px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  background:var(--panel);border-bottom:4px solid var(--blue);display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:.08em;text-transform:uppercase}
+.roundel{width:28px;height:28px;border-radius:50%;border:5px solid var(--blue);position:relative;flex:none}
+.roundel::after{content:"";position:absolute;left:-9px;right:-9px;top:50%;height:7px;margin-top:-3.5px;background:var(--ink);border-radius:1px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-family:var(--font-mono);font-size:12.5px;color:var(--muted)}
+.day{color:var(--ink);font-weight:500}
+.threat{display:flex;align-items:flex-end;gap:3px}
+.threat i{display:block;width:8px;background:var(--line);border-radius:1px}
+.threat i.on{background:var(--blue)} .threat.hot i.on{background:var(--warn)} .threat.max i.on{background:var(--alert)}
+.pips{display:flex;gap:6px}
+.pips span{padding:1px 7px;border:1px solid var(--line);border-radius:3px}
+.pips span.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.wrap{max-width:1080px;margin:0 auto}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-areas:"scene side" "desk side" "log side";gap:18px 22px;align-content:start;margin-top:18px}
+.main.solo{grid-template-columns:minmax(0,1fr);grid-template-areas:"scene" "desk" "log"}
+.scene{grid-area:scene;min-width:0;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--panel)}
+.scene svg{display:block;width:100%;height:auto;aspect-ratio:10/3}
+.desk{grid-area:desk;min-width:0}
+.side{grid-area:side;min-width:0;display:flex;flex-direction:column;gap:14px;align-self:start}
+.log{grid-area:log;min-width:0}
+@media (max-width:820px){
+  .main,.main.solo{grid-template-columns:minmax(0,1fr);grid-template-areas:"scene" "side" "desk" "log"}
+  .main.solo{grid-template-areas:"scene" "desk" "log"}
+  .scene svg{aspect-ratio:2/1}
+}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px}
+.kicker{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
+.lead{margin-top:10px;max-width:64ch;font-size:16px}
+.note{margin-top:10px;max-width:64ch;color:var(--muted);font-size:14px}
+.desk .panel{padding:20px 22px}
+.desk h3{margin:20px 0 8px}
+
+.choices{display:flex;flex-direction:column;gap:8px}
+.choice{display:flex;justify-content:space-between;align-items:center;gap:14px;text-align:left;width:100%;
+  background:var(--bg);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:3px;padding:11px 14px;cursor:pointer}
+.choice:hover:not(:disabled){border-color:var(--blue);background:var(--panel)}
+.choice:disabled{opacity:.5;cursor:not-allowed;border-left-color:var(--line)}
+.choice .t{min-width:0}
+.choice .t b{display:block;font-weight:600}
+.choice .t small{display:block;color:var(--muted);font-size:13px;margin-top:1px}
+.choice .h{font-family:var(--font-mono);font-size:12px;color:var(--muted);white-space:nowrap;text-align:right}
+.tag{font-family:var(--font-mono);font-size:11px;padding:1px 6px;border-radius:3px;margin-left:6px;vertical-align:1px;background:var(--alert);color:var(--blue-ink)}
+.tag.warn{background:var(--warn)}
+@media (max-width:520px){.choice{flex-direction:column;align-items:flex-start;gap:4px}.choice .h{white-space:normal;text-align:left}}
+
+.primary{background:var(--blue);color:var(--blue-ink);border:0;border-radius:3px;padding:11px 20px;font-weight:600;cursor:pointer;margin-top:16px}
+.primary:hover{filter:brightness(1.08)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.chip{font-family:var(--font-mono);font-size:12.5px;padding:2px 8px;border-radius:3px;border:1px solid var(--line);background:var(--bg)}
+.chip.ok{color:var(--good);border-color:var(--good)} .chip.bad{color:var(--alert);border-color:var(--alert)}
+
+.stat{display:grid;gap:4px;margin-top:10px}
+.stat .row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.stat .row b{font-family:var(--font-mono);font-weight:500;color:var(--ink)}
+.bar{height:7px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue)}
+.bar.good i{background:var(--good)} .bar.bad i{background:var(--alert)} .bar.warn i{background:var(--warn)}
+.cashrow{display:flex;justify-content:space-between;align-items:baseline}
+.cashrow .lbl{font-family:var(--font-display);text-transform:uppercase;letter-spacing:.08em;font-size:15px;color:var(--muted);font-weight:600}
+.cash{font-family:var(--font-mono);font-size:30px;font-weight:500;font-variant-numeric:tabular-nums}
+.rent{margin-top:6px;padding:8px 10px;border:1px dashed var(--line);border-radius:3px;font-size:13px;color:var(--muted)}
+.rent b{color:var(--ink);font-family:var(--font-mono);font-weight:500}
+.rent.soon{border-color:var(--alert);color:var(--alert)} .rent.soon b{color:var(--alert)}
+.sidenote{font-size:13px;color:var(--muted)}
+@media (max-width:820px){.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.statgrid .cashrow,.statgrid .rent{grid-column:1/-1}}
+
+table.ledger{width:100%;border-collapse:collapse;margin-top:12px;font-family:var(--font-mono);font-size:14px;max-width:420px}
+table.ledger td{padding:5px 0;border-bottom:1px solid var(--line)}
+table.ledger td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+table.ledger tr.net td{font-weight:500;border-bottom:2px solid var(--ink)}
+
+.end.bad h2{color:var(--alert)} .end.good h2{color:var(--good)}
+.recap{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:16px}
+.recap div{border:1px solid var(--line);border-radius:3px;padding:8px 10px;background:var(--bg)}
+.recap span{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.recap b{font-family:var(--font-mono);font-weight:500;font-size:18px}
+.types{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:6px}
+.types .choice{flex-direction:column;align-items:flex-start;gap:4px;border-left-width:1px;border-top:4px solid var(--blue);height:100%}
+
+details.log{margin-top:2px}
+details.log summary{cursor:pointer;font-family:var(--font-mono);font-size:12.5px;color:var(--muted);padding:6px 0}
+details.log ul{margin:6px 0 0;padding:0;list-style:none;font-size:13px;color:var(--muted);display:grid;gap:3px}
+details.log li b{font-family:var(--font-mono);font-weight:500;color:var(--ink);margin-right:6px}
+
+@keyframes flick{0%,100%{opacity:1}50%{opacity:.55}}
+.beam{animation:flick 1.3s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.beam{animation:none}}
+</style>
+
+<div class="wrap">
+  <header class="strip" id="strip"></header>
+  <div class="main" id="main">
+    <section class="scene" id="scene"></section>
+    <section class="desk" id="desk" aria-live="polite"></section>
+    <aside class="side" id="side"></aside>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const clamp=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
+const rand=()=>Math.random();
+const pick=a=>a[Math.floor(rand()*a.length)];
+const fmt=n=>(n<0?'−':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US');
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYS_FULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const LAST=14, RENT_DAYS=[7,14];
+const rng=seed=>()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const LEVELS=['','Quiet','Rumbling','Active','Severe','Citywide'];
+
+/* ---------- content ---------- */
+const TYPES={
+  coffee:{id:'coffee',name:"Pell's Corner Coffee",blurb:'The best margins on the block, and a glass counter that hates shockwaves.',rev:1.12,dmg:1.25,repair:50,util:25,boost:0,asset:'the espresso machine'},
+  hardware:{id:'hardware',name:'Pell Hardware & Key',blurb:'Slow in calm weeks. When the sky starts breaking, everyone suddenly needs plywood.',rev:.95,dmg:1,repair:32,util:25,boost:.07,asset:'the key-cutting machine'},
+  laundromat:{id:'laundromat',name:"Pell's Wash-n-Fold",blurb:'Heavy machines shrug off collateral damage. The water bill does not shrug.',rev:1,dmg:.6,repair:50,util:36,boost:0,asset:'two of the dryers'}
+};
+const H1=["Lumen and Madame Static trade blows over the river. The city says no bridges have been lost yet.","A scuffle at the aquarium. The otters are fine. The roof is not.","Captain Meridian reports minor disturbances on the east side. Residents report a different adjective."];
+const H2=["The Gridlock has taken the rail yard. Lumen is responding. Crosstown routes are slow.","Rustjaw spotted chewing through the Fifth Street overpass. Please avoid Fifth Street.","Madame Static's outage is rolling across six blocks. Candles are trending."];
+const H3=["Citywide alert: Captain Meridian and The Gridlock are brawling above Halvard Square. Shelter in place if you can. Go to work if you can't.","Dr. Undertow is flooding Lower Market. Captain Meridian is on it. Please do not film.","The Pale Ledger has declared today a reckoning. The mayor has declared it a weekday."];
+const COLL=["A shockwave rattles the block at closing. Plaster dust, and a long new crack in the back wall.","A stray beam clips the building next door. Your ceiling tiles volunteer to leave.","The pavement jumps. A shelf of stock goes with it."];
+const NIGHT=["Around two a.m. the sky flashes white. You roll over.","Somewhere a car alarm sings along with thunder that isn't thunder.","You dream about a clean sidewalk."];
+
+const COMMUTES=[
+  {id:'subway',name:'Subway',time:'35 min',desc:'Cheap and fast, unless the tunnel is the story.',cost:()=>3,hb:.04,hk:.045,lb:.18,lose:.2,
+    tx:{ok:["The 7:42 is packed but moving. A man is eating a whole rotisserie chicken. You arrive with all your parts.","Nothing stops the train and nothing falls on it. You'll take that."],
+        late:["The train sits between stations for forty minutes while the tunnel lights flicker in a pattern you don't like.","A conductor announces a situation above ground. You surface at a station you don't recognize and walk."],
+        hurt:["The lights cut, the train jerks, and you meet the pole with your ribs.","A ceiling tile lets go. Nobody dies. Your shoulder files a complaint."]}},
+  {id:'bus',name:'Crosstown bus',time:'50 min',desc:'Slow, rerouted, and full of people.',cost:()=>2,hb:.03,hk:.035,lb:.3,lose:.25,
+    tx:{ok:["The bus takes a long loop around a barricade and gets you there. A woman shares half a clementine.","Standing room only, windows steamed. The driver narrates the detours like a tour guide."],
+        late:["Route 22 is temporarily rerouted through places that aren't on Route 22. You arrive an hour late.","The driver stops, gets out, looks at the sky, and gets back in. Three more stops of that."],
+        hurt:["A shockwave bucks the bus into a curb. You catch a seat back with your face.","The driver brakes hard for something that was falling. You were standing."]}},
+  {id:'bike',name:'Bike',time:'25 min',desc:'Fastest door to door. Also the most exposed.',cost:()=>0,hb:.06,hk:.07,lb:.1,lose:.15,
+    tx:{ok:["You thread the side streets, and for twelve minutes the city feels almost yours.","The rooftops are loud, but you are a little faster than the noise."],
+        late:["A barricade, then another, then a detour that adds half the ride. You get there sweaty and late.","A flat tire in the worst possible place. You push the bike the last mile."],
+        hurt:["Something heavy lands in the next lane. The pavement ends the conversation. Scraped palms, wrenched knee.","You swerve around falling debris and don't quite finish the swerve."]}},
+  {id:'walk',name:'Walk',time:'1 hr 15',desc:'Free, and nothing can fall on a person who is already moving. It is also long.',cost:()=>0,hb:.02,hk:.025,lb:.45,lose:.35,
+    tx:{ok:["It takes forever, but you pass three bakeries and a mural and nothing falls on you.","The long way. Your shoes will remember."],
+        late:["The cordon moves while you're walking it, so you walk it twice. You arrive at ten-ish with a story and no appetite for it.","Every shortcut turns out to be somebody's crime scene."],
+        hurt:["A sprinkler main bursts under your feet. You slip, hard.","Glass rains from a facade above. You're fine, mostly."]}},
+  {id:'ride',name:'Rideshare',time:'20 min',desc:'Doorstep pickup. The surge pricing follows the explosions.',cost:th=>14+7*th,hb:.02,hk:.02,lb:.2,lose:.15,
+    tx:{ok:["The driver plays a podcast about dinosaurs and gets you there fast. The fare is something you'll try not to think about.","Quiet, quick, expensive. You watch the neighborhood slide past like it's on TV."],
+        late:["The car crawls through a blocked-off grid while the meter ticks. You arrive late and lighter.","Surge pricing and a surge of traffic. You are out of both money and time."],
+        hurt:["The driver swerves around a falling lamppost. You and the seatbelt have a moment.","A shockwave puts the car into a parked van at five miles an hour. Mostly your pride."]}}
+];
+
+const EVENTS=[
+ {id:'debris',t:[2,5],k:'Debris',h:'A truck on your doorstep',x:"A delivery truck, thrown roughly three blocks, lands nose-first across your doorway. Its horn is still going.",c:[
+   {l:'Drag it clear with a tow strap and two neighbors',fx:{health:-6,stress:4,good:6,open:-.15},t:"It takes an hour and a borrowed pickup. Someone cheers when it finally scrapes loose."},
+   {l:'Call the city and wait',fx:{open:-.45,stress:5},t:"Dispatch says it's priority three. You count the priority ones out loud. The truck leaves at four."},
+   {l:'Pay a crane operator to take it now',fx:{cash:-120,open:-.1,good:3},t:"He quotes $120 before looking at it, and also before you ask. Fair."}]},
+ {id:'sanctuary',t:[2,5],k:'Visitor',h:'Ten minutes, please',x:"A teenager in a half-torn cape leans through your door. The patch says Lumen's sidekick. \"Ten minutes? Please?\"",c:[
+   {l:'Let them hide in the stockroom',p:.55,fx:{good:10,stress:3},t:"They drink three glasses of water and leave you a signed card, which you'll never sell.",ffx:{shop:-18,stress:8,good:-3},ft:"The Anvil follows. Your back wall is now a doorway."},
+   {l:'Point them toward the clinic on Fifth',fx:{good:2,stress:3},t:"You give directions. It feels fine for about an hour, then not."},
+   {l:"Say you're closed",fx:{stress:6,good:-6},t:"You flip the sign. They look at it. They don't argue, which is worse."}]},
+ {id:'adjuster',t:[1,4],k:'Insurance',h:'Acts of hero',x:"An adjuster in a very clean jacket sets a clipboard on your counter. \"Your policy covers fire, flood, and theft. Not, and I'm quoting, acts of hero.\"",c:[
+   {l:'Argue about the definition of hero',p:.3,fx:{cash:150,stress:6},t:"She sighs, checks a box, and calls it a goodwill gesture. You frame the receipt.",ffx:{stress:10},ft:"You spend forty minutes and your lunch. She leaves a pamphlet."},
+   {l:'Buy the Hero Rider',fx:{cash:-90,stress:-2},fn:()=>{S.insured=true},t:"The rider is two pages, and page two is page one again. It halves shop damage from here on.",req:()=>!S.insured,rq:'Already covered'},
+   {l:'Take the pamphlet and get back to work',fx:{stress:3},t:"It's titled \"Understanding Your Resilience.\" You use it to level a wobbly table."}]},
+ {id:'looters',t:[3,5],k:'Blackout',h:'Six blocks of dark',x:"The grid goes dark for six blocks. Two figures test the shutter of the shop next door, then look at yours.",c:[
+   {l:'Fight them off with whatever is behind the counter',fight:0,fx:{},t:''},
+   {l:'Stand in the doorway with the push broom',p:.55,fx:{good:4,stress:5},t:"\"It's a good broom,\" one of them says. They find another street.",ffx:{health:-14,cash:-45,stress:8},ft:"It is not a good broom. You lose some stock and a conversation with your back."},
+   {l:'Lock up, lights out, hide in the back',fx:{cash:-35,stress:4},t:"You hear them for a while, then not. At closing the missing shelf is worth about $35."},
+   {l:'Open the door and hand out water and chips',fx:{cash:-30,good:12,stress:-2},t:"Nobody takes more than they need. Somebody tells the story for years."}]},
+ {id:'tourists',t:[1,3],k:'Disaster tourism',h:'Please keep the bus moving',x:"A tour bus unloads in front of the crater. Ten people with lanyards want to know if you saw it happen.",c:[
+   {l:'Sell them commemorative cups',fx:{cash:55,good:-4,stress:2},t:"You wrote I SURVIVED on a hundred cups with a marker last night. Sixty-eight left."},
+   {l:'Ask them to move away from the door',fx:{stress:-3,good:-2},t:"They move six feet and take more photos. It is, somehow, progress."},
+   {l:'Open the restroom for $2 a head',fx:{cash:28,good:-8,stress:3},t:"The line stretches past the awning. A neighbor looks at you the way you look at the adjuster."}]},
+ {id:'outage',t:[2,4],k:'Power',h:'Everything drops',x:"The lights flicker, then everything goes: the freezers, the registers, the little fan.",c:[
+   {l:'Run the rental generator',fx:{cash:-40},t:"It's loud and smells like a lawn mower, but the cooler stays cold."},
+   {l:'Sell perishables at half price',fx:{cash:30,good:6,stress:2},t:"Neighbors line up with bags. It feels less like a sale and more like a block party."},
+   {l:'Close early',fx:{open:-.5,stress:3},t:"You sit in the half-dark and listen to the building tick."}]},
+ {id:'gas',t:[3,5],k:'Evacuation',h:'Gas line, two blocks',x:"A man in a hi-vis vest sprints past yelling, \"Gas line, two blocks, move!\"",c:[
+   {l:'Leave now',fx:{open:-.5,stress:4},t:"You walk fast, not run. You find out later it was a minor leak. You'd do it again."},
+   {l:'Carry out the stock first',p:.5,fx:{cash:70,stress:5,open:-.3},t:"Two trips with the hand truck, and the sellable stuff goes into the neighbor's van.",ffx:{health:-10,stress:9,open:-.3},ft:"You get one trip in before the air starts to taste wrong. You leave with a headache and a hand truck."},
+   {l:'Knock on doors up and down your block',fx:{good:12,stress:6,open:-.3},t:"You get everyone out, including the guy on the second floor who was wearing headphones."}]},
+ {id:'landlord',once:true,t:[1,5],k:'Landlord',h:'Mr. Abernathy on the stairs',x:"Mr. Abernathy catches you on the way down. \"Building's had a stress test. Rent's adjusting.\"",c:[
+   {l:'Accept it',fx:{rent:40,stress:3},t:"You nod. He nods. Next rent day, it's $40 higher."},
+   {l:'Negotiate',p:.5,fx:{stress:4},t:"He says \"fine, fine, no change,\" and then says it again to himself.",ffx:{rent:60,stress:7},ft:"He raises it sixty and wishes you a lovely day."},
+   {l:'Offer to repaint the hallway',fx:{rent:15,stress:6,health:-3,good:2},t:"The hallway is now a warm off-white. The rent is up $15. The paint smell lasts a week."}]},
+ {id:'relief',t:[1,5],k:'City hall',h:'Form 27-B',x:"A city van parks on your corner. A clerk unfolds a card table: \"Hero Damage Relief Intake. Take a number.\"",c:[
+   {l:'Take a number and wait',fx:{open:-.3,stress:5},fn:()=>{S.claims.push({day:S.day+3,p:.5,amt:220})},t:"Two hours later you hand over a form. The clerk stamps it with a stamp that says RECEIVED. Relief, if it comes, arrives in about three days."},
+   {l:'Chat up the clerk while she packs',p:.35,fx:{good:3},fn:()=>{S.claims.push({day:S.day+2,p:.85,amt:180})},t:"She remembers your corner. She slides a form into a stack marked EXPEDITED, a stack that appears to be her lunch bag.",ffx:{stress:2},ft:"She says she's on break. She's been on break for twenty years."},
+   {l:'Skip it. Paperwork is for people with time',fx:{},t:"You walk past. The queue is mostly the same four people."}]},
+ {id:'news',t:[2,5],k:'Press',h:'Camera drone at the door',x:"A reporter with a camera drone asks, \"How do you feel about your block becoming a battleground?\"",c:[
+   {l:'Speak honestly',p:.65,fx:{good:10,stress:-4},t:"You talk about the regulars and the broken curb. The neighborhood watches it at lunch.",ffx:{good:-8,stress:6},ft:"They run one sentence, cut in half, over footage of a different street."},
+   {l:'Plug the shop',fx:{cash:25,good:2},t:"Three people mention the clip. One of them buys something."},
+   {l:'Wave them off',fx:{stress:-2},t:"The drone hovers, sighs, and moves to the next block."}]},
+ {id:'meds',t:[1,5],k:'Neighbor',h:'Mrs. Okonkwo needs her prescription',x:"Mrs. Okonkwo, who has lived upstairs longer than the building has been a building, needs her prescription from the pharmacy across the cordon.",c:[
+   {l:'Go yourself, using side streets',p:.6,fx:{good:14,stress:-4,open:-.25},t:"You bring it back with a bag of peppermints she insists you take.",ffx:{health:-15,good:10,open:-.35,stress:5},ft:"A shockwave knocks you off the curb. You deliver the meds anyway. She makes you sit."},
+   {l:'Phone the pharmacy for delivery',fx:{cash:-15,good:3},t:"Delivery is rated eventually. She thanks you with a face that means it."},
+   {l:"Tell her you can't today",fx:{good:-8,stress:8},t:"She says she understands. That is the problem."}]},
+ {id:'goo',t:[3,5],k:'Hazard',h:'Something violet on the sidewalk',x:"Something glowing has bled across the sidewalk outside. A kid pokes it with a stick.",c:[
+   {l:'Scrub it off with the hose',fx:{cash:-20,stress:3,health:-2},t:"It smells like grape soda and electrical tape. It comes up eventually."},
+   {l:'Rope it off and call hazmat',fx:{open:-.3,good:3},t:"A van arrives in two hours. A man in a very serious suit says, \"Huh.\""},
+   {l:'Sell it as authentic',p:.7,fx:{cash:45,stress:2},t:"Mason jars, a hand-lettered label. You sell out by noon.",ffx:{cash:45,health:-12,stress:4,good:-5},ft:"A customer returns it with a rash and an opinion."}]},
+ {id:'henchman',t:[2,5],k:'Customer',h:'The nine-person break',x:"A man in a matching teal jumpsuit steps in. \"Hi. We need supplies for nine. Whatever you've got. We're, uh, on a break.\"",c:[
+   {l:'Throw them out',fight:1,fx:{},t:''},
+   {l:'Serve them politely',p:.75,fx:{cash:48,stress:2},t:"They tip well and say thanks twice. Nobody breaks anything.",ffx:{cash:48,shop:-10,stress:5},ft:"They tip well. Then their break ends."},
+   {l:'Refuse service',p:.8,fx:{stress:5,good:2},t:"He shrugs and leaves. Your hands shake for an hour.",ffx:{shop:-12,stress:7},ft:"Refusal is read as hostile, by someone whose fists glow."},
+   {l:'Charge triple',p:.5,fx:{cash:110,stress:4,good:-2},t:"He pays without blinking and asks for a receipt for expenses.",ffx:{cash:110,shop:-16,stress:8},ft:"He pays, and then the fists glow."}]},
+ {id:'window',t:[3,5],k:'Damage',h:'A sound through the glass',x:"A shrieking sound from two blocks over goes through your front window as if it wasn't there.",c:[
+   {l:'Order full replacement glass',fx:{cash:-110,shop:8,stress:2},t:"It arrives in a crate at four. The installer says business has been very good."},
+   {l:'Plywood and a hand-painted sign',fx:{cash:-35,shop:2,stress:3,good:2},t:"You paint OPEN in letters tall enough to read from a rooftop. Somebody up there probably does."},
+   {l:'Tape it and keep going',fx:{shop:-6,stress:5},t:"The tape holds, technically. The window looks like a map of somewhere."}]},
+ {id:'quiet',t:[1,2],k:'Quiet hour',h:'Teo and the wedding',x:"For one hour, nothing happens. A regular, Teo, orders his usual and tells you about his cousin's wedding.",c:[
+   {l:'Sit down and listen',fx:{stress:-8,good:6,open:-.05},t:"The wedding has a goat in it. You are now invested in the goat."},
+   {l:'Use the lull to restock shelves',fx:{shop:5,stress:-2,cash:-20},t:"Neat rows, full shelves, a quiet little victory."},
+   {l:'Do the bookkeeping',p:.6,fx:{cash:40,stress:-2},t:"You find an error in your favor and sit with that feeling.",ffx:{stress:6},ft:"You find an error in someone's favor. It is not yours."}]},
+ {id:'supplier',t:[1,5],k:'Supply',h:'The bridge and the van',x:"Your supplier calls. \"My van is fine. The bridge it was on is not.\"",c:[
+   {l:'Wait it out',fx:{stress:4,good:-3},t:"Shelves look a little thin by closing. Regulars take it well, mostly."},
+   {l:'Meet him halfway',p:.5,fx:{cash:-20,shop:6,stress:3},t:"You swap boxes at a gas station. He gives you a free pen.",ffx:{cash:-20,health:-6,stress:6,open:-.2},ft:"You drive in circles and get hit by a road closure that wasn't a road closure an hour ago."},
+   {l:'Buy from the wholesaler at double',fx:{cash:-60,shop:6},t:"It is not the price you wanted. It is the stock you needed."}]}
+];
+
+/* ---------- state ---------- */
+let S={phase:'title',day:1,threat:3};
+const snap=()=>({cash:S.cash,health:S.health,stress:S.stress,shop:S.shop,good:S.good,open:S.open,rent:S.rent});
+function diff(a){const b=snap(),out=[];for(const k of ['cash','health','stress','shop','good','open','rent']){const v=b[k]-a[k];if(k==='open'?Math.abs(v)>.001:Math.round(v)!==0)out.push([k,v])}return out}
+const LBL={health:'Health',stress:'Stress',shop:'Shop',good:'Goodwill'};
+function chips(d){
+  if(!d.length)return '';
+  return '<div class="chips">'+d.map(([k,v])=>{
+    const n=Math.round(v);let txt,bad;
+    if(k==='cash'){txt=(n>0?'+':'−')+'$'+Math.abs(n);bad=n<0}
+    else if(k==='open'){txt='Open hours −'+Math.round(Math.abs(v)*100)+'%';bad=v<0}
+    else if(k==='rent'){txt='Rent '+(n>0?'+':'−')+'$'+Math.abs(n);bad=n>0}
+    else{txt=LBL[k]+' '+(n>0?'+':'−')+Math.abs(n);bad=k==='stress'?n>0:n<0}
+    return `<span class="chip ${bad?'bad':'ok'}">${txt}</span>`}).join('')+'</div>';
+}
+function applyFx(fx){
+  for(const k in fx){let v=fx[k];
+    if(k==='shop'&&v<0&&S.insured)v=Math.round(v/2);
+    if(k==='open'){S.open=clamp(S.open+v,.1,1);continue}
+    if(k==='rent'){S.rent+=v;continue}
+    S[k]+=v}
+  S.cash=Math.max(0,S.cash);S.health=clamp(S.health);S.stress=clamp(S.stress);S.shop=clamp(S.shop);S.good=clamp(S.good);
+}
+const check=()=>S.health<=0?'hospital':S.stress>=100?'burnout':S.shop<=0?'wrecked':null;
+const dayName=d=>DAYS[(d-1)%7];
+const hist=t=>S.hist.push({d:S.day,t});
+
+function newGame(typeId){
+  S={type:typeId,phase:'brief',day:1,cash:240,health:92,stress:22,shop:75,good:50,rent:450,weapons:startWeapons(typeId),kits:1,fight:null,owed:0,insured:false,claims:[],seen:[],hist:[],flags:{},
+     tally:{hurt:0,late:0,dmg:0,claims:0,rents:0,won:0},open:1,res:null,ev:null,led:null,notes:[],carry:[],over:null,threat:1,disrupted:null,news:''};
+  startDay();
+}
+function startDay(){
+  S.open=1;S.notes=S.carry.slice();S.carry=[];S.led=null;S.res=null;S.ev=null;S.over=null;S.phase='brief';
+  const arc=[2,2,3,3,4,3,4,3,4,4,5,4,5,5];
+  let t=arc[S.day-1];const j=rand();if(j<.25)t++;else if(j<.45)t--;
+  S.threat=clamp(t,1,5);
+  S.disrupted=S.threat>=3?pick(['subway','bus','bike']):null;
+  S.news=pick(S.threat<=2?H1:S.threat===3?H2:H3);
+  const keep=[];
+  for(const c of S.claims){
+    if(c.day<=S.day){
+      if(rand()<c.p){S.cash+=c.amt;S.tally.claims+=c.amt;S.notes.push(`Relief check arrived: +${fmt(c.amt)}. The envelope is stamped Processed With Regret.`)}
+      else S.notes.push('Your relief claim came back denied. Reason code: Ambient.')
+    }else keep.push(c)
+  }
+  S.claims=keep;
+  if(S.stress>70){applyFx({health:-3});S.notes.push('Your stress is running hot. You slept badly and your body noticed. Health −3.')}
+  else if(S.stress<=40)S.health=clamp(S.health+2);
+  S.over=check();if(S.over)S.phase='end';
+}
+function nextDay(){
+  if(S.day>=LAST){S.over='win';S.phase='end';return}
+  S.day++;startDay();
+}
+
+/* ---------- commute ---------- */
+function commuteState(c){
+  const closed=(c.id==='subway'&&S.disrupted==='subway'&&S.threat>=4)||(c.id==='bus'&&S.disrupted==='bus'&&S.threat>=5);
+  return {closed,dis:S.disrupted===c.id,cost:c.cost(S.threat)};
+}
+function doCommute(id){
+  const c=COMMUTES.find(x=>x.id===id),th=S.threat,st=commuteState(c),before=snap();
+  S.cash=Math.max(0,S.cash-st.cost);
+  const ph=1.2*(c.hb+c.hk*th+(st.dis?.12:0)),pl=c.lb+.05*th+(st.dis?.18:0),r=rand();
+  let kind='ok';if(r<ph)kind='hurt';else if(r<ph+pl)kind='late';
+  if(kind==='ok'){if(id==='bike'){S.health=clamp(S.health+2);S.stress=clamp(S.stress-3)}else if(id==='walk')S.stress=clamp(S.stress-2)}
+  if(kind==='late'){S.open=clamp(S.open-c.lose,.1,1);S.stress=clamp(S.stress+6);S.tally.late++}
+  if(kind==='hurt'){S.health=clamp(S.health-Math.round(7+rand()*7+th*1.5));S.stress=clamp(S.stress+10);S.open=clamp(S.open-.1,.1,1);S.tally.hurt++}
+  const word={ok:'Made it',late:'Running late',hurt:'Rough ride'}[kind];
+  S.res={title:`${c.name} · ${word}`,text:pick(c.tx[kind]),chips:chips(diff(before))};
+  hist(`${c.name}: ${word.toLowerCase()}.`);
+  S.over=check();S.phase='commute_res';
+}
+
+/* ---------- midday ---------- */
+function pickEvent(){
+  const ok=e=>S.threat>=e.t[0]&&S.threat<=e.t[1]&&!(e.once&&S.flags['seen_'+e.id]);
+  let pool=EVENTS.filter(e=>ok(e)&&!S.seen.includes(e.id));
+  if(!pool.length){S.seen=[];pool=EVENTS.filter(ok)}
+  const e=pick(pool);S.seen.push(e.id);if(e.once)S.flags['seen_'+e.id]=true;return e;
+}
+const need=c=>Math.max(0,-(c.fx.cash||0),-((c.ffx||{}).cash||0));
+function doChoice(i){
+  const c=S.ev.c[i],before=snap();
+  if(c.fight!==undefined){startFight(c.fight);return}
+  let ok=true;if(c.p!==undefined)ok=rand()<c.p;
+  applyFx(ok?c.fx:(c.ffx||{}));
+  if(ok&&c.fn)c.fn();
+  S.res={title:c.l,text:ok?c.t:c.ft,chips:chips(diff(before))};
+  hist(`${S.ev.k}: ${c.l.toLowerCase()}.`);
+  S.over=check();S.phase='event_res';
+}
+
+/* ---------- evening ---------- */
+function enterEvening(){
+  const T=TYPES[S.type];S.phase='evening';
+  let rev=(50+S.good*.9+S.shop*.7)*T.rev*(1.1-.08*S.threat+T.boost*S.threat)*S.open*(S.flags.noMachine?.85:1)*(S.stress>70?.9:1)*(.88+rand()*.24)*.92;
+  rev=Math.max(0,Math.round(rev));const sup=Math.round(rev*.3),util=T.util,net=rev-sup-util;
+  S.cash+=net;let skipped=false;
+  if(S.cash<0){S.cash=0;skipped=true;S.stress=clamp(S.stress+8);S.health=clamp(S.health-4)}
+  let col=null;
+  if(rand()<.15*S.threat){const d=Math.round((6+rand()*10)*T.dmg*(S.insured?.5:1));S.shop=clamp(S.shop-d);S.tally.dmg+=d;col={d,text:pick(COLL)}}
+  S.led={rev,sup,util,net,skipped,col};
+  hist(`Closed the day ${net>=0?'up':'down'} ${fmt(Math.abs(net))}.`);
+  S.over=check();
+}
+function eveActions(){
+  const T=TYPES[S.type];
+  return [
+    {id:'repair',l:'Repair and restock',s:'Patch cracks, sweep up, fill the shelves.',h:`−$${T.repair} · Shop +15`,need:T.repair},
+    {id:'late',l:'Stay open late',s:'The night owls need you. Your knees disagree.',h:'+cash · Stress +9'},
+    {id:'rest',l:'Lock up and go home',s:'Eat something warm, sitting down.',h:'Stress −12 · Health +7'},
+    {id:'stoop',l:'Hand out leftovers on the stoop',s:'Neighbors you only nod to learn your name.',h:'−$15 · Goodwill +8',need:15},
+    {id:'claim',l:'File Hero Damage Relief Form 27-B',s:'Eleven pages. Page nine asks if the damage was witnessed.',h:'45% for $220 in 3 days',req:S.day-(S.flags.lastClaim||-9)>=3&&S.claims.length<2,rq:'Already pending'},
+    {id:'loan',l:'Call your sister for a loan',s:'She will say yes. She will also say be careful.',h:'+$150 once',req:!S.flags.loan,rq:'Already borrowed'},
+    {id:'kit',l:'Restock the first-aid kit',s:'Gauze, tape, and the good painkillers.',h:'−$25 · +1 kit (max 3)',need:25,req:S.kits<3,rq:'Kit shelf is full'},
+    {id:'bat',l:'Buy an aluminum bat',s:'Better reach, better swing, lasts longer than a broom.',h:'−$55 · 11–16 damage',need:55,req:!S.weapons.some(w=>w.name==='Aluminum bat'),rq:'Already behind the counter'}
+  ];
+}
+function doEve(id){
+  const T=TYPES[S.type],before=snap();let text='';
+  switch(id){
+    case 'repair':S.cash-=T.repair;S.shop=clamp(S.shop+15);S.stress=clamp(S.stress-2);text='You tape, patch, sweep, and restock until the place looks like it expects to be open tomorrow.';break;
+    case 'late':{const extra=Math.round(S.led.rev*.35*(.85+rand()*.3));S.cash+=extra;S.stress=clamp(S.stress+9);S.health=clamp(S.health-3);text="You keep the lights on for the night owls and the people who can't go home yet. The register is better for it. Your knees are not.";break}
+    case 'rest':S.stress=clamp(S.stress-12);S.health=clamp(S.health+7);text='You lock up at six and take the long way home. Distant booms sound like furniture moving upstairs.';break;
+    case 'stoop':S.cash=Math.max(0,S.cash-15);S.good=clamp(S.good+8);S.stress=clamp(S.stress-3);text='You hand out the day-old stock on the stoop. Somebody asks your name and remembers it.';break;
+    case 'claim':S.claims.push({day:S.day+3,p:.45,amt:220});S.flags.lastClaim=S.day;S.stress=clamp(S.stress+4);text='You list the whole block as witnesses. Page eleven asks you to sign in two places and a third, just in case.';break;
+    case 'loan':S.cash+=150;S.flags.loan=true;S.stress=clamp(S.stress+6);text='Your sister sends $150 and a voice message that is mostly breathing and then "be careful." You save the message.';break;
+    case 'kit':S.cash-=25;S.kits=Math.min(3,S.kits+1);text='You restock the kit from the pharmacy aisle and hide the good painkillers behind the till.';break;
+    case 'bat':S.cash-=55;S.weapons.push({name:'Aluminum bat',min:11,max:16,acc:.78,dur:8});text='You buy it from a man who says it has never been used for baseball. It lives under the counter now.';break;
+  }
+  text+=' '+pick(NIGHT);
+  S.res={title:'',text,chips:chips(diff(before))};
+  S.over=check();S.phase='eve_res';
+}
+
+/* ---------- skirmishes ---------- */
+const BROOM={name:'Push broom',min:5,max:9,acc:.85,dur:7};
+const SIGNATURE={
+  coffee:{name:'Cast-iron skillet',min:9,max:14,acc:.7,dur:6},
+  hardware:{name:'Pipe wrench',min:10,max:15,acc:.72,dur:7},
+  laundromat:{name:'Mop bucket and wringer',min:8,max:13,acc:.75,dur:7}
+};
+const startWeapons=id=>[{...BROOM},{...SIGNATURE[id]}];
+const ENEMIES=[
+  {name:'Opportunistic looter',hp:22,atk:[4,8],acc:.6,pay:30,intro:'He has a crowbar and the confidence of someone who has watched a lot of videos.'},
+  {name:'Teal-jumpsuit grunt',hp:30,atk:[6,10],acc:.65,pay:55,intro:'The break is over. He pulls a baton from his belt and does not look happy about it.'},
+  {name:'Rustjaw scrap-drone',hp:38,atk:[8,13],acc:.65,pay:70,intro:'A chewed-up drone the size of a dishwasher grinds through your doorframe, jaws clicking.'},
+  {name:'Static-charged enforcer',hp:46,atk:[9,15],acc:.7,pay:90,intro:'Every hair on your arms stands up. He walks in like the room owes him a favor.'},
+  {name:"The Gridlock's bruiser",hp:55,atk:[11,17],acc:.7,pay:110,intro:'He fills the doorway. Somewhere behind him, a bus is on its side.'}
+];
+const fightChance=()=>S.threat>=3?.18+.07*S.threat:S.threat===2?.1:0;
+function startFight(idx){
+  const i=idx!==undefined?idx:clamp(S.threat-2+(rand()<.4?1:0),0,4);
+  const e={...ENEMIES[i]};e.max=e.hp;
+  S.fight={e,log:[e.intro],round:1,brace:false,before:snap()};S.phase='fight';
+}
+function fightAct(a){
+  const F=S.fight,e=F.e,L=[];F.brace=false;
+  if(a==='fist'||a[0]==='w'){
+    const wi=a==='fist'?-1:+a.slice(1),w=wi<0?{name:'bare hands',min:2,max:5,acc:.9,dur:99}:S.weapons[wi];
+    if(rand()<w.acc){const d=Math.round(w.min+rand()*(w.max-w.min));e.hp=Math.max(0,e.hp-d);L.push(`You hit with the ${w.name} for ${d}.`)}
+    else L.push(`Your swing with the ${w.name} misses.`);
+    if(wi>=0){w.dur--;if(w.dur<=0){L.push(`The ${w.name} breaks.`);S.weapons.splice(wi,1)}}
+  }else if(a==='brace'){F.brace=true;L.push('You get low behind the counter and cover up.')}
+  else if(a==='kit'){S.kits--;S.health=clamp(S.health+18);L.push('You slap on a bandage and a very strong painkiller. Health +18.')}
+  else if(a==='run'){
+    if(rand()<.55){F.log=L;endFight('fled');return}
+    L.push('You turn to run and he cuts you off.');
+  }
+  F.log=L;
+  if(e.hp<=0){endFight('won');return}
+  if(rand()<e.acc*(F.brace?.5:1)){
+    let d=Math.round(e.atk[0]+rand()*(e.atk[1]-e.atk[0]));if(F.brace)d=Math.round(d*.6);
+    S.health=clamp(S.health-d);S.shop=clamp(S.shop-(S.insured?1:2));L.push(`The ${e.name.toLowerCase()} hits you for ${d}. Something on a shelf breaks.`);
+  }else L.push(`The ${e.name.toLowerCase()} swings and misses.`);
+  S.stress=clamp(S.stress+2);F.round++;
+  if(check()){endFight('lost');return}
+  if(F.round>9)endFight('draw');
+}
+function endFight(kind){
+  const F=S.fight,e=F.e;let title,text;const lg=F.log.join(' ');
+  if(kind==='won'){applyFx({cash:e.pay,good:5,stress:-4});S.tally.won++;title='Skirmish · You held the line';text=`${lg} The ${e.name.toLowerCase()} backs off, then runs. You find ${fmt(e.pay)} in the dropped gear.`}
+  else if(kind==='fled'){applyFx({cash:-20,good:-4,open:-.3,stress:4});title='Skirmish · You got out';text=`${lg} You squeeze out through the stockroom and watch from the alley. It costs you some stock, and some pride.`}
+  else if(kind==='draw'){applyFx({good:2,stress:4});title='Skirmish · Standoff';text=`${lg} Both of you run out of steam. He wanders off, muttering about the schedule.`}
+  else{title='Skirmish · Down';text=`${lg} The world goes white, then a ceiling.`}
+  S.res={title,text,chips:chips(diff(F.before))};
+  hist(`Skirmish with ${e.name.toLowerCase()}: ${kind==='won'?'won':kind==='fled'?'fled':kind==='draw'?'standoff':'lost'}.`);
+  S.over=check();S.fight=null;S.phase='event_res';
+}
+function fightHtml(){
+  const F=S.fight,e=F.e;
+  const ws=S.weapons.map((w,i)=>choiceBtn(`data-act="fight" data-a="w${i}"`,`Swing the ${w.name}`,`${w.min}–${w.max} damage · ${Math.round(w.acc*100)}% to hit`,`${w.dur} uses left`,false)).join('');
+  return `<div class="panel"><div class="kicker">Skirmish · round ${F.round}</div><h2>${e.name}</h2>
+    <div class="stat"><div class="row"><span>Their strength</span><b>${e.hp}/${e.max}</b></div><div class="bar bad"><i style="width:${e.hp/e.max*100}%"></i></div></div>
+    <div class="stat"><div class="row"><span>Your health</span><b>${Math.round(S.health)}</b></div><div class="bar ${S.health<35?'bad':'good'}"><i style="width:${S.health}%"></i></div></div>
+    <p class="lead">${F.log.join(' ')}</p><h3>Your move</h3><div class="choices">${ws}${choiceBtn('data-act="fight" data-a="fist"','Shove and swing with your bare hands','2–5 damage · 90% to hit','')}${choiceBtn('data-act="fight" data-a="brace"','Brace behind the counter','Their hits land half as often and hurt less.','')}${choiceBtn('data-act="fight" data-a="kit"','Use a first-aid kit','Heals 18 health.',`${S.kits} left`,S.kits<1)}${choiceBtn('data-act="fight" data-a="run"','Back out through the stockroom','About 55% you get away. Failing gives him a free swing.','−$20 stock')}</div></div>`;
+}
+
+/* ---------- rent ---------- */
+const due=()=>S.rent+S.owed;
+function payRent(){S.cash-=due();S.owed=0;S.tally.rents++;hist(`Paid rent.`);nextDay()}
+function sellAsset(){S.cash+=260;S.flags.noMachine=true;S.stress=clamp(S.stress+8)}
+function takeLoan(){S.cash+=150;S.flags.loan=true;S.stress=clamp(S.stress+6)}
+function plead(){
+  const p=.25+S.good/200;
+  if(rand()<p){
+    const d=due();S.owed=d-S.cash+50;S.cash=0;S.flags.pleaded=true;S.stress=clamp(S.stress+4);S.tally.rents++;
+    S.carry.push(`Mr. Abernathy took what you had and wrote the rest on a sticky note, plus a $50 late fee. You now owe ${fmt(S.owed)}.`);
+    hist('Paid part of the rent and begged for time.');nextDay();
+  }else{S.over='evicted';S.phase='end'}
+}
+
+/* ---------- scene ---------- */
+function fig(x,y,body,cape){
+  return `<g transform="translate(${x},${y})"><path d="M0,-9 L-13,6 L-2,3 Z" style="fill:${cape}" opacity=".85"/><circle cx="0" cy="-14" r="4" style="fill:${body}"/><path d="M0,-10 L0,6 M0,-6 L-7,-1 M0,-6 L8,-13 M0,6 L-4,15 M0,6 L5,14" fill="none" style="stroke:${body}" stroke-width="2.6" stroke-linecap="round"/></g>`;
+}
+function sceneSvg(){
+  const th=S.type||S.phase==='end'?S.threat:3,day=S.day||1,r=rng(day*7919+31),W=800,H=240,G=196;
+  let o=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMid slice" role="img" aria-label="Halvard skyline with a rooftop battle at threat level ${th} of 5">`;
+  o+=`<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky-a)"/><stop offset="1" style="stop-color:var(--sky-b)"/></linearGradient><filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter></defs>`;
+  o+=`<rect width="${W}" height="${H}" fill="url(#sky)"/>`;
+  let x=-10;while(x<W){const w=34+r()*40,h=60+r()*85;o+=`<rect x="${x.toFixed(1)}" y="${(G-h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" style="fill:var(--far)"/>`;x+=w+2+r()*4}
+  x=-20;while(x<W){const w=46+r()*50,h=44+r()*74,y=G-h;o+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" style="fill:var(--near)"/>`;
+    for(let wy=y+8;wy<G-8;wy+=12)for(let wx=x+6;wx<x+w-8;wx+=12)if(r()<.26)o+=`<rect x="${wx.toFixed(1)}" y="${wy.toFixed(1)}" width="5" height="6" style="fill:var(--win)" opacity=".8"/>`;
+    x+=w+3}
+  const bx=270+r()*170,by=74;
+  o+=`<g class="beam"><line x1="${bx-64}" y1="${by-2}" x2="${bx+66}" y2="${by+6}" style="stroke:var(--beam)" stroke-width="${3+th*2}" filter="url(#glow)" opacity=".85"/><line x1="${bx-64}" y1="${by-2}" x2="${bx+66}" y2="${by+6}" style="stroke:var(--beam)" stroke-width="${1+th*.5}"/></g>`;
+  o+=fig(bx-70,by,'var(--blue)','var(--blue)')+fig(bx+72,by+6,'var(--alert)','var(--alert)');
+  for(let i=0;i<th;i++){
+    const cx=60+r()*640,cy=40+r()*110,rad=8+th*2.6+r()*8;let p='';
+    for(let k=0;k<12;k++){const a=k*Math.PI/6,rr=k%2?rad*.5:rad;p+=`${(cx+Math.cos(a)*rr).toFixed(1)},${(cy+Math.sin(a)*rr).toFixed(1)} `}
+    o+=`<circle cx="${cx.toFixed(1)}" cy="${(cy-rad-6).toFixed(1)}" r="${(rad*.8).toFixed(1)}" style="fill:var(--smoke)" opacity=".4"/><circle cx="${(cx+10).toFixed(1)}" cy="${(cy-rad-18).toFixed(1)}" r="${(rad*.6).toFixed(1)}" style="fill:var(--smoke)" opacity=".3"/>`;
+    o+=`<polygon points="${p}" style="fill:var(--boom)" opacity=".92"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(rad*.35).toFixed(1)}" style="fill:var(--beam)"/>`;
+  }
+  o+=`<rect y="${G}" width="${W}" height="${H-G}" style="fill:var(--street)"/>`;
+  for(let d=10;d<W;d+=60)o+=`<rect x="${d}" y="${G+30}" width="26" height="3" style="fill:var(--win)" opacity=".45"/>`;
+  /* the shop */
+  const sx=56,sy=G-74,sw=128,sh=74,sc=S.shop===undefined?75:S.shop;
+  o+=`<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" style="fill:var(--wall)"/>`;
+  for(let k=0;k<8;k++)o+=`<rect x="${sx-4+k*17}" y="${sy-2}" width="17" height="16" style="fill:${k%2?'var(--panel)':'var(--blue)'}"/>`;
+  o+=`<rect x="${sx+10}" y="${sy+24}" width="58" height="42" style="fill:var(--street)" opacity=".85"/><rect x="${sx+14}" y="${sy+28}" width="50" height="34" style="fill:var(--win)" opacity="${sc<30?.2:.6}"/>`;
+  o+=`<rect x="${sx+82}" y="${sy+28}" width="30" height="46" style="fill:var(--near)"/>`;
+  if(sc<65)o+=`<path d="M${sx+22},${sy+28} l8,14 l-6,6 l10,14" fill="none" style="stroke:var(--street)" stroke-width="2"/>`;
+  if(sc<40)o+=`<rect x="${sx+10}" y="${sy+36}" width="58" height="7" style="fill:var(--warn)" transform="rotate(-6 ${sx+39} ${sy+40})"/><rect x="${sx+10}" y="${sy+50}" width="58" height="7" style="fill:var(--warn)" transform="rotate(4 ${sx+39} ${sy+54})"/>`;
+  if(sc<20)o+=`<path d="M${sx+sw},${sy} l-30,0 l-10,30 l20,-4 z" style="fill:var(--street)" opacity=".7"/>`;
+  /* you, with a bag */
+  o+=`<g transform="translate(${sx+sw+26},${G+4})"><circle cy="-30" r="5" style="fill:var(--ink)"/><path d="M0,-24 L0,-4 M0,-20 L-8,-10 M0,-20 L8,-12 M0,-4 L-5,10 M0,-4 L6,10" fill="none" style="stroke:var(--ink)" stroke-width="3" stroke-linecap="round"/><rect x="7" y="-14" width="10" height="12" rx="1" style="fill:var(--blue)"/></g>`;
+  o+=`<rect width="${W}" height="${H}" fill="var(--night)" opacity="${S.phase==='evening'||S.phase==='eve_res'||S.phase==='rent'?.28:0}"/>`;
+  return o+'</svg>';
+}
+
+/* ---------- render ---------- */
+const $=id=>document.getElementById(id);
+function render(){
+  $('strip').innerHTML=stripHtml();
+  $('scene').innerHTML=sceneSvg();
+  const playing=!!S.type;
+  $('main').classList.toggle('solo',!playing);
+  $('side').innerHTML=playing?sideHtml():'';
+  $('desk').innerHTML=deskHtml();
+  $('log').innerHTML=playing&&S.hist.length?logHtml():'';
+}
+function stripHtml(){
+  let right='';
+  if(S.type&&S.phase!=='end'){
+    const th=S.threat,cls=th>=4?'max':th===3?'hot':'';
+    const step=['brief','commute_res'].includes(S.phase)?0:['event','event_res','fight'].includes(S.phase)?1:2;
+    right=`<div class="meta"><span class="day">${DAYS_FULL[(S.day-1)%7]} · Day ${S.day} of ${LAST}</span>
+      <span class="threat ${cls}" title="Hero activity: ${LEVELS[th]}" aria-label="Hero activity ${LEVELS[th]}">${[1,2,3,4,5].map(i=>`<i class="${i<=th?'on':''}" style="height:${6+i*3}px"></i>`).join('')}</span>
+      <span>Hero activity: ${LEVELS[th]}</span>
+      <span class="pips">${['Commute','Midday','Close'].map((p,i)=>`<span class="${i===step?'on':''}">${p}</span>`).join('')}</span></div>`;
+  }else right=`<div class="meta"><span>Halvard, a city with a lot going on overhead</span></div>`;
+  return `<div class="brand"><span class="roundel" aria-hidden="true"></span>Ground Level</div>${right}`;
+}
+function bar(label,val,cls){return `<div class="stat"><div class="row"><span>${label}</span><b>${Math.round(val)}</b></div><div class="bar ${cls}"><i style="width:${clamp(val)}%"></i></div></div>`}
+function sideHtml(){
+  const nr=RENT_DAYS.find(d=>d>=S.day)||LAST,dl=nr-S.day;
+  const when=dl===0?'tonight':dl===1?'tomorrow night':`in ${dl} days`;
+  const rentTxt=`Rent <b>${fmt(due())}</b> due ${DAYS_FULL[(nr-1)%7]}, ${when}${S.owed?` (includes ${fmt(S.owed)} owed)`:''}`;
+  const hc=S.health<35?'bad':'good',sc=S.stress>=70?'bad':S.stress>=45?'warn':'';
+  return `<div class="panel"><div class="statgrid">
+    <div class="cashrow"><span class="lbl">Cash</span><span class="cash">${fmt(S.cash)}</span></div>
+    <div class="rent ${dl<=1&&S.cash<due()?'soon':''}">${rentTxt}</div>
+    ${bar('Health',S.health,hc)}${bar('Stress',S.stress,sc||'')}${bar('Shop condition',S.shop,S.shop<35?'bad':'')}${bar('Goodwill',S.good,'')}
+  </div></div>
+  <div class="panel sidenote"><b style="color:var(--ink)">${TYPES[S.type].name}</b><br>${S.insured?'Hero Rider on file: shop damage halved.<br>':''}${S.claims.length?`Relief claims pending: ${S.claims.length}.`:'No relief claims pending.'}<br>Behind the counter: ${S.weapons.length?S.weapons.map(w=>`${w.name} (${w.dur})`).join(', '):'nothing but your hands'}. First-aid kits: ${S.kits}.${S.flags.noMachine?'<br>You sold equipment: sales run about 15% lower.':''}</div>`;
+}
+function logHtml(){
+  return `<details class="log"><summary>Logbook (${S.hist.length})</summary><ul>${S.hist.slice().reverse().map(h=>`<li><b>${dayName(h.d)}</b>${h.t}</li>`).join('')}</ul></details>`;
+}
+function choiceBtn(attrs,label,sub,hint,disabled,tag){
+  return `<button class="choice" ${attrs} ${disabled?'disabled':''}><span class="t"><b>${label}${tag||''}</b>${sub?`<small>${sub}</small>`:''}</span>${hint?`<span class="h">${hint}</span>`:''}</button>`;
+}
+function deskHtml(){
+  const P=S.phase;
+  if(P==='title'){
+    return `<div class="panel"><div class="kicker">A week-by-week survival game</div><h2>You are not the hero. You own a shop.</h2>
+      <p class="lead">Halvard is under constant rooftop attack. You still have to get to work, keep the lights on, and pay Mr. Abernathy on Sunday. When a fight reaches your door, you use what's behind the counter. Weapons wear out, bandages run out, and so does your luck. Survive two weeks and two rent days.</p>
+      <p class="note">Each day: pick how you commute, handle one thing that happens at midday, then close up. Cash, health, stress, your shop, and your neighbors all push back.</p>
+      <h3>Pick your shop</h3><div class="types">${Object.values(TYPES).map(t=>`<button class="choice" data-act="start" data-type="${t.id}"><span class="t"><b>${t.name}</b><small>${t.blurb}</small></span></button>`).join('')}</div></div>`;
+  }
+  if(P==='brief'){
+    const notes=S.notes.length?`<p class="note">${S.notes.join(' ')}</p>`:'';
+    return `<div class="panel"><div class="kicker">${DAYS_FULL[(S.day-1)%7]} morning</div><h2>${S.news}</h2>${notes}
+      <h3>How do you get to the shop?</h3><div class="choices">${COMMUTES.map(c=>{
+        const st=commuteState(c),tag=st.closed?'<span class="tag">Closed</span>':st.dis?'<span class="tag warn">Disrupted</span>':'';
+        const hint=`${st.cost?fmt(st.cost):'Free'} · ${c.time}`;
+        return choiceBtn(`data-act="commute" data-id="${c.id}"`,c.name,st.closed?'Service suspended today.':c.desc,hint,st.closed||st.cost>S.cash,tag)}).join('')}</div></div>`;
+  }
+  if(P==='commute_res'||P==='event_res'||P==='eve_res'){
+    const r=S.res,nxt=P==='commute_res'?'toEvent':P==='event_res'?'toEvening':'afterEve';
+    const lbl=S.over?'See what happens':P==='commute_res'?'On to the shop':P==='event_res'?'Close up for the day':RENT_DAYS.includes(S.day)?'Rent day':S.day>=LAST?'Finish':'Next morning';
+    return `<div class="panel">${r.title?`<div class="kicker">${r.title}</div>`:'<div class="kicker">Night</div>'}<p class="lead">${r.text}</p>${r.chips}<button class="primary" data-act="${nxt}">${lbl}</button></div>`;
+  }
+  if(P==='event'){
+    const e=S.ev;
+    return `<div class="panel"><div class="kicker">Midday · ${e.k}</div><h2>${e.h}</h2><p class="lead">${e.x}</p><h3>What do you do?</h3><div class="choices">${e.c.map((c,i)=>{
+      const n=need(c),bad=(c.req&&!c.req())||n>S.cash;
+      const hint=[n?'−$'+n:'',c.p!==undefined?'a gamble':''].filter(Boolean).join(' · ');
+      return choiceBtn(`data-act="choice" data-i="${i}"`,c.l,bad?(c.req&&!c.req()?c.rq:"Can't afford that"):'',hint,bad)}).join('')}</div></div>`;
+  }
+  if(P==='evening'){
+    const L=S.led,T=TYPES[S.type];
+    const rows=`<tr><td>Sales${S.open<.95?` (open ~${Math.round(S.open*100)}% of hours)`:''}</td><td>${fmt(L.rev)}</td></tr><tr><td>Supplies</td><td>−${fmt(L.sup).replace('−','')}</td></tr><tr><td>Utilities and groceries</td><td>−${fmt(L.util).replace('−','')}</td></tr><tr class="net"><td>Net for the day</td><td>${L.net>=0?'+':''}${fmt(L.net)}</td></tr>`;
+    const extras=(L.col?`<p class="note"><b style="color:var(--alert)">Collateral damage (shop −${L.col.d}).</b> ${L.col.text}</p>`:'')+(L.skipped?'<p class="note">The till couldn\'t cover everything. You skipped dinner. Stress +8, Health −4.</p>':'');
+    if(S.over)return `<div class="panel"><div class="kicker">Closing time</div><h2>The day's numbers</h2><table class="ledger">${rows}</table>${extras}<button class="primary" data-act="afterEve">See what happens</button></div>`;
+    return `<div class="panel"><div class="kicker">Closing time</div><h2>The day's numbers</h2><table class="ledger">${rows}</table>${extras}
+      <h3>Before you lock up</h3><div class="choices">${eveActions().map(a=>{
+        const bad=(a.req===false)||(a.need&&a.need>S.cash);
+        return choiceBtn(`data-act="eve" data-id="${a.id}"`,a.l,bad?(a.req===false?a.rq:"Can't afford that"):a.s,a.h,bad)}).join('')}</div></div>`;
+  }
+  if(P==='rent'){
+    const d=due(),can=S.cash>=d,asset=TYPES[S.type].asset;
+    const pp=Math.round((.25+S.good/200)*100);
+    let opts='';
+    if(can)opts=choiceBtn('data-act="pay"',`Pay ${fmt(d)}`,'Mr. Abernathy counts it twice and says thank you once.','');
+    else opts=`<p class="note">You have ${fmt(S.cash)}. You're ${fmt(d-S.cash)} short.</p><h3>Options</h3><div class="choices">`
+      +choiceBtn('data-act="sell"',`Sell ${asset}`,'Quick cash. Your sales will run about 15% lower from now on.','+$260 · Stress +8',!!S.flags.noMachine)
+      +choiceBtn('data-act="loan"','Call your sister for a loan','She will say yes.','+$150 · Stress +6',!!S.flags.loan)
+      +choiceBtn('data-act="plead"','Ask Mr. Abernathy for time',`Pay what you have now. He adds a $50 late fee. About ${pp}% he agrees, depending on how the neighbors see you.`,'once',!!S.flags.pleaded)
+      +choiceBtn('data-act="giveup"','Hand over the keys','You pack what fits in a duffel bag.','')+'</div>';
+    return `<div class="panel"><div class="kicker">Rent day</div><h2>${fmt(d)} due tonight</h2><p class="lead">Mr. Abernathy is on the stairs with the receipt book. ${S.owed?'He looks at the sticky note from last week and then at you.':'He asks how the shop is holding up. You both look at the ceiling.'}</p>${opts}${can?'<div class="choices" style="margin-top:12px"></div>':''}</div>`;
+  }
+  if(P==='fight')return fightHtml();
+  if(P==='end')return endHtml();
+  return '';
+}
+function endHtml(){
+  const o=S.over,t=S.tally;
+  const E={
+    hospital:['bad','Admitted',"You wake up in a hallway bed at St. Brannock's. The nurse says half the ward is on your postal code. The shop stays shut for a month. Maybe next time, take the car."],
+    burnout:['bad','Closed for Good',"You lock the door, put the key through the mail slot, and take a long bus to your cousin's place in Tulsa. The sky there is boring. You cry about it, a little, in a good way."],
+    wrecked:['bad','Total Loss',"The back wall comes down at 4:12. The sign survives. You're holding it when the adjuster arrives, and neither of you says anything for a while."],
+    evicted:['bad','Notice to Vacate',"The duffel bag is heavy but not as heavy as you expected. Mr. Abernathy holds the door. \"For what it's worth,\" he says. He doesn't finish."]
+  };
+  let tone,title,text;
+  if(o==='win'){
+    tone='good';
+    if(S.owed>0){title='Behind, But Open';text="Two weeks, two rent days, one sticky note. The shop is still open and so are you. Next month will be a real negotiation."}
+    else if(S.good>=70){title='The Block Remembers';text="When the cordon finally lifts, the neighbors carry a banner to your door. It says THANK YOU in handwriting that's almost legible. You hang it above the register."}
+    else if(S.cash>=500){title='Solvent, Somehow';text="You count the cash twice, because it's strange to have extra. The sky above Halvard keeps breaking. You buy a second broom."}
+    else if(S.stress>=70||S.health<35){title='Standing, Barely';text="You made it. Your hands shake when you turn the sign to OPEN, but the sign turns. That counts."}
+    else{title='Still Open';text="Two weeks. Two rents. A city that treats the sky like a trampoline, and a shop that is still here. That is the whole story, and it is a good one."}
+  }else[tone,title,text]=E[o];
+  const recap=o==='win'||true?`<div class="recap">
+    <div><span>Cash</span><b>${fmt(S.cash||0)}</b></div><div><span>Health</span><b>${Math.round(S.health||0)}</b></div>
+    <div><span>Stress</span><b>${Math.round(S.stress||0)}</b></div><div><span>Shop</span><b>${Math.round(S.shop||0)}</b></div>
+    <div><span>Goodwill</span><b>${Math.round(S.good||0)}</b></div><div><span>Rents paid</span><b>${t.rents}/2</b></div>
+    <div><span>Rough commutes</span><b>${t.hurt}</b></div><div><span>Late openings</span><b>${t.late}</b></div>
+    <div><span>Collateral damage</span><b>${t.dmg}</b></div><div><span>Relief paid</span><b>${fmt(t.claims)}</b></div><div><span>Fights won</span><b>${t.won}</b></div></div>`:'';
+  return `<div class="panel end ${tone}"><div class="kicker">${o==='win'?`Day ${LAST} complete`:`Day ${S.day}`}</div><h2>${title}</h2><p class="lead">${text}</p>${recap}<button class="primary" data-act="restart">Play again</button></div>`;
+}
+
+/* ---------- input ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  const a=b.dataset.act,d=b.dataset;
+  switch(a){
+    case 'start':newGame(d.type);break;
+    case 'commute':doCommute(d.id);break;
+    case 'toEvent':if(S.over){S.phase='end'}else if(rand()<fightChance())startFight();else{S.ev=pickEvent();S.phase='event'}break;
+    case 'fight':fightAct(d.a);break;
+    case 'choice':doChoice(+d.i);break;
+    case 'toEvening':if(S.over){S.phase='end'}else enterEvening();break;
+    case 'eve':doEve(d.id);break;
+    case 'afterEve':if(S.over)S.phase='end';else if(RENT_DAYS.includes(S.day))S.phase='rent';else nextDay();break;
+    case 'pay':payRent();break;
+    case 'sell':sellAsset();break;
+    case 'loan':takeLoan();break;
+    case 'plead':plead();break;
+    case 'giveup':S.over='evicted';S.phase='end';break;
+    case 'restart':S={phase:'title',day:1,threat:3};break;
+  }
+  render();
+  const desk=$('desk'),top=desk.getBoundingClientRect().top;
+  if(top<0||top>window.innerHeight*.7)window.scrollTo({top:Math.max(0,window.scrollY+top-70),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+});
+render();
+</script>
+
+</body></html>
