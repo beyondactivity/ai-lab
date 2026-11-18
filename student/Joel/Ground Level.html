@@ -121,6 +121,24 @@ details.log summary{cursor:pointer;font-family:var(--font-mono);font-size:12.5px
 details.log ul{margin:6px 0 0;padding:0;list-style:none;font-size:13px;color:var(--muted);display:grid;gap:3px}
 details.log li b{font-family:var(--font-mono);font-weight:500;color:var(--ink);margin-right:6px}
 
+.acct{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.acct img{width:20px;height:20px;border-radius:50%}
+.mini{font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--line);background:var(--panel);border-radius:3px;cursor:pointer;color:var(--ink)}
+.mini:hover{border-color:var(--blue)}
+.mini.main{background:var(--blue);color:var(--blue-ink);border-color:var(--blue)}
+.mini.danger{border-color:var(--alert);color:var(--alert)}
+.slots{display:grid;gap:8px;margin-top:12px}
+.slot{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:3px;padding:11px 14px;background:var(--bg)}
+.slot .t{min-width:0}.slot .t b{display:block;font-weight:600}.slot small{display:block;color:var(--muted);font-size:13px}
+.slotbtns{display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:520px){.slot{flex-direction:column;align-items:flex-start}}
+.tabs{display:flex;gap:6px;margin:14px 0 4px}
+.auth{display:grid;gap:12px;max-width:380px;margin-top:10px}
+.auth label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.auth input{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:9px 10px}
+.auth input:focus-visible{border-color:var(--blue)}
+.auth .primary{margin-top:4px;justify-self:start}
+.err{margin-top:12px;color:var(--alert);font-size:14px}
 @keyframes flick{0%,100%{opacity:1}50%{opacity:.55}}
 .beam{animation:flick 1.3s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.beam{animation:none}}
@@ -252,6 +270,155 @@ const EVENTS=[
    {l:'Buy from the wholesaler at double',fx:{cash:-60,shop:6},t:"It is not the price you wanted. It is the stock you needed."}]}
 ];
 
+/* ---------- accounts and saves ---------- */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ITER=200000,LS_ACC='groundlevel.accounts.v2';
+const Backend={mode:'local',db:null,ready:false};
+let Acct=null;
+const te=new TextEncoder(),td=new TextDecoder();
+const b64=u=>{u=new Uint8Array(u);let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const hasCrypto=()=>!!(window.crypto&&window.crypto.subtle);
+async function sha256hex(s){const h=await crypto.subtle.digest('SHA-256',te.encode(s));return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const emailId=e=>sha256hex('ground-level:'+e.trim().toLowerCase());
+async function deriveKey(pw,salt,iter){
+  const base=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function seal(key,obj){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,te.encode(JSON.stringify(obj)));return {iv:b64(iv),ct:b64(ct)}}
+async function unseal(key,box){return JSON.parse(td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(box.iv)},key,unb64(box.ct))))}
+
+function lsAll(){try{return JSON.parse(localStorage.getItem(LS_ACC))||{}}catch(e){return {}}}
+async function readDoc(id){
+  if(Backend.mode==='cloud'){const s=await Backend.db.doc('accounts/'+id).get();return s.exists?s.data():null}
+  return lsAll()[id]||null;
+}
+async function writeDoc(id,doc){
+  if(Backend.mode==='cloud')return Backend.db.doc('accounts/'+id).set(doc);
+  const a=lsAll();a[id]=doc;localStorage.setItem(LS_ACC,JSON.stringify(a));
+}
+async function removeDoc(id){
+  if(Backend.mode==='cloud')return Backend.db.doc('accounts/'+id).delete();
+  const a=lsAll();delete a[id];localStorage.setItem(LS_ACC,JSON.stringify(a));
+}
+const normSlots=a=>[0,1,2].map(i=>(a&&a[i])||null);
+async function initBackend(){
+  try{
+    if(window.claude&&window.claude.use){
+      const db=await window.claude.use('db');
+      if(db){Backend.mode='cloud';Backend.db=db}
+    }
+  }catch(e){}
+  Backend.ready=true;refreshUi();
+}
+function refreshUi(){if(S.phase==='title'||S.phase==='pick')render();else document.getElementById('strip').innerHTML=stripHtml()}
+
+async function registerAccount(email,pw,name){
+  const id=await emailId(email),salt=crypto.getRandomValues(new Uint8Array(16));
+  const key=await deriveKey(pw,salt,ITER);
+  const box=await seal(key,{name,slots:[null,null,null],t:Date.now()});
+  const doc={v:2,salt:b64(salt),iter:ITER,box};
+  if(Backend.mode==='cloud'){
+    const ref=Backend.db.doc('accounts/'+id);
+    const pre=await ref.get();
+    if(pre.exists&&pre.data().salt)throw new Error('exists');
+    const lease=await ref.acquire({holder:b64(crypto.getRandomValues(new Uint8Array(9))),ttlMs:8000});
+    if(!lease.acquired)throw new Error('busy');
+    const cur=await ref.get();
+    if(cur.exists&&cur.data().salt)throw new Error('exists');
+  }else if(lsAll()[id])throw new Error('exists');
+  await writeDoc(id,doc);
+  Acct={id,key,salt:doc.salt,iter:ITER,name,slots:[null,null,null],q:Promise.resolve(),note:''};
+}
+async function loginAccount(email,pw){
+  const id=await emailId(email),doc=await readDoc(id);
+  if(!doc||!doc.salt)throw new Error('bad');
+  const key=await deriveKey(pw,unb64(doc.salt),doc.iter||ITER);
+  let data;try{data=await unseal(key,doc.box)}catch(e){throw new Error('bad')}
+  Acct={id,key,salt:doc.salt,iter:doc.iter||ITER,name:data.name||'Player',slots:normSlots(data.slots),q:Promise.resolve(),note:''};
+}
+function queueSave(){
+  const a=Acct;if(!a)return;
+  a.q=a.q.then(async()=>{
+    try{
+      const box=await seal(a.key,{name:a.name,slots:a.slots,t:Date.now()});
+      await writeDoc(a.id,{v:2,salt:a.salt,iter:a.iter,box});
+      if(a.note){a.note='';refreshUi()}
+    }catch(e){a.note='Your progress could not be saved. If you are playing online, ask the page owner for Contributor access.';refreshUi()}
+  });
+}
+function persist(n,data){if(!Acct)return;Acct.slots[n-1]=data;queueSave()}
+const cloneRun=()=>JSON.parse(JSON.stringify(S,(k,v)=>(k==='ev'||k==='res'||k==='led'||k==='fight')?null:v));
+function autosave(){
+  if(!S.slot||!Acct)return;
+  persist(S.slot,{v:1,kind:'run',savedAt:Date.now(),sum:{shop:TYPES[S.type].name,day:S.day,cash:S.cash},state:cloneRun()});
+}
+function saveEnded(){
+  persist(S.slot,{v:1,kind:'ended',savedAt:Date.now(),sum:{shop:TYPES[S.type].name,day:S.day,cash:S.cash,title:S.endTitle||'Finished',outcome:S.over}});
+}
+function loadSlot(n){
+  const d=Acct&&Acct.slots[n-1];if(!d||d.kind!=='run'||!d.state)return;
+  S=JSON.parse(JSON.stringify(d.state));S.slot=n;S.phase='brief';S.menuConfirm=false;
+  if(!S.weapons)S.weapons=startWeapons(S.type);
+  if(S.kits===undefined)S.kits=1;
+}
+async function submitAuth(){
+  const g=id=>{const e=document.getElementById(id);return e?e.value:''};
+  const reg=S.authTab==='register',email=g('f-email').trim(),pw=g('f-pw'),name=g('f-name').trim();
+  S.authEmail=email;S.authName=name;S.authMsg='';
+  const fail=m=>{S.authMsg=m;render()};
+  if(!hasCrypto())return fail('This browser cannot run secure accounts. Try a current version of Chrome, Safari, Firefox or Edge.');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return fail('Enter a valid email address.');
+  if(pw.length<8)return fail('Use a password with at least 8 characters.');
+  if(reg){
+    if(!name)return fail('Pick a display name.');
+    if(pw!==g('f-pw2'))return fail('The two passwords do not match.');
+  }
+  const btn=document.getElementById('authgo');if(btn){btn.disabled=true;btn.textContent='Working…'}
+  try{
+    if(reg)await registerAccount(email,pw,name.slice(0,24));else await loginAccount(email,pw);
+  }catch(e){
+    const m=e&&e.message;
+    return fail(m==='exists'?'An account with that email already exists. Try logging in.':m==='busy'?'Someone is creating that account right now. Try again in a moment.':m==='bad'?"That email and password don't match an account.":'Could not reach the account store. Check your connection and try again.');
+  }
+  S={phase:'title',day:1,threat:3};render();
+}
+function authHtml(){
+  if(!Backend.ready)return '<div class="panel"><div class="kicker">Halvard residents only</div><h2>Connecting…</h2><p class="note">Checking where accounts are stored.</p></div>';
+  const reg=S.authTab==='register';
+  const where=Backend.mode==='cloud'?'Accounts live online, so you can play from any device.':'This page is not connected to online storage, so accounts live on this device only.';
+  return `<div class="panel"><div class="kicker">Halvard residents only</div><h2>${reg?'Create an account':'Log in to your shop'}</h2>
+    <div class="tabs"><button class="mini ${reg?'':'main'}" data-act="tab" data-t="login">Log in</button><button class="mini ${reg?'main':''}" data-act="tab" data-t="register">Create account</button></div>
+    <form id="authform" class="auth">
+      ${reg?`<label>Display name<input id="f-name" name="name" maxlength="24" autocomplete="nickname" value="${esc(S.authName||'')}"></label>`:''}
+      <label>Email<input id="f-email" name="email" type="email" autocomplete="email" value="${esc(S.authEmail||'')}"></label>
+      <label>Password<input id="f-pw" name="password" type="password" autocomplete="${reg?'new-password':'current-password'}"></label>
+      ${reg?'<label>Confirm password<input id="f-pw2" name="password2" type="password" autocomplete="new-password"></label>':''}
+      <button class="primary" id="authgo" type="submit">${reg?'Create account':'Log in'}</button>
+    </form>
+    ${S.authMsg?`<p class="err" role="alert">${esc(S.authMsg)}</p>`:''}
+    <p class="note">${where} Your saves are encrypted with your password before they are stored. This is a game account, separate from claude.ai. There is no email verification and no password reset, so a forgotten password means the saves are gone. Do not reuse a password from anywhere else.</p></div>`;
+}
+function acctHtml(){
+  if(!Acct)return '<span class="acct">Not signed in</span>';
+  return `<span class="acct">${esc(Acct.name)}${Acct.note?' · not saving':''}</span><button class="mini" data-act="logout">Log out</button>`;
+}
+function slotsHtml(){
+  const when=t=>t?new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+  const who=`Signed in as ${esc(Acct.name)}. ${Backend.mode==='cloud'?'Saves are encrypted with your password and stored online.':'Saves are encrypted and stored on this device.'}`;
+  const rows=[1,2,3].map(n=>{
+    const d=Acct.slots[n-1],sm=(d&&d.sum)||{};
+    if(S.confirmDel===n)return `<div class="slot"><div class="t"><b>Delete slot ${n}?</b><small>This removes ${d&&d.kind==='run'?esc(sm.shop||'the game')+', day '+sm.day:'this finished game'} for good.</small></div><div class="slotbtns"><button class="mini danger" data-act="delyes" data-n="${n}">Delete</button><button class="mini" data-act="delno">Keep it</button></div></div>`;
+    if(!d)return `<div class="slot"><div class="t"><b>Slot ${n} · Empty</b><small>A fresh start in Halvard.</small></div><div class="slotbtns"><button class="mini main" data-act="pickslot" data-n="${n}">New game</button></div></div>`;
+    if(d.kind==='run')return `<div class="slot"><div class="t"><b>Slot ${n} · ${esc(sm.shop||'Shop')}</b><small>Day ${sm.day} of ${LAST} · ${fmt(sm.cash||0)} · saved ${when(d.savedAt)}</small></div><div class="slotbtns"><button class="mini main" data-act="load" data-n="${n}">Continue</button><button class="mini" data-act="del" data-n="${n}">Delete</button></div></div>`;
+    return `<div class="slot"><div class="t"><b>Slot ${n} · ${esc(sm.title||'Finished')}</b><small>${sm.outcome==='win'?'Survived':'Ended'} on day ${sm.day} · ${esc(sm.shop||'')}</small></div><div class="slotbtns"><button class="mini main" data-act="pickslot" data-n="${n}">Start over</button><button class="mini" data-act="del" data-n="${n}">Delete</button></div></div>`;
+  }).join('');
+  const del=S.confirmAcct
+    ?`<p class="note">Delete ${esc(Acct.name)} and all three slots for good?</p><div class="slotbtns"><button class="mini danger" data-act="acctdelyes">Delete account</button><button class="mini" data-act="acctdelno">Keep it</button></div>`
+    :`<p class="note"><button class="mini" data-act="acctdel">Delete this account</button></p>`;
+  return `<p class="note" style="margin-top:0">${who}</p>${Acct.note?`<p class="err">${esc(Acct.note)}</p>`:''}<div class="slots">${rows}</div>${del}`;
+}
+
 /* ---------- state ---------- */
 let S={phase:'title',day:1,threat:3};
 const snap=()=>({cash:S.cash,health:S.health,stress:S.stress,shop:S.shop,good:S.good,open:S.open,rent:S.rent});
@@ -279,8 +446,8 @@ const check=()=>S.health<=0?'hospital':S.stress>=100?'burnout':S.shop<=0?'wrecke
 const dayName=d=>DAYS[(d-1)%7];
 const hist=t=>S.hist.push({d:S.day,t});
 
-function newGame(typeId){
-  S={type:typeId,phase:'brief',day:1,cash:240,health:92,stress:22,shop:75,good:50,rent:450,weapons:startWeapons(typeId),kits:1,fight:null,owed:0,insured:false,claims:[],seen:[],hist:[],flags:{},
+function newGame(typeId,slot){
+  S={type:typeId,slot:slot,phase:'brief',day:1,cash:240,health:92,stress:22,shop:75,good:50,rent:450,weapons:startWeapons(typeId),kits:1,fight:null,owed:0,insured:false,claims:[],seen:[],hist:[],flags:{},
      tally:{hurt:0,late:0,dmg:0,claims:0,rents:0,won:0},open:1,res:null,ev:null,led:null,notes:[],carry:[],over:null,threat:1,disrupted:null,news:''};
   startDay();
 }
@@ -301,7 +468,7 @@ function startDay(){
   S.claims=keep;
   if(S.stress>70){applyFx({health:-3});S.notes.push('Your stress is running hot. You slept badly and your body noticed. Health −3.')}
   else if(S.stress<=40)S.health=clamp(S.health+2);
-  S.over=check();if(S.over)S.phase='end';
+  S.over=check();if(S.over)S.phase='end';else autosave();
 }
 function nextDay(){
   if(S.day>=LAST){S.over='win';S.phase='end';return}
@@ -523,9 +690,9 @@ function stripHtml(){
     const step=['brief','commute_res'].includes(S.phase)?0:['event','event_res','fight'].includes(S.phase)?1:2;
     right=`<div class="meta"><span class="day">${DAYS_FULL[(S.day-1)%7]} · Day ${S.day} of ${LAST}</span>
       <span class="threat ${cls}" title="Hero activity: ${LEVELS[th]}" aria-label="Hero activity ${LEVELS[th]}">${[1,2,3,4,5].map(i=>`<i class="${i<=th?'on':''}" style="height:${6+i*3}px"></i>`).join('')}</span>
-      <span>Hero activity: ${LEVELS[th]}</span>
+      <span>Hero activity: ${LEVELS[th]}</span>${acctHtml()}<button class="mini" data-act="menu">${S.menuConfirm?'Leave? Progress since this morning is lost':'Menu'}</button>
       <span class="pips">${['Commute','Midday','Close'].map((p,i)=>`<span class="${i===step?'on':''}">${p}</span>`).join('')}</span></div>`;
-  }else right=`<div class="meta"><span>Halvard, a city with a lot going on overhead</span></div>`;
+  }else right=`<div class="meta"><span>Halvard, a city with a lot going on overhead</span>${acctHtml()}</div>`;
   return `<div class="brand"><span class="roundel" aria-hidden="true"></span>Ground Level</div>${right}`;
 }
 function bar(label,val,cls){return `<div class="stat"><div class="row"><span>${label}</span><b>${Math.round(val)}</b></div><div class="bar ${cls}"><i style="width:${clamp(val)}%"></i></div></div>`}
@@ -549,11 +716,15 @@ function choiceBtn(attrs,label,sub,hint,disabled,tag){
 }
 function deskHtml(){
   const P=S.phase;
+  if(P==='title'&&(!Acct||!Backend.ready))return authHtml();
   if(P==='title'){
     return `<div class="panel"><div class="kicker">A week-by-week survival game</div><h2>You are not the hero. You own a shop.</h2>
       <p class="lead">Halvard is under constant rooftop attack. You still have to get to work, keep the lights on, and pay Mr. Abernathy on Sunday. When a fight reaches your door, you use what's behind the counter. Weapons wear out, bandages run out, and so does your luck. Survive two weeks and two rent days.</p>
       <p class="note">Each day: pick how you commute, handle one thing that happens at midday, then close up. Cash, health, stress, your shop, and your neighbors all push back.</p>
-      <h3>Pick your shop</h3><div class="types">${Object.values(TYPES).map(t=>`<button class="choice" data-act="start" data-type="${t.id}"><span class="t"><b>${t.name}</b><small>${t.blurb}</small></span></button>`).join('')}</div></div>`;
+      <h3>Your saves</h3>${slotsHtml()}</div>`;
+  }
+  if(P==='pick'){
+    return `<div class="panel"><button class="mini" data-act="back">Back to saves</button><div class="kicker" style="margin-top:14px">Slot ${S.pendingSlot}</div><h2>Pick your shop</h2><p class="note">The game saves at the start of every day.</p><h3>Choose one</h3><div class="types">${Object.values(TYPES).map(t=>`<button class="choice" data-act="start" data-type="${t.id}"><span class="t"><b>${t.name}</b><small>${t.blurb}</small></span></button>`).join('')}</div></div>`;
   }
   if(P==='brief'){
     const notes=S.notes.length?`<p class="note">${S.notes.join(' ')}</p>`:'';
@@ -618,6 +789,7 @@ function endHtml(){
     else if(S.stress>=70||S.health<35){title='Standing, Barely';text="You made it. Your hands shake when you turn the sign to OPEN, but the sign turns. That counts."}
     else{title='Still Open';text="Two weeks. Two rents. A city that treats the sky like a trampoline, and a shop that is still here. That is the whole story, and it is a good one."}
   }else[tone,title,text]=E[o];
+  S.endTitle=title;
   const recap=o==='win'||true?`<div class="recap">
     <div><span>Cash</span><b>${fmt(S.cash||0)}</b></div><div><span>Health</span><b>${Math.round(S.health||0)}</b></div>
     <div><span>Stress</span><b>${Math.round(S.stress||0)}</b></div><div><span>Shop</span><b>${Math.round(S.shop||0)}</b></div>
@@ -628,11 +800,25 @@ function endHtml(){
 }
 
 /* ---------- input ---------- */
+document.addEventListener('submit',e=>{if(e.target&&e.target.id==='authform'){e.preventDefault();submitAuth()}});
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
   const a=b.dataset.act,d=b.dataset;
+  if(a!=='menu')S.menuConfirm=false;
   switch(a){
-    case 'start':newGame(d.type);break;
+    case 'tab':{const e=document.getElementById('f-email'),nm=document.getElementById('f-name');if(e)S.authEmail=e.value;if(nm)S.authName=nm.value;S.authTab=d.t;S.authMsg='';break}
+    case 'logout':Acct=null;S={phase:'title',day:1,threat:3};break;
+    case 'acctdel':S.confirmAcct=true;break;
+    case 'acctdelno':S.confirmAcct=false;break;
+    case 'acctdelyes':{const id=Acct.id;Acct.q=Acct.q.then(()=>removeDoc(id)).catch(()=>{});Acct=null;S={phase:'title',day:1,threat:3};break}
+    case 'pickslot':S={phase:'pick',day:1,threat:3,pendingSlot:+d.n};break;
+    case 'back':S={phase:'title',day:1,threat:3};break;
+    case 'load':loadSlot(+d.n);break;
+    case 'del':S.confirmDel=+d.n;break;
+    case 'delno':S.confirmDel=null;break;
+    case 'delyes':persist(+d.n,null);S.confirmDel=null;break;
+    case 'menu':if(S.menuConfirm)S={phase:'title',day:1,threat:3};else S.menuConfirm=true;break;
+    case 'start':newGame(d.type,S.pendingSlot);break;
     case 'commute':doCommute(d.id);break;
     case 'toEvent':if(S.over){S.phase='end'}else if(rand()<fightChance())startFight();else{S.ev=pickEvent();S.phase='event'}break;
     case 'fight':fightAct(d.a);break;
@@ -648,10 +834,12 @@ document.addEventListener('click',e=>{
     case 'restart':S={phase:'title',day:1,threat:3};break;
   }
   render();
+  if(S.phase==='end'&&S.slot&&!S.savedEnd){S.savedEnd=true;saveEnded()}
   const desk=$('desk'),top=desk.getBoundingClientRect().top;
   if(top<0||top>window.innerHeight*.7)window.scrollTo({top:Math.max(0,window.scrollY+top-70),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
 });
 render();
+initBackend();
 </script>
 
 </body></html>
