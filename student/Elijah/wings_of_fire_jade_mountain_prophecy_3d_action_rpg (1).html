@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wings of Fire: Arc 2 - Jade Mountain Prophecy 3D Action RPG</title>
+    <!-- Tailwind CSS for responsive fantasy HUD -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts: Cinzel for fantasy headers & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background-color: #050811; color: #f8fafc; }
+        .font-fantasy { font-family: 'Cinzel', serif; }
+        #game-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: block; z-index: 1; cursor: grab; }
+        #game-canvas:active { cursor: grabbing; }
+        .fantasy-panel { background: linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(8, 12, 22, 0.98)); border: 1.5px solid rgba(217, 160, 91, 0.45); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(217, 160, 91, 0.08); backdrop-filter: blur(12px); }
+        .fantasy-btn { background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1px solid rgba(217, 160, 91, 0.5); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
+        .fantasy-btn:hover:not(:disabled) { border-color: #fbbf24; background: linear-gradient(180deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(251, 191, 36, 0.22); }
+        .gold-gradient-text { background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(217, 160, 91, 0.5); border-radius: 9999px; }
+        @keyframes blinkCursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .action-pad-btn { background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(251, 191, 36, 0.5); backdrop-filter: blur(8px); touch-action: none; transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease; }
+        .action-pad-btn:hover { border-color: #fbbf24; background: rgba(30, 41, 59, 0.92); }
+        .action-pad-btn:active, .action-pad-btn.key-pressed { background: rgba(251, 191, 36, 0.35); border-color: #fde68a; transform: scale(0.94); }
+        @keyframes pulseAlert { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+        .boss-banner-pulse { animation: pulseAlert 2s infinite; }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Viewport Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Top Persistent Controls (Stage Jump, Audio, Menu) -->
+    <div class="fixed top-3 right-3 z-50 flex items-center gap-2 flex-wrap justify-end">
+        <div id="coin-counter-pill" class="fantasy-panel px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-amber-400/50">
+            <span class="text-sm">🪙</span>
+            <span id="hud-coin-count" class="text-xs sm:text-sm font-black text-amber-300">0</span>
+            <span class="hidden md:inline text-[11px] font-semibold text-amber-200/80">Dragon Coins</span>
+        </div>
+        <button id="btn-shop" onclick="openDragonShop()" title="Dragon Skins & Backgrounds Shop"
+            class="fantasy-btn px-3 py-2 rounded-xl text-amber-300 text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer">
+            <span>🛍️</span>
+            <span>Shop</span>
+        </button>
+        <div id="level-selector-wrap" class="hidden flex items-center gap-1.5 fantasy-panel px-2.5 py-1.5 rounded-xl">
+            <label for="level-jump-select" class="text-[11px] font-bold text-amber-300 uppercase tracking-wider">Jump Lv:</label>
+            <select id="level-jump-select" onchange="jumpToLevel(parseInt(this.value))"
+                class="bg-slate-900 border border-amber-500/40 rounded-lg px-2 py-1 text-xs text-amber-100 font-semibold focus:outline-none cursor-pointer">
+            </select>
+        </div>
+        <button id="btn-sound" onclick="toggleAudio()" title="Toggle Sound"
+            class="fantasy-btn px-3 py-2 rounded-xl text-amber-300 text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer">
+            <span id="sound-icon">🔊</span>
+            <span class="hidden sm:inline" id="sound-label">Sound On</span>
+        </button>
+        <button id="btn-home" onclick="returnToMenu()" title="Return to Menu"
+            class="hidden fantasy-btn px-3 py-2 rounded-xl text-slate-200 text-xs sm:text-sm font-semibold cursor-pointer">
+            🐉 Destiny Menu
+        </button>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. PERSONALITY QUIZ & CHARACTER SELECT OVERLAY                        -->
+    <!-- ===================================================================== -->
+    <div id="quiz-overlay" class="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-md overflow-y-auto">
+        <div class="fantasy-panel w-full max-w-3xl rounded-2xl p-5 sm:p-8 my-auto relative">
+            <div class="text-center mb-5">
+                <div class="inline-block px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-semibold tracking-widest uppercase mb-2">
+                    Zelda-Style 3D Action RPG • Wings of Fire Arc 2 • 50 Levels
+                </div>
+                <h1 class="font-fantasy text-2xl sm:text-4xl font-black gold-gradient-text tracking-wide">
+                    JADE MOUNTAIN PROPHECY: HEROES OF PYRRHIA
+                </h1>
+                <p class="text-slate-300 text-xs sm:text-sm mt-1.5 max-w-xl mx-auto">
+                    Explore lush 3D kingdoms, battle wildlife, bandits, and animus hazards across 50 escalating levels, and confront your canon antagonist at Levels 10, 20, 30, 40, and 50!
+                </p>
+            </div>
+
+            <div id="quiz-intro-view" class="space-y-5">
+                <div class="p-4 sm:p-5 rounded-xl bg-slate-900/80 border border-slate-700/80 text-sm sm:text-base text-slate-200 leading-relaxed">
+                    <p class="mb-2">
+                        <span class="text-amber-400 font-semibold">Pyrrhia calls for a hero.</span> Discover your dragon soul through the 5-question personality quiz or pick your Jade Winglet protagonist directly below.
+                    </p>
+                    <p class="text-slate-400 text-xs sm:text-sm">
+                        <span class="text-emerald-300">Moon</span> (Rainforest Treehouses & Jade Mountain vs Darkstalker) •
+                        <span class="text-sky-300">Winter</span> (Ice Glaciers & Polar Bears vs Chameleon) •
+                        <span class="text-orange-400">Peril</span> (Firescales & SkyWing Arena vs Queen Scarlet) •
+                        <span class="text-teal-300">Turtle</span> (SeaWing Palace, Coral & Summer Island vs Anemone) •
+                        <span class="text-amber-300">Qibli</span> (Sand Dunes, Cactuses & Possibility vs Darkstalker).
+                    </p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button onclick="startQuiz()"
+                        class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer">
+                        🔮 Take Personality Quiz
+                    </button>
+                    <button onclick="toggleDirectSelect()"
+                        class="w-full sm:w-auto fantasy-btn px-5 py-3.5 rounded-xl text-amber-200 font-semibold text-xs sm:text-sm cursor-pointer">
+                        🐉 Skip Quiz / Choose Hero
+                    </button>
+                </div>
+
+                <div id="direct-select-grid" class="hidden pt-3 border-t border-slate-700/70">
+                    <p class="text-xs text-center text-slate-400 uppercase tracking-wider mb-3">Select Your Jade Winglet Protagonist</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5" id="direct-cards-container"></div>
+                </div>
+            </div>
+
+            <!-- Quiz Questions -->
+            <div id="quiz-question-view" class="hidden space-y-4">
+                <div class="flex items-center justify-between text-xs text-amber-300 font-semibold">
+                    <span id="quiz-progress-label">Question 1 of 5</span>
+                    <div class="w-40 sm:w-56 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                        <div id="quiz-progress-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-300" style="width: 20%"></div>
+                    </div>
+                </div>
+                <div class="p-4 sm:p-5 rounded-xl bg-slate-900/90 border border-amber-500/30">
+                    <h2 id="quiz-question-text" class="font-fantasy text-base sm:text-xl text-amber-100 font-bold leading-snug"></h2>
+                </div>
+                <div id="quiz-options-container" class="space-y-2.5"></div>
+            </div>
+
+            <!-- Quiz Result -->
+            <div id="quiz-result-view" class="hidden space-y-5">
+                <div class="p-5 rounded-2xl bg-slate-900/90 border border-amber-400/50 flex flex-col sm:flex-row items-center gap-5">
+                    <div id="result-portrait" class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex-shrink-0 flex items-center justify-center border-2 border-amber-400/60 shadow-inner bg-slate-950"></div>
+                    <div class="text-center sm:text-left flex-1">
+                        <div class="text-xs uppercase tracking-widest text-amber-400 font-bold" id="result-trait-badge">Soul Trait</div>
+                        <h2 class="font-fantasy text-2xl sm:text-3xl font-black text-white mt-0.5" id="result-dragon-name">Name</h2>
+                        <div class="text-xs sm:text-sm font-semibold text-amber-200/90 mt-1" id="result-destination-boss">Destination • Boss</div>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-2.5 leading-relaxed" id="result-description"></p>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <button onclick="startActionAdventure()"
+                        class="w-full sm:flex-1 py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer">
+                        ⚔️ Enter <span id="result-btn-destination">Kingdom</span> (Level 1–50)
+                    </button>
+                    <button onclick="showCharacterSwitchModal()"
+                        class="w-full sm:w-auto fantasy-btn py-3.5 px-4 rounded-xl text-xs sm:text-sm text-slate-300 font-semibold cursor-pointer">
+                        Switch Hero
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 2. IN-GAME ACTION RPG HUD                                             -->
+    <!-- ===================================================================== -->
+    <div id="game-hud" class="hidden fixed inset-0 z-20 pointer-events-none">
+        <!-- Top-Left Player Status & Health/Stamina/Trait -->
+        <div class="fixed top-3 left-3 pointer-events-auto fantasy-panel rounded-2xl p-3.5 w-72 sm:w-80">
+            <div class="flex items-center gap-2.5">
+                <div id="hud-portrait" class="w-11 h-11 rounded-xl bg-slate-900 border border-amber-400/50 flex items-center justify-center flex-shrink-0"></div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-1">
+                        <span id="hud-dragon-name" class="font-fantasy font-bold text-sm sm:text-base text-amber-200 truncate">Moonwatcher</span>
+                        <span id="hud-level-badge" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/30 whitespace-nowrap">Lv 1 / 50</span>
+                    </div>
+                    <div id="hud-destination-label" class="text-[11px] text-slate-300 truncate">Rainforest -> Jade Mountain</div>
+                </div>
+            </div>
+
+            <!-- Health Bar -->
+            <div class="mt-2.5">
+                <div class="flex justify-between text-[11px] font-semibold mb-1">
+                    <span class="text-rose-300">Vitality (HP)</span>
+                    <span id="hud-hp-text" class="text-slate-200">120 / 120</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+                    <div id="hud-hp-bar" class="h-full bg-gradient-to-r from-rose-600 to-emerald-400 transition-all duration-200" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- Stamina Bar -->
+            <div class="mt-2">
+                <div class="flex justify-between text-[11px] font-semibold mb-1">
+                    <span class="text-sky-300">Stamina (Flight/Dash)</span>
+                    <span id="hud-stamina-text" class="text-slate-200">100 / 100</span>
+                </div>
+                <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+                    <div id="hud-stamina-bar" class="h-full bg-gradient-to-r from-sky-500 to-teal-300 transition-all duration-100" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- Elemental Breath [E] & Trait Power [Q] -->
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                    <div class="flex justify-between text-[10px] font-semibold mb-0.5">
+                        <span id="hud-ability-name" class="text-amber-300 truncate">Breath [E]</span>
+                        <span id="hud-ability-status" class="text-emerald-300">READY</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+                        <div id="hud-ability-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-100" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] font-semibold mb-0.5">
+                        <span id="hud-trait-name" class="text-purple-300 truncate">Trait [Q]</span>
+                        <span id="hud-trait-status" class="text-emerald-300">READY</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+                        <div id="hud-trait-bar" class="h-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-100" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objective Tracker -->
+            <div class="mt-2.5 pt-2 border-t border-slate-700/70">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] uppercase tracking-wider text-amber-400/90 font-bold" id="hud-encounter-type">Book Encounter</span>
+                    <span class="text-[10px] text-emerald-300 font-semibold" id="hud-flight-status">Mode: Ground</span>
+                </div>
+                <div id="hud-objective-text" class="text-xs text-slate-100 font-medium mt-0.5 leading-snug">
+                    Defeat targets to advance!
+                </div>
+            </div>
+        </div>
+
+        <!-- Boss Health Bar (Top Center, Levels 10, 20, 30, 40, 50) -->
+        <div id="boss-hud" class="hidden fixed top-16 sm:top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-lg fantasy-panel rounded-2xl p-3.5 border-2 border-rose-500/70 boss-banner-pulse">
+            <div class="flex items-center justify-between mb-1">
+                <span id="boss-name-label" class="font-fantasy font-bold text-sm sm:text-base text-rose-300 tracking-wide">DARKSTALKER (PHASE 1)</span>
+                <span id="boss-hp-text" class="text-xs font-bold text-rose-200">350 / 350</span>
+            </div>
+            <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-rose-500/40">
+                <div id="boss-hp-bar" class="h-full bg-gradient-to-r from-purple-700 via-rose-600 to-amber-500 transition-all duration-150" style="width: 100%"></div>
+            </div>
+            <div id="boss-subtitle" class="text-[11px] text-amber-200/90 mt-1 text-center font-medium">Unlocked Attacks: Melee Claws & Elemental Breath</div>
+        </div>
+
+        <!-- Floating Notification Toast -->
+        <div id="toast-banner" class="hidden fixed top-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full fantasy-panel border-amber-400/70 text-xs sm:text-sm font-bold text-amber-200 shadow-xl">
+            ✨ Level Cleared!
+        </div>
+
+        <!-- Dedicated Attack & Action Bar (Bottom Center - Isolated from Camera Look) -->
+        <div id="bottom-attack-bar" onmousedown="event.stopPropagation()" onmousemove="event.stopPropagation()"
+            class="fixed bottom-3 left-1/2 -translate-x-1/2 pointer-events-auto flex items-center gap-1.5 sm:gap-2.5 z-30">
+            <button id="hud-btn-bite" type="button"
+                class="action-pad-btn px-2.5 sm:px-3.5 py-2 rounded-xl flex flex-col items-center min-w-[62px] sm:min-w-[76px] cursor-pointer">
+                <span class="px-1.5 py-0.2 rounded bg-amber-500/25 border border-amber-400/50 text-[10px] font-black text-amber-200 leading-tight">[F]</span>
+                <span class="text-xs font-bold text-amber-300 mt-0.5">🦷 Bite</span>
+            </button>
+            <button id="hud-btn-tail" type="button"
+                class="action-pad-btn px-2.5 sm:px-3.5 py-2 rounded-xl flex flex-col items-center min-w-[62px] sm:min-w-[76px] cursor-pointer">
+                <span class="px-1.5 py-0.2 rounded bg-orange-500/25 border border-orange-400/50 text-[10px] font-black text-orange-200 leading-tight">[R]</span>
+                <span class="text-xs font-bold text-orange-300 mt-0.5">🌀 Tail</span>
+            </button>
+            <button id="hud-btn-breath" type="button"
+                class="action-pad-btn px-2.5 sm:px-3.5 py-2 rounded-xl flex flex-col items-center min-w-[62px] sm:min-w-[76px] cursor-pointer">
+                <span class="px-1.5 py-0.2 rounded bg-cyan-500/25 border border-cyan-400/50 text-[10px] font-black text-cyan-200 leading-tight">[E]</span>
+                <span class="text-xs font-bold text-cyan-300 mt-0.5">🔥 Breath</span>
+            </button>
+            <button id="hud-btn-trait" type="button"
+                class="action-pad-btn px-2.5 sm:px-3.5 py-2 rounded-xl flex flex-col items-center min-w-[62px] sm:min-w-[76px] cursor-pointer">
+                <span class="px-1.5 py-0.2 rounded bg-purple-500/25 border border-purple-400/50 text-[10px] font-black text-purple-200 leading-tight">[Q]</span>
+                <span class="text-xs font-bold text-purple-300 mt-0.5">✨ Trait</span>
+            </button>
+            <button id="hud-btn-fly" type="button"
+                class="action-pad-btn px-2.5 sm:px-3.5 py-2 rounded-xl flex flex-col items-center min-w-[62px] sm:min-w-[76px] cursor-pointer">
+                <span class="px-1.5 py-0.2 rounded bg-emerald-500/25 border border-emerald-400/50 text-[10px] font-black text-emerald-200 leading-tight">[SPACE]</span>
+                <span class="text-xs font-bold text-emerald-300 mt-0.5">🦅 Fly</span>
+            </button>
+        </div>
+
+        <!-- Controls Guide (Desktop) -->
+        <div class="hidden xl:flex fixed bottom-3 right-3 fantasy-panel rounded-xl px-3 py-2 text-[11px] text-slate-300 gap-2.5 items-center">
+            <span><strong class="text-amber-300">Hold Click / WASD</strong> Move</span>
+            <span><strong class="text-amber-300">Drag / Mouse</strong> Look</span>
+            <span><strong class="text-amber-300">F</strong> Bite</span>
+            <span><strong class="text-amber-300">R</strong> Tail</span>
+            <span><strong class="text-amber-300">E</strong> Breath</span>
+            <span><strong class="text-amber-300">Q</strong> Trait</span>
+            <span><strong class="text-amber-300">Space/C</strong> Fly/Down</span>
+            <span><strong class="text-amber-300">Shift</strong> Dash</span>
+        </div>
+
+        <!-- Mobile Directional Pad (Touch Screens) -->
+        <div id="mobile-controls" onmousedown="event.stopPropagation()" onmousemove="event.stopPropagation()"
+            class="lg:hidden fixed bottom-20 left-3 pointer-events-none z-20">
+            <div class="grid grid-cols-3 gap-1.5 w-32 h-32 pointer-events-auto">
+                <div></div>
+                <button id="touch-up" class="action-pad-btn rounded-xl flex items-center justify-center text-amber-200 font-bold text-lg">▲</button>
+                <div></div>
+                <button id="touch-left" class="action-pad-btn rounded-xl flex items-center justify-center text-amber-200 font-bold text-lg">◀</button>
+                <div class="rounded-xl bg-slate-900/40 border border-slate-700/40"></div>
+                <button id="touch-right" class="action-pad-btn rounded-xl flex items-center justify-center text-amber-200 font-bold text-lg">▶</button>
+                <div></div>
+                <button id="touch-down" class="action-pad-btn rounded-xl flex items-center justify-center text-amber-200 font-bold text-lg">▼</button>
+                <div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 3. RPG STORY DIALOGUE BOX                                             -->
+    <!-- ===================================================================== -->
+    <div id="story-textbox-overlay" onmousedown="event.stopPropagation()" onmousemove="event.stopPropagation()"
+        class="hidden fixed inset-x-0 bottom-3 sm:bottom-6 z-40 flex justify-center px-3 sm:px-6 pointer-events-auto">
+        <div class="fantasy-panel w-full max-w-3xl rounded-2xl p-4 sm:p-6 border-2 border-amber-400/65 shadow-2xl">
+            <div class="flex items-start gap-3.5 sm:gap-4">
+                <div id="dialogue-portrait" class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-slate-950 border-2 border-amber-400/60 flex-shrink-0 flex items-center justify-center"></div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                        <span id="dialogue-speaker" class="font-fantasy font-bold text-base sm:text-lg text-amber-300">Speaker</span>
+                        <span id="dialogue-tag" class="text-[11px] uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-200 border border-amber-400/30">Chapter</span>
+                    </div>
+                    <p id="dialogue-text" class="text-xs sm:text-base text-slate-100 leading-relaxed min-h-[3.5rem] typing-cursor"></p>
+                    <div id="dialogue-choices" class="mt-3.5 flex flex-col sm:flex-row flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 4. END GAME MODAL                                                     -->
+    <!-- ===================================================================== -->
+    <div id="end-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="fantasy-panel w-full max-w-xl rounded-2xl p-6 sm:p-8 text-center space-y-5">
+            <div id="end-badge" class="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/20 text-amber-300 border border-amber-400/40">Prophecy Fulfilled</div>
+            <h2 id="end-title" class="font-fantasy text-2xl sm:text-4xl font-black gold-gradient-text">VICTORY IN PYRRHIA!</h2>
+            <p id="end-summary" class="text-sm sm:text-base text-slate-200 leading-relaxed"></p>
+            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs sm:text-sm text-amber-200/90" id="end-trait-reflection"></div>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <button onclick="retryCurrentLevel()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold text-sm shadow-lg transition cursor-pointer">🔄 Retry Current Level</button>
+                <button onclick="returnToMenu()" class="fantasy-btn px-6 py-3 rounded-xl text-amber-200 font-semibold text-sm cursor-pointer">🔮 Choose Another Hero</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 5. DRAGON COINS SHOP MODAL (SKINS & BACKGROUNDS)                      -->
+    <!-- ===================================================================== -->
+    <div id="shop-overlay" onmousedown="event.stopPropagation()" onmousemove="event.stopPropagation()"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+        <div class="fantasy-panel w-full max-w-3xl rounded-2xl p-5 sm:p-7 my-auto space-y-5 border-2 border-amber-400/60">
+            <div class="flex items-center justify-between border-b border-slate-700/80 pb-3">
+                <div>
+                    <h2 class="font-fantasy text-xl sm:text-2xl font-black gold-gradient-text">🛍️ PYRRHIA DRAGON TREASURY</h2>
+                    <p class="text-xs text-slate-300 mt-0.5">Spend Dragon Coins earned from beating levels to unlock custom Dragon Skins & 3D Sky Backgrounds!</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-300 font-black text-sm">
+                        🪙 <span id="shop-coin-display">0</span>
+                    </div>
+                    <button onclick="closeDragonShop()" class="fantasy-btn px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 cursor-pointer">✕ Close</button>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-fantasy text-sm font-bold text-amber-300 uppercase tracking-wider mb-2.5">🐉 Dragon Scale Skins</h3>
+                <div id="shop-skins-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5"></div>
+            </div>
+
+            <div>
+                <h3 class="font-fantasy text-sm font-bold text-sky-300 uppercase tracking-wider mb-2.5">🌌 3D Kingdom Sky & Atmosphere Themes</h3>
+                <div id="shop-bgs-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ============================================================================
+         * 1. SOUND EFFECT & WEB AUDIO ENGINE (SOFT LOW-PASS FILTERED AUDIO)
+         * ============================================================================ */
+        const SoundFX = (() => {
+            let ctx = null;
+            let muted = false;
+            function init() {
+                if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ctx = new AC(); }
+                if (ctx && ctx.state === 'suspended') ctx.resume();
+            }
+            function playSoftTone(freq, type = 'sine', dur = 0.22, gainVal = 0.045, slide = null, cutoff = 520) {
+                if (muted) return;
+                init();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const filter = ctx.createBiquadFilter();
+                const gain = ctx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(25, slide), now + dur);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(cutoff, now);
+                filter.Q.setValueAtTime(1.2, now);
+
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.linearRampToValueAtTime(gainVal, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + dur + 0.02);
+            }
+            function playSoftWhoosh(dur = 0.28, gainVal = 0.04, startFreq = 420, endFreq = 160) {
+                if (muted) return;
+                init();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                const bufferSize = Math.floor(ctx.sampleRate * dur);
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(startFreq, now);
+                filter.frequency.exponentialRampToValueAtTime(endFreq, now + dur);
+
+                const gain = ctx.createGain();
+                gain.gain.setValueAtTime(0.0001, now);
+                gain.gain.linearRampToValueAtTime(gainVal, now + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                noise.start(now);
+                noise.stop(now + dur);
+            }
+            return {
+                toggleMute() { muted = !muted; return muted; },
+                click() { playSoftTone(480, 'sine', 0.11, 0.035, 620, 900); },
+                bite() {
+                    playSoftWhoosh(0.16, 0.045, 480, 140);
+                    playSoftTone(145, 'triangle', 0.15, 0.045, 68, 280);
+                },
+                tail() {
+                    playSoftWhoosh(0.24, 0.05, 560, 130);
+                    playSoftTone(190, 'sine', 0.2, 0.04, 85, 320);
+                },
+                collect() { playSoftTone(523, 'sine', 0.18, 0.045, 784, 1200); },
+                trait() { [392, 494, 587, 784].forEach((f, i) => setTimeout(() => playSoftTone(f, 'sine', 0.26, 0.04, null, 1100), i * 65)); },
+                breath(id) {
+                    playSoftWhoosh(0.38, 0.05, 650, 210);
+                    if (id === 'moon') playSoftTone(360, 'sine', 0.36, 0.04, 620, 800);
+                    else if (id === 'winter') playSoftTone(520, 'triangle', 0.34, 0.038, 240, 680);
+                    else if (id === 'peril') playSoftTone(170, 'triangle', 0.4, 0.045, 310, 420);
+                    else if (id === 'turtle') playSoftTone(280, 'sine', 0.38, 0.04, 480, 720);
+                    else playSoftTone(410, 'triangle', 0.32, 0.038, 590, 750);
+                },
+                hit() { playSoftTone(115, 'sine', 0.22, 0.055, 55, 220); },
+                enemyHit() { playSoftTone(290, 'triangle', 0.14, 0.04, 165, 500); },
+                bossRoar() {
+                    playSoftWhoosh(0.5, 0.05, 320, 90);
+                    playSoftTone(92, 'triangle', 0.52, 0.055, 54, 200);
+                },
+                victory() { [440, 554, 659, 880].forEach((n, i) => setTimeout(() => playSoftTone(n, 'sine', 0.38, 0.045, null, 1200), i * 120)); },
+                defeat() { [330, 294, 262, 220].forEach((n, i) => setTimeout(() => playSoftTone(n, 'triangle', 0.38, 0.04, null, 600), i * 150)); }
+            };
+        })();
+
+        function toggleAudio() {
+            const m = SoundFX.toggleMute();
+            document.getElementById('sound-icon').textContent = m ? '🔇' : '🔊';
+            document.getElementById('sound-label').textContent = m ? 'Muted' : 'Sound On';
+        }
+
+        /* ============================================================================
+         * 2. WINGS OF FIRE ARC 2 HEROES, KINGDOMS & BOOK ENCOUNTER DEFINITIONS
+         * ============================================================================ */
+        const HEROES = {
+            moon: {
+                id: 'moon',
+                name: 'Moonwatcher',
+                tribe: 'NightWing',
+                trait: "Moon's Friendship & Foresight",
+                traitSkill: "Future-Sight Prediction",
+                startLocation: 'Rainforest Canopy',
+                destination: 'Jade Mountain Academy',
+                bossName: 'Darkstalker',
+                bossTitle: 'Ancient NightWing Animus',
+                breathName: 'Starlight Mind-Pulse',
+                desc: "Born under two full moons, your foresight predicts enemy attacks before they strike and slows time around foes. Journey to Jade Mountain to confront Darkstalker!",
+                colors: { primary: 0x16222a, secondary: 0x10b981, membrane: 0x064e3b, accent: 0xa7f3d0, ground: 0x14532d, sky: 0x06281e, bossBody: 0x090d16, bossAccent: 0x9333ea },
+                encounters: [
+                    { type: 'wildlife', name: 'Hostile Jungle Panther', verb: 'Defeat prowling Jungle Panthers in the canopy trails' },
+                    { type: 'collect', name: 'Sun-Ripened Rainforest Fruit', verb: 'Harvest glowing Mangoes, Papayas & Dragonfruits for the Winglet' },
+                    { type: 'hazard', name: 'Darkstalker Dreamvisitor Totem', verb: 'Shatter enchanted Obsidian Dreamvisitor Totems corrupting the woods' },
+                    { type: 'dragon', name: 'Darkstalker NightWing Follower', verb: 'Fend off mind-controlled NightWing scouts near Jade Mountain' }
+                ]
+            },
+            winter: {
+                id: 'winter',
+                name: 'Winter',
+                tribe: 'IceWing',
+                trait: "Winter's Rebelliousness & Pride",
+                traitSkill: "Diamond-Frost Freeze",
+                startLocation: 'Ice Kingdom Glaciers',
+                destination: 'Ice Palace & Frontier',
+                bossName: 'Chameleon',
+                bossTitle: 'Shapeshifting Scroll-Bearer',
+                breathName: 'Glacial Frostbreath',
+                desc: "Defying the rigid IceWing rankings, your fierce independence and frostbreath freeze Chameleon's deceptive forms solid across the glaciers!",
+                colors: { primary: 0xe0f2fe, secondary: 0x38bdf8, membrane: 0xbae6fd, accent: 0x0284c7, ground: 0xe0f2fe, sky: 0x082f49, bossBody: 0x3f6212, bossAccent: 0xfacc15 },
+                encounters: [
+                    { type: 'wildlife', name: 'Charging Tundra Polar Bear', verb: 'Subdue territorial Polar Bears roaming the blue glaciers' },
+                    { type: 'hazard', name: 'Enchanted Ice-Cliff Spire', verb: 'Shatter cursed Animus Ice Spires blocking the frozen pass' },
+                    { type: 'collect', name: 'Frozen Arctic Seal & Ice-Crystal', verb: 'Gather Arctic Provisions & Frost Crystals to survive the blizzard' },
+                    { type: 'dragon', name: 'First-Circle IceWing Sentinel', verb: 'Outfight First-Circle guards sent to force you back' }
+                ]
+            },
+            peril: {
+                id: 'peril',
+                name: 'Peril',
+                tribe: 'SkyWing (Firescales)',
+                trait: "Peril's Bravery & Firescales",
+                traitSkill: "Supernova Firescales Surge",
+                startLocation: 'Claws of the Clouds',
+                destination: 'SkyWing Arena',
+                bossName: 'Queen Scarlet',
+                bossTitle: 'Ex-Queen of the SkyWings',
+                breathName: 'Firescales Inferno',
+                desc: "Your blazing firescales burn hotter than dragonfire! Soar through sky-rings and battle into Queen Scarlet's Arena to end her tyranny forever!",
+                colors: { primary: 0xea580c, secondary: 0xfacc15, membrane: 0xf97316, accent: 0xfef08a, ground: 0x7c2d12, sky: 0x450a0a, bossBody: 0x991b1b, bossAccent: 0xf59e0b },
+                encounters: [
+                    { type: 'wildlife', name: 'Crag Rock-Golem', verb: 'Melt armored Mountain Rock-Golems blocking the Claws of the Clouds' },
+                    { type: 'collect', name: 'Soaring Sky-Wind Thermal Ring', verb: 'Fly through blazing Sky-Wind Rings above the mountain spires' },
+                    { type: 'hazard', name: 'Scarlet Arena Fire-Brazier', verb: 'Destroy Queen Scarlet’s rigged Arena Trap Braziers' },
+                    { type: 'dragon', name: 'SkyWing Royal Guard', verb: 'Defeat Queen Scarlet’s loyal SkyWing soldiers' }
+                ]
+            },
+            turtle: {
+                id: 'turtle',
+                name: 'Turtle',
+                tribe: 'SeaWing (Animus)',
+                trait: "Turtle's Riskiness & Secret Animus",
+                traitSkill: "Animus Object Telekinesis",
+                startLocation: 'SeaWing Palace & Reefs',
+                destination: 'Summer Palace Duel Island',
+                bossName: 'Anemone',
+                bossTitle: 'Enchanted SeaWing Princess',
+                breathName: 'Animus Tidal Surge',
+                desc: "Wielding secret animus magic, command boulders, coral pillars, and debris to hurl straight at enemies and save Anemone on the duel island!",
+                colors: { primary: 0x0d9488, secondary: 0x2dd4bf, membrane: 0x115e59, accent: 0x99f6e4, ground: 0x0f766e, sky: 0x042f2e, bossBody: 0xf472b6, bossAccent: 0x38bdf8 },
+                encounters: [
+                    { type: 'wildlife', name: 'Reef Hammerhead Shark', verb: 'Drive back aggressive Reef Sharks threatening the SeaWing Palace' },
+                    { type: 'collect', name: 'Luminous Sea-Palace Pearl', verb: 'Recover scattered Luminous Pearls across the coral gardens' },
+                    { type: 'hazard', name: 'Whirlpool Animus Obelisk', verb: 'Dispel enchanted Coral Obelisks churning up the lagoon' },
+                    { type: 'dragon', name: 'Enchanted SeaWing Guard', verb: 'Defeat palace guards under Anemone’s animus command' }
+                ]
+            },
+            qibli: {
+                id: 'qibli',
+                name: 'Qibli',
+                tribe: 'SandWing',
+                trait: "Qibli's Cleverness & Tactical Wit",
+                traitSkill: "Sandstorm Trap & Swift Strike",
+                startLocation: 'Scorpion Den & Possibility',
+                destination: 'Jade Mountain Academy',
+                bossName: 'Darkstalker',
+                bossTitle: 'Colossal Animus Usurper',
+                breathName: 'Scorching Sand-Flare',
+                desc: "Armed with razor-sharp intellect, navigate the cactuses and bustling town of Possibility toward Jade Mountain to outsmart Darkstalker!",
+                colors: { primary: 0xd97706, secondary: 0xfde047, membrane: 0xb45309, accent: 0xfef9c3, ground: 0xd97706, sky: 0x451a03, bossBody: 0x090d16, bossAccent: 0xa855f7 },
+                encounters: [
+                    { type: 'wildlife', name: 'Giant Dune Scorpion', verb: 'Defeat venomous Giant Dune Scorpions near the oasis cactuses' },
+                    { type: 'collect', name: 'Possibility Market Supply Crate', verb: 'Recover stolen Merchant Crates across the bridges of Possibility' },
+                    { type: 'hazard', name: 'Vulture’s Talons Booby-Trap', verb: 'Dismantle Talon of Power explosives planted along the canyon' },
+                    { type: 'dragon', name: 'SandWing Outlaw Raider', verb: 'Outmaneuver Vulture’s SandWing raiders on the road to Jade Mountain' }
+                ]
+            }
+        };
+
+        /* ============================================================================
+         * 2B. DRAGON COINS SHOP CATALOG (SKINS & 3D BACKGROUNDS)
+         * ============================================================================ */
+        const SHOP_SKINS = [
+            { id: 'default', name: 'Canon Winglet Scales', desc: 'Your hero’s signature book colors', cost: 0, colors: null },
+            { id: 'starflight_obsidian', name: 'Starry NightWing Obsidian', desc: 'Midnight scales with silver starlight wings', cost: 30, colors: { primary: 0x0f172a, secondary: 0x94a3b8, membrane: 0x1e293b, accent: 0xe2e8f0 } },
+            { id: 'royal_animus', name: 'Royal Gold & Amethyst', desc: 'Enchanted animus gold with purple glow', cost: 60, colors: { primary: 0x581c87, secondary: 0xfbbf24, membrane: 0x7e22ce, accent: 0xfef08a } },
+            { id: 'blue_firescales', name: 'Blue-Flame Cobalt Scales', desc: 'White-hot cobalt scales & cyan fire', cost: 90, colors: { primary: 0x1d4ed8, secondary: 0x67e8f9, membrane: 0x0284c7, accent: 0xe0f2fe } },
+            { id: 'emerald_jade', name: 'Jade Mountain Guardian', desc: 'Ancient emerald stone & moss gold', cost: 120, colors: { primary: 0x065f46, secondary: 0x34d399, membrane: 0x047857, accent: 0xa7f3d0 } },
+            { id: 'crimson_champion', name: 'Scarlet Arena Champion', desc: 'Ruby-red armor with molten gold trim', cost: 160, colors: { primary: 0x991b1b, secondary: 0xf59e0b, membrane: 0xb91c1c, accent: 0xfde68a } }
+        ];
+
+        const SHOP_BACKGROUNDS = [
+            { id: 'default', name: 'Canon Kingdom Sky', desc: 'Original realm sky & ground palette', cost: 0, sky: null, ground: null },
+            { id: 'three_moons', name: 'Three Full Moons Night', desc: 'Silver moonlit sky & twilight mist', cost: 35, sky: 0x090d1e, ground: 0x1e293b },
+            { id: 'aurora_sky', name: 'Ice Kingdom Aurora', desc: 'Shimmering emerald & cyan northern lights', cost: 70, sky: 0x06373a, ground: 0xcffafe },
+            { id: 'sunset_canyon', name: 'Pyrrhia Crimson Sunset', desc: 'Warm amber dusk & terracotta terrain', cost: 100, sky: 0x7c2d12, ground: 0xb45309 },
+            { id: 'bioluminescent', name: 'Deep Sea Bioluminescence', desc: 'Glowing teal depths & neon coral hues', cost: 140, sky: 0x022c22, ground: 0x0f766e }
+        ];
+
+        const playerInventory = {
+            coins: 0,
+            ownedSkins: ['default'],
+            equippedSkin: 'default',
+            ownedBgs: ['default'],
+            equippedBg: 'default'
+        };
+
+        function updateCoinDisplay() {
+            const c1 = document.getElementById('hud-coin-count');
+            const c2 = document.getElementById('shop-coin-display');
+            if (c1) c1.textContent = playerInventory.coins;
+            if (c2) c2.textContent = playerInventory.coins;
+        }
+
+        /* ============================================================================
+         * 3. PERSONALITY QUIZ DATA & DRAGON SVG PORTRAITS
+         * ============================================================================ */
+        const QUIZ = [
+            {
+                q: "1. A classmate at Jade Mountain Academy is hiding a dangerous secret. How do you respond?",
+                options: [
+                    { text: "Listen with empathy, keep their trust, and gently guide them toward friendship.", hero: 'moon' },
+                    { text: "Confront them proudly—honor and fierce independence come before blind loyalty.", hero: 'winter' },
+                    { text: "Charge in fearlessly to protect everyone around you, no matter the personal risk!", hero: 'peril' },
+                    { text: "Quietly observe from the shadows and take a calculated risk when nobody is looking.", hero: 'turtle' },
+                    { text: "Analyze every angle, anticipate their next move, and craft a clever backup plan.", hero: 'qibli' }
+                ]
+            },
+            {
+                q: "2. Which Pyrrhian homeland feels most like where your dragon soul belongs?",
+                options: [
+                    { text: "High among misty Rainforest kapok treehouses surrounded by bright fruit and sloths.", hero: 'moon' },
+                    { text: "Across shimmering blue glaciers and crystalline IceWing palace spires.", hero: 'winter' },
+                    { text: "Soaring over jagged crimson peaks and thermal updrafts in the Sky Kingdom.", hero: 'peril' },
+                    { text: "Beneath glowing coral reefs and pearl domes in the deep SeaWing Kingdom.", hero: 'turtle' },
+                    { text: "Among desert oases, giant cactuses, and the bustling market bridges of Possibility.", hero: 'qibli' }
+                ]
+            },
+            {
+                q: "3. In battle against a powerful enemy, what is your greatest strength?",
+                options: [
+                    { text: "Predicting their attacks before they strike and staying one step ahead.", hero: 'moon' },
+                    { text: "Freezing foes solid with relentless frostbreath and unyielding resolve.", hero: 'winter' },
+                    { text: "Blazing firescales that incinerate obstacles and overwhelm any opponent.", hero: 'peril' },
+                    { text: "Secret animus magic that commands boulders, coral, and objects around you.", hero: 'turtle' },
+                    { text: "Lightning-fast reflexes, sand-bolt volleys, and outsmarting stronger foes.", hero: 'qibli' }
+                ]
+            },
+            {
+                q: "4. What drives you forward on a perilous quest across Pyrrhia?",
+                options: [
+                    { text: "Protecting your friends and proving that compassion is stronger than fear.", hero: 'moon' },
+                    { text: "Defying unfair expectations and carving out your own destiny.", hero: 'winter' },
+                    { text: "Choosing your own path of courage rather than letting your past define you.", hero: 'peril' },
+                    { text: "Stepping up when it matters most, even if you prefer staying out of the spotlight.", hero: 'turtle' },
+                    { text: "Using your wits to keep your winglet safe against impossible odds.", hero: 'qibli' }
+                ]
+            },
+            {
+                q: "5. Which Arc 2 antagonist are you destined to face?",
+                options: [
+                    { text: "Darkstalker—confronting ancient animus ambition at Jade Mountain Academy.", hero: 'moon' },
+                    { text: "Chameleon—shattering his deceptive forms across the Ice Kingdom frontier.", hero: 'winter' },
+                    { text: "Queen Scarlet—defeating her once and for all inside the SkyWing Arena.", hero: 'peril' },
+                    { text: "Anemone—dueling on the Summer Palace island to save her from animus corruption.", hero: 'turtle' },
+                    { text: "Darkstalker—outthinking an immortal mind-reader at Jade Mountain.", hero: 'qibli' }
+                ]
+            }
+        ];
+
+        let selectedHeroId = 'moon';
+        let currentQuizStep = 0;
+        let quizScores = { moon: 0, winter: 0, peril: 0, turtle: 0, qibli: 0 };
+
+        function getDragonSVG(id, cls = 'w-16 h-16') {
+            const palettes = {
+                moon: { body: '#1e293b', wing: '#065f46', accent: '#34d399', eye: '#a7f3d0' },
+                winter: { body: '#e0f2fe', wing: '#7dd3fc', accent: '#0284c7', eye: '#38bdf8' },
+                peril: { body: '#ea580c', wing: '#f97316', accent: '#facc15', eye: '#fef08a' },
+                turtle: { body: '#0d9488', wing: '#115e59', accent: '#2dd4bf', eye: '#99f6e4' },
+                qibli: { body: '#d97706', wing: '#b45309', accent: '#fde047', eye: '#fef9c3' }
+            };
+            const p = palettes[id] || palettes.moon;
+            return `<svg viewBox="0 0 100 100" class="${cls}" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 56 Q8 26 36 32 Q28 46 42 52 Z" fill="${p.wing}" stroke="${p.accent}" stroke-width="2"/>
+                <path d="M82 56 Q92 26 64 32 Q72 46 58 52 Z" fill="${p.wing}" stroke="${p.accent}" stroke-width="2"/>
+                <path d="M36 78 Q50 92 64 78 L58 50 L42 50 Z" fill="${p.body}" stroke="${p.accent}" stroke-width="2"/>
+                <ellipse cx="50" cy="40" rx="14" ry="16" fill="${p.body}" stroke="${p.accent}" stroke-width="2"/>
+                <path d="M40 27 L32 12 L45 24 Z" fill="${p.accent}"/>
+                <path d="M60 27 L68 12 L55 24 Z" fill="${p.accent}"/>
+                <circle cx="44" cy="38" r="2.8" fill="${p.eye}"/>
+                <circle cx="56" cy="38" r="2.8" fill="${p.eye}"/>
+                <path d="M44 47 Q50 51 56 47" stroke="${p.accent}" stroke-width="2" fill="none"/>
+            </svg>`;
+        }
+
+        function populateLevelSelector() {
+            const sel = document.getElementById('level-jump-select');
+            if (!sel) return;
+            sel.innerHTML = '';
+            for (let i = 1; i <= 50; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = i % 10 === 0 ? `Lv ${i} ★ BOSS` : `Level ${i}`;
+                sel.appendChild(opt);
+            }
+        }
+
+        function openDragonShop() {
+            SoundFX.click();
+            updateCoinDisplay();
+            renderShopItems();
+            document.getElementById('shop-overlay').classList.remove('hidden');
+        }
+
+        function closeDragonShop() {
+            SoundFX.click();
+            document.getElementById('shop-overlay').classList.add('hidden');
+            gameState.hasLastMouse = false;
+        }
+
+        function renderShopItems() {
+            const skinsGrid = document.getElementById('shop-skins-grid');
+            const bgsGrid = document.getElementById('shop-bgs-grid');
+            skinsGrid.innerHTML = '';
+            bgsGrid.innerHTML = '';
+
+            SHOP_SKINS.forEach(skin => {
+                const owned = playerInventory.ownedSkins.includes(skin.id);
+                const equipped = playerInventory.equippedSkin === skin.id;
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border ${equipped ? 'border-emerald-400 bg-emerald-950/35' : 'border-slate-700 bg-slate-900/85'} flex flex-col justify-between gap-2`;
+                const swatch = skin.colors
+                    ? `<div class="flex gap-1"><span class="w-4 h-4 rounded-full border border-white/30" style="background:#${skin.colors.primary.toString(16).padStart(6,'0')}"></span><span class="w-4 h-4 rounded-full border border-white/30" style="background:#${skin.colors.secondary.toString(16).padStart(6,'0')}"></span></div>`
+                    : `<span class="text-xs">🐉</span>`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="font-bold text-xs text-amber-200">${skin.name}</span>
+                            ${swatch}
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-1">${skin.desc}</p>
+                    </div>
+                    <button class="w-full py-1.5 px-2.5 rounded-lg text-xs font-bold cursor-pointer transition ${equipped ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/50' : owned ? 'fantasy-btn text-amber-200' : 'bg-amber-500 hover:bg-amber-400 text-slate-950'}">
+                        ${equipped ? '✓ Equipped' : owned ? 'Equip Skin' : `🪙 Buy (${skin.cost})`}
+                    </button>
+                `;
+                card.querySelector('button').onclick = () => {
+                    if (equipped) return;
+                    if (owned) {
+                        SoundFX.click();
+                        playerInventory.equippedSkin = skin.id;
+                        rebuildKeepingProgress();
+                        renderShopItems();
+                    } else if (playerInventory.coins >= skin.cost) {
+                        SoundFX.collect();
+                        playerInventory.coins -= skin.cost;
+                        playerInventory.ownedSkins.push(skin.id);
+                        playerInventory.equippedSkin = skin.id;
+                        updateCoinDisplay();
+                        rebuildKeepingProgress();
+                        renderShopItems();
+                        showToast(`🐉 Unlocked & Equipped: ${skin.name}!`);
+                    } else {
+                        SoundFX.hit();
+                        showToast(`🪙 Need ${skin.cost} Dragon Coins! Beat levels to earn more!`);
+                    }
+                };
+                skinsGrid.appendChild(card);
+            });
+
+            SHOP_BACKGROUNDS.forEach(bg => {
+                const owned = playerInventory.ownedBgs.includes(bg.id);
+                const equipped = playerInventory.equippedBg === bg.id;
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border ${equipped ? 'border-sky-400 bg-sky-950/35' : 'border-slate-700 bg-slate-900/85'} flex flex-col justify-between gap-2`;
+                const swatch = bg.sky !== null
+                    ? `<span class="w-4 h-4 rounded-full border border-white/30" style="background:#${bg.sky.toString(16).padStart(6,'0')}"></span>`
+                    : `<span class="text-xs">🌍</span>`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="font-bold text-xs text-sky-200">${bg.name}</span>
+                            ${swatch}
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-1">${bg.desc}</p>
+                    </div>
+                    <button class="w-full py-1.5 px-2.5 rounded-lg text-xs font-bold cursor-pointer transition ${equipped ? 'bg-sky-500/30 text-sky-200 border border-sky-400/50' : owned ? 'fantasy-btn text-sky-200' : 'bg-amber-500 hover:bg-amber-400 text-slate-950'}">
+                        ${equipped ? '✓ Active Sky' : owned ? 'Apply Sky' : `🪙 Buy (${bg.cost})`}
+                    </button>
+                `;
+                card.querySelector('button').onclick = () => {
+                    if (equipped) return;
+                    if (owned) {
+                        SoundFX.click();
+                        playerInventory.equippedBg = bg.id;
+                        rebuildKeepingProgress();
+                        renderShopItems();
+                    } else if (playerInventory.coins >= bg.cost) {
+                        SoundFX.collect();
+                        playerInventory.coins -= bg.cost;
+                        playerInventory.ownedBgs.push(bg.id);
+                        playerInventory.equippedBg = bg.id;
+                        updateCoinDisplay();
+                        rebuildKeepingProgress();
+                        renderShopItems();
+                        showToast(`🌌 Applied Sky Theme: ${bg.name}!`);
+                    } else {
+                        SoundFX.hit();
+                        showToast(`🪙 Need ${bg.cost} Dragon Coins! Beat levels to earn more!`);
+                    }
+                };
+                bgsGrid.appendChild(card);
+            });
+        }
+
+        function rebuildKeepingProgress() {
+            const savedPos = player ? player.position.clone() : new THREE.Vector3(0, 0, 50);
+            const savedYaw = gameState.yaw;
+            buildWorld(selectedHeroId);
+            if (player) {
+                player.position.copy(savedPos);
+                gameState.yaw = savedYaw;
+            }
+            if (gameState.mode === 'playing') {
+                setupLevel(gameState.level, false);
+            }
+        }
+
+        function renderDirectCards() {
+            const container = document.getElementById('direct-cards-container');
+            container.innerHTML = '';
+            Object.values(HEROES).forEach(h => {
+                const btn = document.createElement('button');
+                btn.className = 'fantasy-btn p-2.5 rounded-xl flex flex-col items-center text-center cursor-pointer';
+                btn.onclick = () => selectHero(h.id);
+                btn.innerHTML = `
+                    ${getDragonSVG(h.id, 'w-12 h-12 mb-1')}
+                    <div class="font-fantasy font-bold text-xs text-amber-200">${h.name}</div>
+                    <div class="text-[10px] text-slate-300 leading-tight mt-0.5">${h.tribe}</div>
+                    <div class="text-[9px] text-amber-400/80 mt-1">${h.destination}</div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function toggleDirectSelect() {
+            SoundFX.click();
+            document.getElementById('direct-select-grid').classList.toggle('hidden');
+        }
+
+        function startQuiz() {
+            SoundFX.click();
+            currentQuizStep = 0;
+            quizScores = { moon: 0, winter: 0, peril: 0, turtle: 0, qibli: 0 };
+            document.getElementById('quiz-intro-view').classList.add('hidden');
+            document.getElementById('quiz-result-view').classList.add('hidden');
+            document.getElementById('quiz-question-view').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = QUIZ[currentQuizStep];
+            document.getElementById('quiz-progress-label').textContent = `Question ${currentQuizStep + 1} of ${QUIZ.length}`;
+            document.getElementById('quiz-progress-bar').style.width = `${((currentQuizStep + 1) / QUIZ.length) * 100}%`;
+            document.getElementById('quiz-question-text').textContent = q.q;
+
+            const opts = document.getElementById('quiz-options-container');
+            opts.innerHTML = '';
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left fantasy-btn p-3.5 sm:p-4 rounded-xl text-xs sm:text-sm text-slate-100 hover:text-amber-200 cursor-pointer flex items-center gap-3';
+                btn.innerHTML = `<span class="text-amber-400 font-bold">✦</span> <span>${opt.text}</span>`;
+                btn.onclick = () => {
+                    SoundFX.click();
+                    quizScores[opt.hero]++;
+                    currentQuizStep++;
+                    if (currentQuizStep < QUIZ.length) renderQuestion();
+                    else finalizeQuiz();
+                };
+                opts.appendChild(btn);
+            });
+        }
+
+        function finalizeQuiz() {
+            let best = 'moon';
+            let max = -1;
+            for (let [k, v] of Object.entries(quizScores)) {
+                if (v > max) { max = v; best = k; }
+            }
+            selectHero(best);
+        }
+
+        function selectHero(id) {
+            SoundFX.click();
+            selectedHeroId = id;
+            const h = HEROES[id];
+            document.getElementById('quiz-intro-view').classList.add('hidden');
+            document.getElementById('quiz-question-view').classList.add('hidden');
+            document.getElementById('quiz-result-view').classList.remove('hidden');
+
+            document.getElementById('result-portrait').innerHTML = getDragonSVG(id, 'w-20 h-20 sm:w-24 sm:h-24');
+            document.getElementById('result-trait-badge').textContent = h.trait;
+            document.getElementById('result-dragon-name').textContent = `${h.name} (${h.tribe})`;
+            document.getElementById('result-destination-boss').textContent = `Realm: ${h.startLocation} -> ${h.destination} • Bosses at Lv 10, 20, 30, 40, 50: ${h.bossName}`;
+            document.getElementById('result-description').textContent = h.desc;
+            document.getElementById('result-btn-destination').textContent = h.startLocation;
+
+            buildWorld(id);
+        }
+
+        function showCharacterSwitchModal() {
+            SoundFX.click();
+            document.getElementById('quiz-result-view').classList.add('hidden');
+            document.getElementById('quiz-intro-view').classList.remove('hidden');
+            document.getElementById('direct-select-grid').classList.remove('hidden');
+        }
+
+        function returnToMenu() {
+            SoundFX.click();
+            gameState.mode = 'menu';
+            document.getElementById('game-hud').classList.add('hidden');
+            document.getElementById('story-textbox-overlay').classList.add('hidden');
+            document.getElementById('end-overlay').classList.add('hidden');
+            document.getElementById('btn-home').classList.add('hidden');
+            document.getElementById('level-selector-wrap').classList.add('hidden');
+            document.getElementById('quiz-overlay').classList.remove('hidden');
+            document.getElementById('quiz-question-view').classList.add('hidden');
+            document.getElementById('quiz-result-view').classList.add('hidden');
+            document.getElementById('quiz-intro-view').classList.remove('hidden');
+        }
+
+        /* ============================================================================
+         * 5. STORY DIALOGUE BOX SYSTEM & TOASTS
+         * ============================================================================ */
+        let typeTimer = null;
+        function openStoryBox({ speaker, speakerId, tag, text, choices }) {
+            gameState.isDialogueOpen = true;
+            const overlay = document.getElementById('story-textbox-overlay');
+            overlay.classList.remove('hidden');
+
+            document.getElementById('dialogue-speaker').textContent = speaker;
+            document.getElementById('dialogue-tag').textContent = tag;
+            document.getElementById('dialogue-portrait').innerHTML = getDragonSVG(speakerId || selectedHeroId, 'w-12 h-12 sm:w-16 sm:h-16');
+
+            const textEl = document.getElementById('dialogue-text');
+            const choicesEl = document.getElementById('dialogue-choices');
+            choicesEl.innerHTML = '';
+
+            if (typeTimer) clearInterval(typeTimer);
+            textEl.textContent = '';
+            textEl.classList.add('typing-cursor');
+
+            let idx = 0;
+            const finish = () => {
+                clearInterval(typeTimer);
+                typeTimer = null;
+                textEl.textContent = text;
+                textEl.classList.remove('typing-cursor');
+                renderChoices(choices, choicesEl);
+            };
+
+            typeTimer = setInterval(() => {
+                textEl.textContent += text[idx];
+                idx++;
+                if (idx >= text.length) finish();
+            }, 12);
+
+            textEl.onclick = () => { if (typeTimer) finish(); };
+        }
+
+        function renderChoices(choices, container) {
+            container.innerHTML = '';
+            choices.forEach((c, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'fantasy-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-amber-200 hover:text-white cursor-pointer text-left flex items-center gap-2';
+                const badge = idx === 0 ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-[10px] font-bold text-amber-300">[ENTER / T]</span>` : '';
+                btn.innerHTML = `${badge}<span>${c.label}</span>`;
+                btn.onclick = (e) => {
+                    if (e) e.stopPropagation();
+                    SoundFX.click();
+                    document.getElementById('story-textbox-overlay').classList.add('hidden');
+                    gameState.isDialogueOpen = false;
+                    gameState.hasLastMouse = false;
+                    if (c.action) c.action();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        let toastTimeout = null;
+        function showToast(msg) {
+            const el = document.getElementById('toast-banner');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => el.classList.add('hidden'), 2400);
+        }
+
+        /* ============================================================================
+         * 6. THREE.JS 3D ENGINE — ANATOMICAL DRAGONS & BOOK-ACCURATE KINGDOMS
+         * ============================================================================ */
+        let scene, camera, renderer, clock;
+        let player = null;
+        let worldGroup = null;
+        let animatedProps = []; // Sea animals, bugs, sloths, waterfalls, banners
+        let perilEmbers = null;
+        let entities = [];      // Enemies, wildlife, totems, collectibles
+        let projectiles = [];
+        let boss = null;
+        let predictionLines = [];
+
+        const gameState = {
+            mode: 'menu',
+            isDialogueOpen: false,
+            level: 1,
+            maxLevel: 50,
+            hp: 120,
+            maxHp: 120,
+            stamina: 100,
+            maxStamina: 100,
+            isFlying: false,
+            abilityCd: 0,
+            traitCd: 0,
+            attackCooldown: 0,
+            attackAnimTimer: 0,
+            attackAnimType: 'none', // 'bite' or 'tail'
+            shieldTimer: 0,
+            foresightTimer: 0,
+            freezeTimer: 0,
+            progressCount: 0,
+            targetCount: 3,
+            currentEncounterType: 'wildlife',
+            bossHp: 350,
+            bossMaxHp: 350,
+            bossPhase: 1,
+            bossAttackTimer: 2.0,
+            yaw: 0,
+            camOrbitYaw: 0,
+            camLookPitch: 0.05,
+            flyAltitudeOffset: 0,
+            isPointerHolding: false,
+            activeTouchId: null,
+            hasLastMouse: false,
+            lastMouseX: 0,
+            lastMouseY: 0
+        };
+
+        const keys = {};
+
+        function pulseHudButton(id) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            btn.classList.add('key-pressed');
+            setTimeout(() => btn.classList.remove('key-pressed'), 160);
+        }
+
+        function toggleFlightMode() {
+            if (gameState.mode !== 'playing' || gameState.isDialogueOpen) return;
+            gameState.isFlying = !gameState.isFlying;
+            gameState.flyAltitudeOffset = 0;
+            pulseHudButton('hud-btn-fly');
+            document.getElementById('hud-flight-status').textContent = gameState.isFlying ? 'Mode: Flying 🦅' : 'Mode: Ground';
+            SoundFX.click();
+        }
+
+        function initThree() {
+            const canvas = document.getElementById('game-canvas');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 1200);
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            clock = new THREE.Clock();
+
+            buildWorld('moon');
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Press and hold on the 3D canvas to move forward; drag to steer perspective
+            canvas.addEventListener('mousedown', e => {
+                if (e.target !== canvas) return;
+                if (e.button === 0 && gameState.mode === 'playing' && !gameState.isDialogueOpen) {
+                    gameState.isPointerHolding = true;
+                    gameState.hasLastMouse = true;
+                    gameState.lastMouseX = e.clientX;
+                    gameState.lastMouseY = e.clientY;
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                gameState.isPointerHolding = false;
+            });
+
+            // Touch press-and-hold on screen to move + drag to steer perspective
+            canvas.addEventListener('touchstart', e => {
+                if (e.target !== canvas) return;
+                if (gameState.mode === 'playing' && !gameState.isDialogueOpen && e.changedTouches.length > 0) {
+                    const t = e.changedTouches[0];
+                    gameState.isPointerHolding = true;
+                    gameState.activeTouchId = t.identifier;
+                    gameState.hasLastMouse = true;
+                    gameState.lastMouseX = t.clientX;
+                    gameState.lastMouseY = t.clientY;
+                }
+            }, { passive: true });
+
+            canvas.addEventListener('touchmove', e => {
+                if (!gameState.isPointerHolding || gameState.mode !== 'playing' || gameState.isDialogueOpen) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    if (t.identifier === gameState.activeTouchId) {
+                        const dx = t.clientX - gameState.lastMouseX;
+                        const dy = t.clientY - gameState.lastMouseY;
+                        gameState.lastMouseX = t.clientX;
+                        gameState.lastMouseY = t.clientY;
+                        gameState.camOrbitYaw -= dx * 0.0055;
+                        gameState.camLookPitch = THREE.MathUtils.clamp(gameState.camLookPitch - dy * 0.0045, -0.55, 0.85);
+                        break;
+                    }
+                }
+            }, { passive: true });
+
+            const releaseTouchHold = e => {
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === gameState.activeTouchId) {
+                        gameState.isPointerHolding = false;
+                        gameState.activeTouchId = null;
+                        break;
+                    }
+                }
+            };
+            canvas.addEventListener('touchend', releaseTouchHold);
+            canvas.addEventListener('touchcancel', releaseTouchHold);
+
+            // Smooth mouse perspective look ONLY while holding down the mouse button
+            window.addEventListener('mousemove', e => {
+                if (!gameState.isPointerHolding || gameState.mode !== 'playing' || gameState.isDialogueOpen) {
+                    gameState.hasLastMouse = false;
+                    return;
+                }
+                if (!gameState.hasLastMouse) {
+                    gameState.hasLastMouse = true;
+                    gameState.lastMouseX = e.clientX;
+                    gameState.lastMouseY = e.clientY;
+                    return;
+                }
+                const dx = e.clientX - gameState.lastMouseX;
+                const dy = e.clientY - gameState.lastMouseY;
+                gameState.lastMouseX = e.clientX;
+                gameState.lastMouseY = e.clientY;
+
+                // Dragging right turns your first-person dragon view right; dragging up looks up
+                gameState.yaw -= dx * 0.0048;
+                gameState.camOrbitYaw = gameState.yaw;
+                gameState.camLookPitch = THREE.MathUtils.clamp(gameState.camLookPitch - dy * 0.004, -0.65, 0.85);
+            });
+            canvas.addEventListener('mouseleave', () => {
+                if (!gameState.isPointerHolding) gameState.hasLastMouse = false;
+            });
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+            // Dedicated Single-Letter Keybindings for Every Attack & Action
+            window.addEventListener('keydown', e => {
+                keys[e.code] = true;
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+                    e.preventDefault();
+                }
+
+                // Allow advancing/closing RPG Story Dialogue with Enter or T
+                if (gameState.isDialogueOpen) {
+                    if (e.code === 'Enter' || e.code === 'KeyT') {
+                        e.preventDefault();
+                        const textEl = document.getElementById('dialogue-text');
+                        if (typeTimer && textEl) {
+                            textEl.click();
+                        } else {
+                            const firstChoice = document.querySelector('#dialogue-choices button');
+                            if (firstChoice) firstChoice.click();
+                        }
+                    }
+                    return;
+                }
+
+                if (gameState.mode !== 'playing') return;
+
+                // Dedicated Attack Keys:
+                // [F] (or J / 1) = Bite
+                if (e.code === 'KeyF' || e.code === 'KeyJ' || e.code === 'Digit1') performBite();
+                // [R] (or K / 2) = Tail Swipe
+                if (e.code === 'KeyR' || e.code === 'KeyK' || e.code === 'Digit2') performTail();
+                // [E] (or 3) = Elemental Breath
+                if (e.code === 'KeyE' || e.code === 'Digit3') triggerBreath();
+                // [Q] (or 4) = Personality Trait Power
+                if (e.code === 'KeyQ' || e.code === 'Digit4') triggerTraitPower();
+                // [Space] = Toggle Fly / Land
+                if (e.code === 'Space') toggleFlightMode();
+            });
+            window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+            setupTouchHandlers();
+        }
+
+        function setupTouchHandlers() {
+            const bind = (id, code) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const s = (e) => { e.preventDefault(); e.stopPropagation(); keys[code] = true; };
+                const end = (e) => { e.preventDefault(); e.stopPropagation(); keys[code] = false; };
+                el.addEventListener('touchstart', s, { passive: false });
+                el.addEventListener('touchend', end, { passive: false });
+                el.addEventListener('mousedown', s);
+                el.addEventListener('mouseup', end);
+            };
+            bind('touch-up', 'KeyW');
+            bind('touch-down', 'KeyS');
+            bind('touch-left', 'KeyA');
+            bind('touch-right', 'KeyD');
+
+            const tap = (id, fn) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); fn(); }, { passive: false });
+                    el.addEventListener('mousedown', (e) => { e.stopPropagation(); });
+                    el.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+                }
+            };
+            tap('hud-btn-bite', performBite);
+            tap('hud-btn-tail', performTail);
+            tap('hud-btn-breath', triggerBreath);
+            tap('hud-btn-trait', triggerTraitPower);
+            tap('hud-btn-fly', toggleFlightMode);
+        }
+
+        /* ----------------------------------------------------------------------------
+         * 1. TRUE ANATOMICAL 3D DRAGON BUILDER (NOT MOSQUITOES!)
+         * ---------------------------------------------------------------------------- */
+        function buildDragonMesh(pHex, sHex, mHex, aHex, scale = 1.0, isPeril = false) {
+            const dragon = new THREE.Group();
+
+            const scaleMat = new THREE.MeshStandardMaterial({
+                color: pHex,
+                roughness: 0.42,
+                metalness: 0.15,
+                emissive: isPeril ? 0xff4500 : 0x000000,
+                emissiveIntensity: isPeril ? 0.55 : 0.0
+            });
+            const bellyMat = new THREE.MeshStandardMaterial({
+                color: sHex,
+                roughness: 0.5,
+                emissive: isPeril ? 0xfbbf24 : 0x000000,
+                emissiveIntensity: isPeril ? 0.45 : 0.0
+            });
+            const wingMat = new THREE.MeshStandardMaterial({
+                color: mHex,
+                roughness: 0.45,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.94,
+                emissive: isPeril ? 0xf97316 : 0x000000,
+                emissiveIntensity: isPeril ? 0.4 : 0.0
+            });
+            const hornMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.3 });
+            const eyeMat = new THREE.MeshStandardMaterial({ color: aHex, emissive: aHex, emissiveIntensity: 0.9 });
+
+            // 1. Broad Muscular Chest & Tapered Torso
+            const chest = new THREE.Mesh(new THREE.SphereGeometry(1.35, 14, 12), scaleMat);
+            chest.scale.set(1.05, 0.95, 1.55);
+            chest.position.set(0, 1.85, 0.5);
+            dragon.add(chest);
+
+            const abdomen = new THREE.Mesh(new THREE.SphereGeometry(1.1, 12, 10), scaleMat);
+            abdomen.scale.set(0.95, 0.85, 1.65);
+            abdomen.position.set(0, 1.75, -1.2);
+            dragon.add(abdomen);
+
+            // Segmented Armored Underbelly Plates
+            for (let i = 0; i < 6; i++) {
+                const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.95 - i * 0.07, 1.0 - i * 0.07, 0.42, 10), bellyMat);
+                plate.rotation.x = Math.PI / 2;
+                plate.scale.set(1.0, 1.0, 0.65);
+                plate.position.set(0, 1.18 - i * 0.03, 1.35 - i * 0.52);
+                dragon.add(plate);
+            }
+
+            // Dorsal Spine Ridges along back
+            for (let i = 0; i < 7; i++) {
+                const spine = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.52, 4), bellyMat);
+                spine.position.set(0, 2.95 - i * 0.06, 1.4 - i * 0.52);
+                spine.rotation.x = -0.35;
+                dragon.add(spine);
+            }
+
+            // 2. Muscular S-Curved Neck
+            const neckGroup = new THREE.Group();
+            neckGroup.position.set(0, 2.35, 1.95);
+            const neckLower = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.88, 1.5, 10), scaleMat);
+            neckLower.rotation.x = 0.55;
+            neckLower.position.set(0, 0.55, 0.45);
+            neckGroup.add(neckLower);
+
+            const neckUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 1.4, 10), scaleMat);
+            neckUpper.rotation.x = 0.25;
+            neckUpper.position.set(0, 1.45, 0.85);
+            neckGroup.add(neckUpper);
+
+            // Neck Spines
+            for (let i = 0; i < 3; i++) {
+                const nSpine = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 4), bellyMat);
+                nSpine.position.set(0, 0.6 + i * 0.55, 0.1 + i * 0.22);
+                nSpine.rotation.x = -0.6;
+                neckGroup.add(nSpine);
+            }
+
+            // 3. Sculpted Dragon Head with Articulated Jaw, Snout, Horns & Glowing Eyes
+            const headGroup = new THREE.Group();
+            headGroup.position.set(0, 2.05, 1.05);
+
+            // Cranium
+            const cranium = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.85, 1.25), scaleMat);
+            headGroup.add(cranium);
+
+            // Upper Snout & Nostrils
+            const upperSnout = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.52, 1.25), scaleMat);
+            upperSnout.position.set(0, -0.05, 1.05);
+            headGroup.add(upperSnout);
+
+            const nostrilL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), eyeMat);
+            nostrilL.position.set(0.24, 0.18, 1.55);
+            const nostrilR = nostrilL.clone();
+            nostrilR.position.x = -0.24;
+            headGroup.add(nostrilL, nostrilR);
+
+            // Articulated Lower Jaw (opens when roaring/biting/breathing fire!)
+            const jawPivot = new THREE.Group();
+            jawPivot.position.set(0, -0.28, 0.4);
+            const lowerJaw = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.26, 1.2), bellyMat);
+            lowerJaw.position.set(0, -0.05, 0.6);
+            jawPivot.add(lowerJaw);
+
+            // Fangs
+            const fangGeo = new THREE.ConeGeometry(0.06, 0.22, 4);
+            const f1 = new THREE.Mesh(fangGeo, hornMat); f1.position.set(0.24, 0.1, 1.05);
+            const f2 = new THREE.Mesh(fangGeo, hornMat); f2.position.set(-0.24, 0.1, 1.05);
+            jawPivot.add(f1, f2);
+            headGroup.add(jawPivot);
+
+            // Swept-Back Curved Dragon Horns & Cheek Frills
+            const createHorn = (dir) => {
+                const hGrp = new THREE.Group();
+                hGrp.position.set(dir * 0.42, 0.38, -0.35);
+                const h1 = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.35, 7), hornMat);
+                h1.rotation.x = -1.15;
+                h1.rotation.z = -dir * 0.25;
+                h1.position.set(dir * 0.15, 0.35, -0.55);
+                hGrp.add(h1);
+                return hGrp;
+            };
+            headGroup.add(createHorn(1), createHorn(-1));
+
+            // Glowing Dragon Eyes with Brow Ridges
+            const eyeGeo = new THREE.SphereGeometry(0.15, 8, 8);
+            const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+            eyeL.position.set(0.56, 0.14, 0.32);
+            const eyeR = eyeL.clone();
+            eyeR.position.x = -0.56;
+            headGroup.add(eyeL, eyeR);
+
+            neckGroup.add(headGroup);
+            dragon.add(neckGroup);
+
+            // 4. Four Muscular Reptilian Legs with Claws
+            const legs = [];
+            const legConfigs = [
+                { x: 1.05, y: 1.65, z: 1.15, isFront: true },
+                { x: -1.05, y: 1.65, z: 1.15, isFront: true },
+                { x: 1.05, y: 1.6, z: -1.45, isFront: false },
+                { x: -1.05, y: 1.6, z: -1.45, isFront: false }
+            ];
+            legConfigs.forEach(cfg => {
+                const legPivot = new THREE.Group();
+                legPivot.position.set(cfg.x, cfg.y, cfg.z);
+
+                // Muscular Thigh / Shoulder
+                const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.28, 1.05, 8), scaleMat);
+                thigh.position.set(0, -0.45, cfg.isFront ? 0.1 : -0.15);
+                thigh.rotation.x = cfg.isFront ? -0.2 : 0.35;
+                legPivot.add(thigh);
+
+                // Lower Shin
+                const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.95, 8), scaleMat);
+                shin.position.set(0, -1.15, cfg.isFront ? 0.15 : 0.05);
+                legPivot.add(shin);
+
+                // Dragon Foot & 3 Talons
+                const foot = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.22, 0.68), bellyMat);
+                foot.position.set(0, -1.58, 0.25);
+                legPivot.add(foot);
+
+                for (let c = -1; c <= 1; c++) {
+                    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 4), hornMat);
+                    claw.rotation.x = Math.PI / 2;
+                    claw.position.set(c * 0.16, -1.62, 0.65);
+                    legPivot.add(claw);
+                }
+
+                dragon.add(legPivot);
+                legs.push(legPivot);
+            });
+
+            // 5. Broad Bat-Like Leathery Wings with Wing-Arms & Membrane Webbing
+            const createDragonWing = (dir) => {
+                const wingPivot = new THREE.Group();
+                wingPivot.position.set(dir * 0.85, 2.55, 0.85);
+
+                // Inner Wing Arm (Humerus)
+                const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 2.4, 7), scaleMat);
+                arm1.rotation.z = -dir * 1.25;
+                arm1.rotation.y = dir * 0.25;
+                arm1.position.set(dir * 1.1, 0.45, 0.25);
+                wingPivot.add(arm1);
+
+                // Outer Wing Forearm (Radius)
+                const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 3.2, 7), scaleMat);
+                arm2.rotation.z = -dir * 1.55;
+                arm2.rotation.y = -dir * 0.15;
+                arm2.position.set(dir * 3.55, 0.72, -0.05);
+                wingPivot.add(arm2);
+
+                // Wing Claw Thumb
+                const thumb = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.45, 5), hornMat);
+                thumb.position.set(dir * 2.15, 0.95, 0.55);
+                thumb.rotation.x = 0.6;
+                wingPivot.add(thumb);
+
+                // Custom Triangular/Bat Membrane Geometry connecting body, wing arm, and trailing edge
+                const memGeo = new THREE.BufferGeometry();
+                const vertices = new Float32Array([
+                    // Inner membrane triangle
+                    0, -0.3, 0.1,
+                    dir * 2.1, 0.8, 0.45,
+                    dir * 1.9, -0.4, -2.2,
+                    // Second inner triangle
+                    0, -0.3, 0.1,
+                    dir * 1.9, -0.4, -2.2,
+                    0, -0.5, -2.1,
+                    // Outer wingtip membrane
+                    dir * 2.1, 0.8, 0.45,
+                    dir * 5.2, 0.65, -0.35,
+                    dir * 3.8, -0.35, -2.6,
+                    // Mid-outer membrane
+                    dir * 2.1, 0.8, 0.45,
+                    dir * 3.8, -0.35, -2.6,
+                    dir * 1.9, -0.4, -2.2
+                ]);
+                memGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                memGeo.computeVertexNormals();
+                const membrane = new THREE.Mesh(memGeo, wingMat);
+                wingPivot.add(membrane);
+
+                // Wing Finger Spars
+                const finger1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 2.8, 5), scaleMat);
+                finger1.rotation.x = Math.PI / 2;
+                finger1.position.set(dir * 2.0, 0.2, -0.9);
+                wingPivot.add(finger1);
+
+                const finger2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 3.1, 5), scaleMat);
+                finger2.rotation.x = Math.PI / 2;
+                finger2.rotation.z = -dir * 0.45;
+                finger2.position.set(dir * 3.0, 0.2, -1.1);
+                wingPivot.add(finger2);
+
+                return wingPivot;
+            };
+            const leftWing = createDragonWing(1);
+            const rightWing = createDragonWing(-1);
+            dragon.add(leftWing, rightWing);
+
+            // 6. Long, Segmented, Tapered Dragon Tail
+            const tailGroup = new THREE.Group();
+            tailGroup.position.set(0, 1.65, -2.5);
+            const tailSegments = [];
+            let parentSeg = tailGroup;
+            for (let s = 0; s < 5; s++) {
+                const segPivot = new THREE.Group();
+                segPivot.position.set(0, 0, s === 0 ? 0 : -1.05);
+                const rTop = Math.max(0.14, 0.68 - s * 0.12);
+                const rBot = Math.max(0.08, 0.56 - s * 0.12);
+                const segMesh = new THREE.Mesh(new THREE.CylinderGeometry(rBot, rTop, 1.15, 8), scaleMat);
+                segMesh.rotation.x = Math.PI / 2;
+                segMesh.position.set(0, 0, -0.52);
+                segPivot.add(segMesh);
+
+                if (s === 4) {
+                    // Tail Spade / Barb (SandWing stinger / IceWing whip / SkyWing blade)
+                    const spade = new THREE.Mesh(new THREE.OctahedronGeometry(0.35, 0), eyeMat);
+                    spade.scale.set(0.8, 0.35, 1.8);
+                    spade.position.set(0, 0, -1.1);
+                    segPivot.add(spade);
+                }
+
+                parentSeg.add(segPivot);
+                tailSegments.push(segPivot);
+                parentSeg = segPivot;
+            }
+            dragon.add(tailGroup);
+
+            // 7. Peril's Blazing Firescales Molten Aura Light
+            if (isPeril) {
+                const fireLight = new THREE.PointLight(0xff6b00, 2.2, 22);
+                fireLight.position.set(0, 2.5, 0);
+                dragon.add(fireLight);
+            }
+
+            dragon.scale.setScalar(scale);
+            dragon.userData = { leftWing, rightWing, tailGroup, tailSegments, headGroup, jawPivot, legs, isPeril };
+            return dragon;
+        }
+
+        /* ----------------------------------------------------------------------------
+         * 2. BOOK-ACCURATE 3D KINGDOM BUILDERS
+         * ---------------------------------------------------------------------------- */
+        function buildWorld(heroId) {
+            const h = HEROES[heroId];
+            const baseC = h.colors;
+            const equippedSkinObj = SHOP_SKINS.find(s => s.id === playerInventory.equippedSkin);
+            const equippedBgObj = SHOP_BACKGROUNDS.find(b => b.id === playerInventory.equippedBg);
+
+            const dragonC = (equippedSkinObj && equippedSkinObj.colors) ? equippedSkinObj.colors : baseC;
+            const skyColor = (equippedBgObj && equippedBgObj.sky !== null) ? equippedBgObj.sky : baseC.sky;
+            const groundColor = (equippedBgObj && equippedBgObj.ground !== null) ? equippedBgObj.ground : baseC.ground;
+
+            while (scene.children.length > 0) scene.remove(scene.children[0]);
+            entities = [];
+            projectiles = [];
+            animatedProps = [];
+            predictionLines = [];
+            boss = null;
+            perilEmbers = null;
+
+            scene.background = new THREE.Color(skyColor);
+            scene.fog = new THREE.FogExp2(skyColor, 0.0028);
+
+            const hemi = new THREE.HemisphereLight(dragonC.accent, groundColor, 1.25);
+            scene.add(hemi);
+            const dir = new THREE.DirectionalLight(0xffffff, 1.35);
+            dir.position.set(60, 120, 60);
+            scene.add(dir);
+
+            worldGroup = new THREE.Group();
+            scene.add(worldGroup);
+
+            // Base Terrain
+            const planeGeo = new THREE.PlaneGeometry(750, 750, 40, 40);
+            planeGeo.rotateX(-Math.PI / 2);
+            const pos = planeGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const vx = pos.getX(i);
+                const vz = pos.getZ(i);
+                const hVal = Math.sin(vx * 0.025) * Math.cos(vz * 0.025) * 4.5;
+                pos.setY(i, hVal);
+            }
+            planeGeo.computeVertexNormals();
+            const terrain = new THREE.Mesh(planeGeo, new THREE.MeshStandardMaterial({ color: groundColor, roughness: 0.88, flatShading: true }));
+            worldGroup.add(terrain);
+
+            // Build Distinct Book-Accurate Landmark Props for Each Kingdom
+            if (heroId === 'qibli') buildSandKingdomAndPossibility();
+            else if (heroId === 'turtle') buildSeaKingdomAndPalace();
+            else if (heroId === 'moon') buildRainforestAndTreehouses();
+            else if (heroId === 'winter') buildIceKingdomAndGlaciers();
+            else if (heroId === 'peril') buildSkyKingdomAndArena();
+
+            // Create Player Dragon (with equipped Dragon Coin Skin & Peril Firescales!)
+            player = buildDragonMesh(dragonC.primary, dragonC.secondary, dragonC.membrane, dragonC.accent, 1.0, heroId === 'peril');
+            player.position.set(0, 0, 55);
+            scene.add(player);
+
+            // Peril's Blazing Firescales Rising Ember Particle System
+            if (heroId === 'peril') {
+                const eGeo = new THREE.BufferGeometry();
+                const ePos = new Float32Array(120 * 3);
+                for (let i = 0; i < 360; i += 3) {
+                    ePos[i] = (Math.random() - 0.5) * 6;
+                    ePos[i + 1] = Math.random() * 5;
+                    ePos[i + 2] = (Math.random() - 0.5) * 7;
+                }
+                eGeo.setAttribute('position', new THREE.BufferAttribute(ePos, 3));
+                perilEmbers = new THREE.Points(eGeo, new THREE.PointsMaterial({ color: 0xfacc15, size: 0.45, transparent: true, opacity: 0.9 }));
+                player.add(perilEmbers);
+            }
+        }
+
+        // SAND KINGDOM (QIBLI): Cactuses, Dunes, Oasis & City of Possibility
+        function buildSandKingdomAndPossibility() {
+            const cactusMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7 });
+            const sandstoneMat = new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.8 });
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
+            const waterMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.2 });
+
+            // Giant Saguaro Cactuses across the desert
+            for (let i = 0; i < 45; i++) {
+                const cx = (Math.random() - 0.5) * 280;
+                const cz = (Math.random() - 0.5) * 280;
+                if (Math.abs(cx) < 28 && Math.abs(cz + 20) < 35) continue; // Keep Possibility square clear
+                const cGrp = new THREE.Group();
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, 7 + Math.random() * 4, 8), cactusMat);
+                trunk.position.y = 3.5;
+                cGrp.add(trunk);
+                const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 3, 7), cactusMat);
+                armL.position.set(1.1, 4.2, 0);
+                armL.rotation.z = -0.4;
+                const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 2.5, 7), cactusMat);
+                armR.position.set(-1.1, 3.2, 0);
+                armR.rotation.z = 0.4;
+                cGrp.add(armL, armR);
+                cGrp.position.set(cx, 0, cz);
+                worldGroup.add(cGrp);
+            }
+
+            // River running through the city of Possibility
+            const river = new THREE.Mesh(new THREE.PlaneGeometry(16, 320), waterMat);
+            river.rotation.x = -Math.PI / 2;
+            river.position.set(0, 0.25, -20);
+            worldGroup.add(river);
+
+            // Arched Stone Bridges of Possibility
+            [-35, 10].forEach(bz => {
+                const bridge = new THREE.Mesh(new THREE.BoxGeometry(22, 1.2, 8), sandstoneMat);
+                bridge.position.set(0, 1.1, bz);
+                worldGroup.add(bridge);
+            });
+
+            // Sandstone Houses & Colorful Market Stalls of Possibility
+            const stallColors = [0xef4444, 0x3b82f6, 0x10b981, 0xa855f7];
+            for (let i = 0; i < 16; i++) {
+                const side = i % 2 === 0 ? 1 : -1;
+                const hx = side * (22 + (i % 3) * 14);
+                const hz = -65 + i * 7;
+                const house = new THREE.Group();
+                const body = new THREE.Mesh(new THREE.BoxGeometry(9, 6.5, 9), sandstoneMat);
+                body.position.y = 3.25;
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(4.2, 10, 8), roofMat);
+                dome.position.y = 6.5;
+                house.add(body, dome);
+
+                // Market awning
+                const awning = new THREE.Mesh(
+                    new THREE.BoxGeometry(4, 0.3, 5),
+                    new THREE.MeshStandardMaterial({ color: stallColors[i % stallColors.length] })
+                );
+                awning.position.set(-side * 5.5, 3.2, 0);
+                house.add(awning);
+                house.position.set(hx, 0, hz);
+                worldGroup.add(house);
+            }
+
+            // Distant Jade Mountain silhouette on the northern horizon
+            const jmPeak = new THREE.Mesh(
+                new THREE.ConeGeometry(65, 95, 7),
+                new THREE.MeshStandardMaterial({ color: 0x334155, flatShading: true })
+            );
+            jmPeak.position.set(0, 42, -210);
+            worldGroup.add(jmPeak);
+        }
+
+        // SEA KINGDOM (TURTLE): Coral Reefs, SeaWing Palace, Sea Animals & Summer Island
+        function buildSeaKingdomAndPalace() {
+            const waterSurface = new THREE.Mesh(
+                new THREE.PlaneGeometry(750, 750),
+                new THREE.MeshStandardMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.48, roughness: 0.15 })
+            );
+            waterSurface.rotation.x = -Math.PI / 2;
+            waterSurface.position.y = 14;
+            worldGroup.add(waterSurface);
+
+            // Glowing Coral Reefs (Staghorn & Brain Coral)
+            const coralColors = [0xf43f5e, 0xfb923c, 0xe879f9, 0x2dd4bf, 0xfacc15];
+            for (let i = 0; i < 65; i++) {
+                const cMat = new THREE.MeshStandardMaterial({
+                    color: coralColors[i % coralColors.length],
+                    emissive: coralColors[i % coralColors.length],
+                    emissiveIntensity: 0.25
+                });
+                const coral = new THREE.Mesh(
+                    i % 2 === 0 ? new THREE.DodecahedronGeometry(2.2 + Math.random() * 2, 1) : new THREE.ConeGeometry(1.4, 5.5, 6),
+                    cMat
+                );
+                coral.position.set((Math.random() - 0.5) * 260, 1.5, (Math.random() - 0.5) * 260);
+                worldGroup.add(coral);
+            }
+
+            // Grand SeaWing Palace Pavilions & Pearl Columns
+            const pearlMat = new THREE.MeshStandardMaterial({ color: 0xf0fdfa, emissive: 0x99f6e4, emissiveIntensity: 0.2, roughness: 0.2 });
+            for (let p = 0; p < 8; p++) {
+                const ang = (p / 8) * Math.PI * 2;
+                const pillar = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.8, 22, 10), pearlMat);
+                pillar.position.set(Math.cos(ang) * 35, 11, -45 + Math.sin(ang) * 35);
+                worldGroup.add(pillar);
+            }
+            const palaceDome = new THREE.Mesh(new THREE.SphereGeometry(18, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), pearlMat);
+            palaceDome.position.set(0, 20, -45);
+            worldGroup.add(palaceDome);
+
+            // Summer Palace Animus Duel Island (for Turtle vs Anemone)
+            const islandSand = new THREE.Mesh(
+                new THREE.CylinderGeometry(32, 38, 3.2, 24),
+                new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.85 })
+            );
+            islandSand.position.set(0, 13.8, -45);
+            worldGroup.add(islandSand);
+
+            const marbleMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 });
+            for (let c = 0; c < 6; c++) {
+                const a = (c / 6) * Math.PI * 2;
+                const col = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 12, 8), marbleMat);
+                col.position.set(Math.cos(a) * 24, 21, -45 + Math.sin(a) * 24);
+                worldGroup.add(col);
+            }
+
+            // Swimming Sea Animals (Sea Turtles, Sharks & Glowing Jellyfish) + Friendly SeaWings
+            for (let a = 0; a < 18; a++) {
+                const animal = new THREE.Group();
+                if (a % 3 === 0) {
+                    // Sea Turtle
+                    const shell = new THREE.Mesh(new THREE.SphereGeometry(1.6, 10, 8), new THREE.MeshStandardMaterial({ color: 0x059669 }));
+                    shell.scale.set(1.1, 0.5, 1.4);
+                    animal.add(shell);
+                } else if (a % 3 === 1) {
+                    // Glowing Jellyfish
+                    const bell = new THREE.Mesh(new THREE.SphereGeometry(1.2, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf472b6, emissive: 0xf472b6, emissiveIntensity: 0.6 }));
+                    animal.add(bell);
+                } else {
+                    // Friendly SeaWing Dragon patrolling high
+                    const npcDragon = buildDragonMesh(0x0284c7, 0x7dd3fc, 0x0369a1, 0xe0f2fe, 0.75, false);
+                    animal.add(npcDragon);
+                }
+                const radius = 35 + (a % 5) * 18;
+                const speed = 0.25 + (a % 4) * 0.08;
+                const yBase = 6 + (a % 4) * 5;
+                animal.position.set(Math.cos(a) * radius, yBase, Math.sin(a) * radius - 20);
+                worldGroup.add(animal);
+                animatedProps.push({ mesh: animal, type: 'orbit', radius, speed, phase: a, yBase });
+            }
+        }
+
+        // RAINFOREST KINGDOM (MOON): Giant Kapok Trees, Treehouses, Fruits, Bugs & Sloths
+        function buildRainforestAndTreehouses() {
+            const barkMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7 });
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.75 });
+            const slothMat = new THREE.MeshStandardMaterial({ color: 0xa8a29e, roughness: 0.9 });
+
+            for (let t = 0; t < 28; t++) {
+                const tx = (Math.random() - 0.5) * 260;
+                const tz = (Math.random() - 0.5) * 260;
+                if (Math.abs(tx) < 20 && tz > 25) continue;
+
+                const tree = new THREE.Group();
+                const height = 28 + Math.random() * 14;
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 3.6, height, 9), barkMat);
+                trunk.position.y = height / 2;
+                tree.add(trunk);
+
+                const canopy = new THREE.Mesh(new THREE.DodecahedronGeometry(11, 1), leafMat);
+                canopy.position.y = height;
+                tree.add(canopy);
+
+                // RainWing Wooden Treehouse Platforms on major trees
+                if (t % 3 === 0) {
+                    const deck = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 7.5, 0.8, 10), woodMat);
+                    deck.position.y = height * 0.62;
+                    const hut = new THREE.Mesh(new THREE.ConeGeometry(5.5, 4.5, 8), leafMat);
+                    hut.position.y = height * 0.62 + 2.6;
+                    tree.add(deck, hut);
+
+                    // Cute 3D Sloth clinging to a branch!
+                    const sloth = new THREE.Group();
+                    const sBody = new THREE.Mesh(new THREE.SphereGeometry(0.95, 8, 8), slothMat);
+                    sBody.scale.set(0.85, 1.35, 0.85);
+                    const sHead = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 8), new THREE.MeshStandardMaterial({ color: 0xe7e5e4 }));
+                    sHead.position.set(0, 0.9, 0.35);
+                    sloth.add(sBody, sHead);
+                    sloth.position.set(4.5, height * 0.58, 0);
+                    tree.add(sloth);
+                    animatedProps.push({ mesh: sloth, type: 'sway', phase: t });
+                }
+
+                // Hanging Delicious Rainforest Fruits (Mangoes, Dragonfruits, Bananas)
+                const fruitColors = [0xfacc15, 0xf43f5e, 0xfb923c];
+                for (let f = 0; f < 3; f++) {
+                    const fruit = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.85, 8, 8),
+                        new THREE.MeshStandardMaterial({ color: fruitColors[(t + f) % 3], emissive: fruitColors[(t + f) % 3], emissiveIntensity: 0.35 })
+                    );
+                    fruit.position.set(Math.cos(f * 2.1) * 6, height * 0.45, Math.sin(f * 2.1) * 6);
+                    tree.add(fruit);
+                }
+
+                tree.position.set(tx, 0, tz);
+                worldGroup.add(tree);
+            }
+
+            // Fluttering Colorful Rainforest Bugs & Butterflies
+            for (let b = 0; b < 35; b++) {
+                const bug = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(0.45, 0),
+                    new THREE.MeshBasicMaterial({ color: b % 2 === 0 ? 0x38bdf8 : 0xfacc15 })
+                );
+                bug.position.set((Math.random() - 0.5) * 160, 4 + Math.random() * 14, (Math.random() - 0.5) * 160);
+                worldGroup.add(bug);
+                animatedProps.push({ mesh: bug, type: 'flutter', phase: b, baseY: bug.position.y });
+            }
+        }
+
+        // ICE KINGDOM (WINTER): Towering Blue Glaciers, Ice Palace & Polar Bears
+        function buildIceKingdomAndGlaciers() {
+            const glacierMat = new THREE.MeshStandardMaterial({ color: 0x7dd3fc, roughness: 0.2, metalness: 0.15, flatShading: true });
+            const palaceMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, emissive: 0x38bdf8, emissiveIntensity: 0.25, roughness: 0.15 });
+            const bearMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
+
+            // Jagged Blue Glaciers
+            for (let g = 0; g < 38; g++) {
+                const gx = (Math.random() - 0.5) * 270;
+                const gz = (Math.random() - 0.5) * 270;
+                if (Math.abs(gx) < 25 && Math.abs(gz - 45) < 25) continue;
+                const h = 14 + Math.random() * 26;
+                const glacier = new THREE.Mesh(new THREE.ConeGeometry(4 + Math.random() * 5, h, 5), glacierMat);
+                glacier.position.set(gx, h / 2 - 1, gz);
+                worldGroup.add(glacier);
+            }
+
+            // IceWing Palace Spires
+            for (let s = -2; s <= 2; s++) {
+                const spire = new THREE.Mesh(new THREE.ConeGeometry(4.5, 38 - Math.abs(s) * 5, 6), palaceMat);
+                spire.position.set(s * 14, 18, -85);
+                worldGroup.add(spire);
+            }
+
+            // Ambient Roaming Polar Bears on the ice fields
+            for (let pb = 0; pb < 8; pb++) {
+                const bear = new THREE.Group();
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.8, 3.6), bearMat);
+                torso.position.y = 1.4;
+                const head = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.2, 1.5), bearMat);
+                head.position.set(0, 1.9, 2.1);
+                bear.add(torso, head);
+                const radius = 30 + pb * 12;
+                bear.position.set(Math.cos(pb) * radius, 0, Math.sin(pb) * radius);
+                worldGroup.add(bear);
+                animatedProps.push({ mesh: bear, type: 'orbit', radius, speed: 0.15, phase: pb, yBase: 0 });
+            }
+        }
+
+        // SKY KINGDOM (PERIL): Red-Rock Spires, Cloud Banks, Sky Rings & Scarlet's Arena
+        function buildSkyKingdomAndArena() {
+            const rockMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.85, flatShading: true });
+            const cloudMat = new THREE.MeshStandardMaterial({ color: 0xfef2f2, transparent: true, opacity: 0.78 });
+            const arenaStone = new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.7 });
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.35 });
+
+            // Towering Red-Rock Mountain Spires
+            for (let m = 0; m < 30; m++) {
+                const mx = (Math.random() - 0.5) * 280;
+                const mz = (Math.random() - 0.5) * 280;
+                if (Math.hypot(mx, mz + 45) < 48) continue; // Keep Scarlet's Arena clear!
+                const mh = 22 + Math.random() * 35;
+                const peak = new THREE.Mesh(new THREE.ConeGeometry(7 + Math.random() * 6, mh, 6), rockMat);
+                peak.position.set(mx, mh / 2 - 2, mz);
+                worldGroup.add(peak);
+            }
+
+            // Floating Cloud Banks & Glowing Sky-Wind Rings
+            for (let c = 0; c < 18; c++) {
+                const cloud = new THREE.Mesh(new THREE.DodecahedronGeometry(6 + Math.random() * 5, 1), cloudMat);
+                cloud.scale.set(1.8, 0.55, 1.4);
+                cloud.position.set((Math.random() - 0.5) * 220, 22 + Math.random() * 18, (Math.random() - 0.5) * 220);
+                worldGroup.add(cloud);
+            }
+
+            // Queen Scarlet's Grand Circular SkyWing Arena!
+            const arenaCenterZ = -45;
+            const arenaFloor = new THREE.Mesh(new THREE.CylinderGeometry(36, 38, 1.5, 24), arenaStone);
+            arenaFloor.position.set(0, 0.5, arenaCenterZ);
+            worldGroup.add(arenaFloor);
+
+            for (let p = 0; p < 16; p++) {
+                const ang = (p / 16) * Math.PI * 2;
+                const col = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.7, 18, 8), arenaStone);
+                col.position.set(Math.cos(ang) * 36, 9, arenaCenterZ + Math.sin(ang) * 36);
+                const brazier = new THREE.Mesh(new THREE.SphereGeometry(1.3, 8, 8), goldMat);
+                brazier.position.set(Math.cos(ang) * 36, 18.8, arenaCenterZ + Math.sin(ang) * 36);
+                worldGroup.add(col, brazier);
+            }
+        }
+
+        /* ----------------------------------------------------------------------------
+         * 3. 50-LEVEL CAMPAIGN & BOOK ENCOUNTER GENERATOR
+         * ---------------------------------------------------------------------------- */
+        function startActionAdventure() {
+            SoundFX.click();
+            gameState.mode = 'playing';
+            gameState.level = 1;
+            gameState.maxHp = 120;
+            gameState.hp = 120;
+            gameState.maxStamina = 100;
+            gameState.stamina = 100;
+            gameState.abilityCd = 0;
+            gameState.traitCd = 0;
+            gameState.attackCooldown = 0;
+
+            buildWorld(selectedHeroId);
+
+            document.getElementById('quiz-overlay').classList.add('hidden');
+            document.getElementById('end-overlay').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('hidden');
+            document.getElementById('btn-home').classList.remove('hidden');
+            document.getElementById('level-selector-wrap').classList.remove('hidden');
+
+            const h = HEROES[selectedHeroId];
+            document.getElementById('hud-portrait').innerHTML = getDragonSVG(selectedHeroId, 'w-9 h-9');
+            document.getElementById('hud-dragon-name').textContent = h.name;
+            document.getElementById('hud-destination-label').textContent = `${h.startLocation} -> ${h.destination}`;
+            document.getElementById('hud-ability-name').textContent = `${h.breathName} [E]`;
+            document.getElementById('hud-trait-name').textContent = `${h.traitSkill} [Q]`;
+
+            setupLevel(1, true);
+        }
+
+        function jumpToLevel(lvl) {
+            if (lvl < 1 || lvl > 50) return;
+            SoundFX.click();
+            setupLevel(lvl, true);
+        }
+
+        function retryCurrentLevel() {
+            SoundFX.click();
+            document.getElementById('end-overlay').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('hidden');
+            gameState.mode = 'playing';
+            gameState.hp = gameState.maxHp;
+            gameState.stamina = gameState.maxStamina;
+            setupLevel(gameState.level, false);
+        }
+
+        function setupLevel(lvl, showStory = false) {
+            gameState.level = lvl;
+            gameState.progressCount = 0;
+            document.getElementById('level-jump-select').value = lvl;
+
+            // Clear old entities & boss
+            entities.forEach(e => scene.remove(e.mesh));
+            entities = [];
+            projectiles.forEach(p => scene.remove(p));
+            projectiles = [];
+            if (boss) { scene.remove(boss); boss = null; }
+            document.getElementById('boss-hud').classList.add('hidden');
+
+            // Reset player position and give slight HP recovery between levels
+            gameState.hp = Math.min(gameState.maxHp, gameState.hp + 35);
+            player.position.set(0, gameState.isFlying ? 10 : 0, 50);
+            gameState.yaw = 0;
+
+            const h = HEROES[selectedHeroId];
+            const isBossLevel = (lvl % 10 === 0);
+
+            document.getElementById('hud-level-badge').textContent = `Lv ${lvl} / 50`;
+
+            if (isBossLevel) {
+                // BOSS FIGHT AT LEVELS 10, 20, 30, 40, 50!
+                const phase = lvl / 10; // 1, 2, 3, 4, or 5
+                gameState.bossPhase = phase;
+                gameState.bossMaxHp = 280 + phase * 160;
+                gameState.bossHp = gameState.bossMaxHp;
+                gameState.bossAttackTimer = 1.6;
+
+                SoundFX.bossRoar();
+                document.getElementById('boss-hud').classList.remove('hidden');
+                document.getElementById('boss-name-label').textContent = `${h.bossName.toUpperCase()} • TIER ${phase} (${lvl === 50 ? 'FINAL FORM' : 'LEVEL ' + lvl})`;
+
+                const attackDescriptions = [
+                    "Tier 1 Attacks: Claw Swipe & Elemental Blast",
+                    "Tier 2 Attacks: + Ground Shockwave Ring",
+                    "Tier 3 Attacks: + Triple Homing Animus/Elemental Orbs",
+                    "Tier 4 Attacks: + Summoned Guard Reinforcements",
+                    "Tier 5 ULTIMATE: + Cataclysmic Rapid Barrage & Frenzy!"
+                ];
+                document.getElementById('boss-subtitle').textContent = attackDescriptions[phase - 1];
+                document.getElementById('hud-encounter-type').textContent = `★ MILESTONE BOSS (TIER ${phase})`;
+                document.getElementById('hud-objective-text').textContent = `Defeat ${h.bossName} at ${h.destination}!`;
+
+                // Build Boss Dragon (grows larger and fiercer each milestone!)
+                const bossScale = 1.55 + phase * 0.18;
+                boss = buildDragonMesh(h.colors.bossBody, h.colors.bossAccent, h.colors.bossBody, h.colors.bossAccent, bossScale, false);
+                boss.position.set(0, 8, -45);
+                scene.add(boss);
+
+                // In Tier 4 and 5, boss also brings 2 elite guards!
+                if (phase >= 4) {
+                    spawnBookEncounters('dragon', 2, lvl);
+                }
+
+                openStoryBox({
+                    speaker: h.bossName,
+                    speakerId: selectedHeroId,
+                    tag: `Level ${lvl} Milestone Boss • Tier ${phase}/5`,
+                    text: phase === 1
+                        ? `So you think you can challenge me at ${h.destination}, ${h.name}? Let's see what your claws can really do!`
+                        : `You defeated me before, ${h.name}, but now at Level ${lvl} I have unlocked devastating new powers! Prepare to fall!`,
+                    choices: [{ label: `⚔️ Battle ${h.bossName} (Tier ${phase})!` }]
+                });
+            } else {
+                // VARIED BOOK ENCOUNTERS (Wildlife, Collectibles, Animus Totems/Hazards, or Dragon Skirmishes)
+                const encIndex = (lvl - 1) % h.encounters.length;
+                const encounter = h.encounters[encIndex];
+                gameState.currentEncounterType = encounter.type;
+                gameState.targetCount = Math.min(8, 3 + Math.floor(lvl / 9));
+
+                document.getElementById('hud-encounter-type').textContent = `Book Encounter: ${encounter.name}`;
+                document.getElementById('hud-objective-text').textContent = `${encounter.verb} (0 / ${gameState.targetCount})`;
+
+                spawnBookEncounters(encounter.type, gameState.targetCount, lvl);
+
+                if (showStory || lvl === 1 || lvl % 5 === 1) {
+                    openStoryBox({
+                        speaker: h.name,
+                        speakerId: selectedHeroId,
+                        tag: `Level ${lvl} • ${h.startLocation}`,
+                        text: `Chapter ${lvl}: ${encounter.verb}. Stay alert—every step closer to ${h.destination} brings stronger foes and new trials!`,
+                        choices: [{ label: "🐉 Begin Level " + lvl }]
+                    });
+                } else {
+                    showToast(`⚔️ Level ${lvl}: ${encounter.name} (${gameState.targetCount})`);
+                }
+            }
+            updateHUD();
+        }
+
+        function spawnBookEncounters(type, count, lvl) {
+            const h = HEROES[selectedHeroId];
+            const scaleFactor = 1 + (lvl * 0.045);
+
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 1.6 - Math.PI * 0.8;
+                const dist = 32 + (i % 4) * 18;
+                const x = Math.sin(angle) * dist + (Math.random() - 0.5) * 12;
+                const z = -dist + (Math.random() - 0.5) * 12;
+
+                let mesh;
+                let hp = Math.round((45 + lvl * 4.5));
+
+                if (type === 'dragon') {
+                    mesh = buildDragonMesh(0x334155, h.colors.accent, 0x1e293b, 0xef4444, 0.85, false);
+                    mesh.position.set(x, 0, z);
+                } else if (type === 'wildlife') {
+                    // Distinct 3D Book Creature (Polar Bear, Panther, Scorpion, Shark, Rock-Golem)
+                    mesh = new THREE.Group();
+                    const beastColor = selectedHeroId === 'winter' ? 0xf8fafc :
+                                       selectedHeroId === 'moon' ? 0x1e1b4b :
+                                       selectedHeroId === 'qibli' ? 0x78350f :
+                                       selectedHeroId === 'turtle' ? 0x475569 : 0x57534e;
+                    const mat = new THREE.MeshStandardMaterial({ color: beastColor, roughness: 0.6 });
+                    const body = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.1, 4.4), mat);
+                    body.position.y = 1.6;
+                    const head = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.5, 1.8), mat);
+                    head.position.set(0, 2.1, 2.5);
+                    const eyes = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.28, 0.3), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+                    eyes.position.set(0, 2.35, 3.3);
+                    mesh.add(body, head, eyes);
+                    mesh.position.set(x, 0, z);
+                } else if (type === 'hazard') {
+                    // Enchanted Animus Totem / Fire Brazier / Booby Trap
+                    mesh = new THREE.Group();
+                    const obelisk = new THREE.Mesh(
+                        new THREE.OctahedronGeometry(2.2, 0),
+                        new THREE.MeshStandardMaterial({ color: 0x7e22ce, emissive: 0xa855f7, emissiveIntensity: 0.7 })
+                    );
+                    obelisk.scale.set(0.8, 2.2, 0.8);
+                    obelisk.position.y = 3.2;
+                    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.2, 8, 20), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
+                    ring.rotation.x = Math.PI / 2;
+                    ring.position.y = 0.5;
+                    mesh.add(obelisk, ring);
+                    mesh.position.set(x, 0, z);
+                } else {
+                    // Collectible Relic / Fruit / Pearl / Sky-Ring
+                    mesh = new THREE.Group();
+                    const gem = new THREE.Mesh(
+                        selectedHeroId === 'peril' ? new THREE.TorusGeometry(3.2, 0.35, 10, 24) : new THREE.DodecahedronGeometry(1.6, 1),
+                        new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.8 })
+                    );
+                    gem.position.y = selectedHeroId === 'peril' ? 11 : 2.5;
+                    mesh.add(gem);
+                    mesh.position.set(x, 0, z);
+                    hp = 1;
+                }
+
+                scene.add(mesh);
+                entities.push({
+                    mesh,
+                    type,
+                    hp,
+                    maxHp: hp,
+                    speed: (type === 'wildlife' ? 9.5 : 6.5) * Math.min(1.8, scaleFactor),
+                    damage: (7 + lvl * 0.55),
+                    attackTimer: 1.5 + Math.random()
+                });
+            }
+        }
+
+        /* ----------------------------------------------------------------------------
+         * 4. PLAYER COMBAT & PERSONALITY TRAIT POWERS
+         * ---------------------------------------------------------------------------- */
+        function performBite() {
+            if (gameState.mode !== 'playing' || gameState.isDialogueOpen || gameState.attackCooldown > 0) return;
+            gameState.attackCooldown = 0.32;
+            gameState.attackAnimTimer = 0.28;
+            gameState.attackAnimType = 'bite';
+            pulseHudButton('hud-btn-bite');
+            SoundFX.bite();
+            checkMeleeDamage(42, 6.5);
+        }
+
+        function performTail() {
+            if (gameState.mode !== 'playing' || gameState.isDialogueOpen || gameState.attackCooldown > 0) return;
+            gameState.attackCooldown = 0.45;
+            gameState.attackAnimTimer = 0.38;
+            gameState.attackAnimType = 'tail';
+            pulseHudButton('hud-btn-tail');
+            SoundFX.tail();
+            checkMeleeDamage(52, 8.2);
+        }
+
+        function checkMeleeDamage(dmg, range) {
+            if (boss) {
+                if (player.position.distanceTo(boss.position) <= range + 4.0) {
+                    SoundFX.enemyHit();
+                    gameState.bossHp -= dmg;
+                    updateHUD();
+                    if (gameState.bossHp <= 0) handleBossDefeated();
+                }
+            }
+            for (let i = entities.length - 1; i >= 0; i--) {
+                const ent = entities[i];
+                if (ent.type === 'collect') continue;
+                if (player.position.distanceTo(ent.mesh.position) <= range) {
+                    SoundFX.enemyHit();
+                    ent.hp -= dmg;
+                    if (ent.hp <= 0) {
+                        scene.remove(ent.mesh);
+                        entities.splice(i, 1);
+                        gameState.progressCount++;
+                        updateHUD();
+                        checkLevelClear();
+                    }
+                }
+            }
+        }
+
+        function triggerBreath() {
+            if (gameState.abilityCd > 0 || gameState.mode !== 'playing' || gameState.isDialogueOpen) return;
+            gameState.abilityCd = 1.6;
+            gameState.attackAnimTimer = 0.35;
+            gameState.attackAnimType = 'bite';
+            pulseHudButton('hud-btn-breath');
+            const h = HEROES[selectedHeroId];
+            SoundFX.breath(selectedHeroId);
+
+            const proj = new THREE.Mesh(
+                new THREE.SphereGeometry(1.5, 10, 10),
+                new THREE.MeshBasicMaterial({ color: h.colors.accent })
+            );
+            proj.position.copy(player.position).add(new THREE.Vector3(0, 2.2, 0));
+            const dir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.yaw);
+            proj.userData = { vel: dir.multiplyScalar(72), life: 2.0, damage: 70, isEnemy: false };
+            scene.add(proj);
+            projectiles.push(proj);
+        }
+
+        function triggerTraitPower() {
+            if (gameState.traitCd > 0 || gameState.mode !== 'playing' || gameState.isDialogueOpen) return;
+            gameState.traitCd = 8.0;
+            pulseHudButton('hud-btn-trait');
+            SoundFX.trait();
+            const h = HEROES[selectedHeroId];
+
+            if (selectedHeroId === 'moon') {
+                // Moon's Future-Sight Prediction: Slows CPU enemies/projectiles, reveals trajectory lines, and grants auto-dodge shield!
+                gameState.foresightTimer = 6.5;
+                gameState.shieldTimer = 4.5;
+                gameState.hp = Math.min(gameState.maxHp, gameState.hp + 35);
+                showToast("🔮 Moon's Foresight: Predicting CPU moves + Auto-Dodge & +35 HP!");
+            } else if (selectedHeroId === 'winter') {
+                // Winter's Rebelliousness: 360-degree Glacial Frost Nova that freezes enemies solid!
+                gameState.freezeTimer = 4.5;
+                checkMeleeDamage(85, 22);
+                showToast("❄️ Winter's Pride: Enemies Frozen Solid & Frost Nova!");
+            } else if (selectedHeroId === 'peril') {
+                // Peril's Bravery: Firescales Supernova + Molten Barrier
+                gameState.shieldTimer = 4.5;
+                checkMeleeDamage(115, 24);
+                showToast("🔥 Peril's Bravery: Firescales Supernova!");
+            } else if (selectedHeroId === 'turtle') {
+                // Turtle's Animus Telekinesis: Lifts 3D rocks, coral pillars, and debris to hurl directly at enemies & bosses!
+                const targets = [];
+                if (boss) targets.push(boss.position.clone().add(new THREE.Vector3(0, 2.5, 0)));
+                entities.forEach(ent => {
+                    if (ent.type !== 'collect') targets.push(ent.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)));
+                });
+
+                const objectGeos = [
+                    new THREE.DodecahedronGeometry(1.8, 0),
+                    new THREE.CylinderGeometry(0.9, 1.2, 3.6, 7),
+                    new THREE.OctahedronGeometry(1.7, 0)
+                ];
+                const objectColors = [0x94a3b8, 0x2dd4bf, 0xfbbf24];
+
+                for (let k = 0; k < 5; k++) {
+                    const objMesh = new THREE.Mesh(
+                        objectGeos[k % objectGeos.length],
+                        new THREE.MeshStandardMaterial({ color: objectColors[k % objectColors.length], emissive: 0x14b8a6, emissiveIntensity: 0.45 })
+                    );
+                    const startOffset = new THREE.Vector3((k - 2) * 3.5, 4.5 + (k % 2) * 1.5, -2.5).applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.yaw);
+                    objMesh.position.copy(player.position).add(startOffset);
+
+                    let dir;
+                    if (targets.length > 0) {
+                        const chosenTarget = targets[k % targets.length];
+                        dir = chosenTarget.clone().sub(objMesh.position).normalize();
+                    } else {
+                        dir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.yaw);
+                    }
+
+                    objMesh.userData = { vel: dir.multiplyScalar(78), life: 2.2, damage: 68, isEnemy: false, spin: true };
+                    scene.add(objMesh);
+                    projectiles.push(objMesh);
+                }
+                showToast("🪨 Turtle's Animus Control: Hurled 5 Enchanted Objects at Enemies!");
+            } else {
+                // Qibli's Cleverness: Multi-Bolt Tactical Sandstorm Barrage
+                for (let a = -0.35; a <= 0.35; a += 0.175) {
+                    const p = new THREE.Mesh(new THREE.SphereGeometry(1.1, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfde047 }));
+                    p.position.copy(player.position).add(new THREE.Vector3(0, 2.2, 0));
+                    const d = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.yaw + a);
+                    p.userData = { vel: d.multiplyScalar(75), life: 1.8, damage: 48, isEnemy: false };
+                    scene.add(p);
+                    projectiles.push(p);
+                }
+                showToast("⚡ Qibli's Cleverness: Tactical Sand-Bolt Volley!");
+            }
+            updateHUD();
+        }
+
+        function checkLevelClear() {
+            if (!boss && gameState.progressCount >= gameState.targetCount) {
+                const clearedLvl = gameState.level;
+                const coinsEarned = 15 + clearedLvl * 3;
+                playerInventory.coins += coinsEarned;
+                updateCoinDisplay();
+
+                if (clearedLvl < 50) {
+                    const nextLvl = clearedLvl + 1;
+                    SoundFX.victory();
+                    showToast(`🎉 Good job! You beat Level ${clearedLvl}! (+${coinsEarned} 🪙) Next level is Level ${nextLvl}!`);
+                    setTimeout(() => {
+                        if (gameState.mode === 'playing') setupLevel(nextLvl, false);
+                    }, 1250);
+                } else {
+                    endGame(true);
+                }
+            }
+        }
+
+        function handleBossDefeated() {
+            const h = HEROES[selectedHeroId];
+            const clearedLvl = gameState.level;
+            const nextLvl = clearedLvl + 1;
+            const bossCoins = 50 + gameState.bossPhase * 25;
+            playerInventory.coins += bossCoins;
+            updateCoinDisplay();
+
+            scene.remove(boss);
+            boss = null;
+            document.getElementById('boss-hud').classList.add('hidden');
+            SoundFX.victory();
+
+            // Increase max HP after every milestone boss!
+            gameState.maxHp += 30;
+            gameState.hp = gameState.maxHp;
+
+            if (clearedLvl >= 50) {
+                endGame(true);
+            } else {
+                openStoryBox({
+                    speaker: h.name,
+                    speakerId: selectedHeroId,
+                    tag: `★ Good job! You beat Level ${clearedLvl}!`,
+                    text: `Good job! You beat Level ${clearedLvl} and defeated ${h.bossName} (Tier ${gameState.bossPhase})! You earned +${bossCoins} Dragon Coins 🪙 and +30 Max HP! Next level is Level ${nextLvl}!`,
+                    choices: [
+                        {
+                            label: `➡️ Next Level is Level ${nextLvl}`,
+                            action: () => setupLevel(nextLvl, false)
+                        },
+                        {
+                            label: `🛍️ Spend Dragon Coins in Shop`,
+                            action: () => {
+                                setupLevel(nextLvl, false);
+                                openDragonShop();
+                            }
+                        }
+                    ]
+                });
+            }
+        }
+
+        function damagePlayer(amt) {
+            if (gameState.mode !== 'playing' || gameState.shieldTimer > 0) return;
+            SoundFX.hit();
+            gameState.hp -= amt;
+            updateHUD();
+            if (gameState.hp <= 0) endGame(false);
+        }
+
+        function updateHUD() {
+            const hpPct = Math.max(0, (gameState.hp / gameState.maxHp) * 100);
+            document.getElementById('hud-hp-bar').style.width = `${hpPct}%`;
+            document.getElementById('hud-hp-text').textContent = `${Math.max(0, Math.ceil(gameState.hp))} / ${gameState.maxHp}`;
+
+            const stamPct = Math.max(0, (gameState.stamina / gameState.maxStamina) * 100);
+            document.getElementById('hud-stamina-bar').style.width = `${stamPct}%`;
+            document.getElementById('hud-stamina-text').textContent = `${Math.ceil(gameState.stamina)} / ${gameState.maxStamina}`;
+
+            const cdRatio = 1 - Math.min(1, gameState.abilityCd / 1.6);
+            document.getElementById('hud-ability-bar').style.width = `${cdRatio * 100}%`;
+            const statEl = document.getElementById('hud-ability-status');
+            statEl.textContent = cdRatio >= 1 ? 'READY' : `${gameState.abilityCd.toFixed(1)}s`;
+
+            const trRatio = 1 - Math.min(1, gameState.traitCd / 8.0);
+            document.getElementById('hud-trait-bar').style.width = `${trRatio * 100}%`;
+            const trEl = document.getElementById('hud-trait-status');
+            trEl.textContent = trRatio >= 1 ? 'READY' : `${gameState.traitCd.toFixed(1)}s`;
+
+            if (boss) {
+                const bPct = Math.max(0, (gameState.bossHp / gameState.bossMaxHp) * 100);
+                document.getElementById('boss-hp-bar').style.width = `${bPct}%`;
+                document.getElementById('boss-hp-text').textContent = `${Math.max(0, Math.ceil(gameState.bossHp))} / ${gameState.bossMaxHp}`;
+            } else {
+                const h = HEROES[selectedHeroId];
+                const enc = h.encounters[(gameState.level - 1) % h.encounters.length];
+                document.getElementById('hud-objective-text').textContent = `${enc.verb} (${gameState.progressCount} / ${gameState.targetCount})`;
+            }
+        }
+
+        function endGame(victory) {
+            gameState.mode = 'ended';
+            document.getElementById('game-hud').classList.add('hidden');
+            document.getElementById('story-textbox-overlay').classList.add('hidden');
+            const h = HEROES[selectedHeroId];
+            const overlay = document.getElementById('end-overlay');
+            overlay.classList.remove('hidden');
+
+            if (victory) {
+                SoundFX.victory();
+                document.getElementById('end-badge').textContent = 'All 50 Levels Conquered • Prophecy Fulfilled';
+                document.getElementById('end-title').textContent = `${h.name.toUpperCase()} SAVES PYRRHIA!`;
+                document.getElementById('end-summary').textContent = `Across 50 escalating levels and 5 epic boss showdowns at ${h.destination}, you conquered ${h.bossName}'s ultimate form!`;
+                document.getElementById('end-trait-reflection').textContent = `✨ Guided by ${h.trait}: ${h.desc}`;
+            } else {
+                SoundFX.defeat();
+                document.getElementById('end-badge').textContent = `Defeated on Level ${gameState.level}`;
+                document.getElementById('end-title').textContent = 'FALLEN IN BATTLE';
+                document.getElementById('end-summary').textContent = `You fought fiercely up to Level ${gameState.level}, but your vitality fell to zero. Rise again and continue your quest!`;
+                document.getElementById('end-trait-reflection').textContent = `💡 Tip: Use [Q] ${h.traitSkill} to heal or shield yourself during intense boss phases!`;
+            }
+        }
+
+        /* ----------------------------------------------------------------------------
+         * 5. MAIN 3D ANIMATION & GAME LOOP
+         * ---------------------------------------------------------------------------- */
+        function animateDragonRig(dragonObj, elapsed, isMoving, isFlying, animType, animTimer) {
+            if (!dragonObj || !dragonObj.userData) return;
+            const { leftWing, rightWing, tailGroup, tailSegments, jawPivot, legs } = dragonObj.userData;
+
+            // Wing Flapping (Grand majestic strokes in flight, folded subtly on ground)
+            if (isFlying) {
+                const flap = Math.sin(elapsed * 7.5) * 0.62;
+                leftWing.rotation.z = flap;
+                rightWing.rotation.z = -flap;
+            } else {
+                const idleBreath = Math.sin(elapsed * 2.5) * 0.06;
+                leftWing.rotation.z = -0.35 + idleBreath;
+                rightWing.rotation.z = 0.35 - idleBreath;
+            }
+
+            // Four-Leg Walking Stride vs Tucked Flight Pose
+            if (legs && legs.length === 4) {
+                if (isFlying) {
+                    legs.forEach((leg, idx) => {
+                        leg.rotation.x = idx < 2 ? 0.6 : -0.7;
+                    });
+                } else if (isMoving) {
+                    const stride = Math.sin(elapsed * 11) * 0.55;
+                    legs[0].rotation.x = stride;
+                    legs[1].rotation.x = -stride;
+                    legs[2].rotation.x = -stride;
+                    legs[3].rotation.x = stride;
+                } else {
+                    legs.forEach(leg => { leg.rotation.x *= 0.85; });
+                }
+            }
+
+            // Jaw Roar / Bite Animation
+            if (jawPivot) {
+                jawPivot.rotation.x = (animType === 'bite' && animTimer > 0) ? 0.58 : Math.max(0, Math.sin(elapsed * 2.2) * 0.06);
+            }
+
+            // Tail Sway & Tail-Swipe Whip Attack
+            if (tailSegments) {
+                const whip = (animType === 'tail' && animTimer > 0) ? Math.sin(animTimer * 25) * 0.65 : Math.sin(elapsed * 3.5) * 0.14;
+                tailSegments.forEach((seg, idx) => {
+                    seg.rotation.y = whip * (1 + idx * 0.15);
+                });
+            }
+            if (tailGroup && animType === 'tail' && animTimer > 0) {
+                dragonObj.rotation.y += 0.35;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+            const elapsed = clock.getElapsedTime();
+
+            // Animate World Living Props (Sea animals, sloths, fluttering bugs)
+            animatedProps.forEach(p => {
+                if (p.type === 'orbit') {
+                    const ang = elapsed * p.speed + p.phase;
+                    p.mesh.position.x = Math.cos(ang) * p.radius;
+                    p.mesh.position.z = Math.sin(ang) * p.radius - 20;
+                    p.mesh.rotation.y = -ang;
+                } else if (p.type === 'flutter') {
+                    p.mesh.position.y = p.baseY + Math.sin(elapsed * 5 + p.phase) * 1.4;
+                    p.mesh.position.x += Math.cos(elapsed * 2 + p.phase) * 0.04;
+                } else if (p.type === 'sway') {
+                    p.mesh.rotation.z = Math.sin(elapsed * 1.8 + p.phase) * 0.12;
+                }
+            });
+
+            // Animate Peril's Rising Firescales Embers
+            if (perilEmbers) {
+                const attr = perilEmbers.geometry.attributes.position;
+                for (let i = 1; i < attr.count * 3; i += 3) {
+                    attr.array[i] += dt * 4.5;
+                    if (attr.array[i] > 6.5) attr.array[i] = 0.5;
+                }
+                attr.needsUpdate = true;
+            }
+
+            if (gameState.mode === 'menu') {
+                const r = 24;
+                camera.position.x = Math.sin(elapsed * 0.3) * r;
+                camera.position.z = Math.cos(elapsed * 0.3) * r + 45;
+                camera.position.y = 12;
+                if (player) {
+                    animateDragonRig(player, elapsed, false, true, 'none', 0);
+                    camera.lookAt(player.position.x, player.position.y + 3, player.position.z);
+                }
+            } else if (gameState.mode === 'playing') {
+                updateGameplay(dt, elapsed);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function updateGameplay(dt, elapsed) {
+            if (gameState.abilityCd > 0) gameState.abilityCd = Math.max(0, gameState.abilityCd - dt);
+            if (gameState.traitCd > 0) gameState.traitCd = Math.max(0, gameState.traitCd - dt);
+            if (gameState.attackCooldown > 0) gameState.attackCooldown = Math.max(0, gameState.attackCooldown - dt);
+            if (gameState.attackAnimTimer > 0) gameState.attackAnimTimer = Math.max(0, gameState.attackAnimTimer - dt);
+            if (gameState.shieldTimer > 0) gameState.shieldTimer = Math.max(0, gameState.shieldTimer - dt);
+            if (gameState.foresightTimer > 0) gameState.foresightTimer = Math.max(0, gameState.foresightTimer - dt);
+            if (gameState.freezeTimer > 0) gameState.freezeTimer = Math.max(0, gameState.freezeTimer - dt);
+
+            // Clear previous frame's Moon Future-Sight prediction lines
+            predictionLines.forEach(line => scene.remove(line));
+            predictionLines = [];
+
+            let isMoving = false;
+            if (!gameState.isDialogueOpen) {
+                const isSprinting = keys['ShiftLeft'] || keys['ShiftRight'];
+                const moveSpeed = isSprinting ? 36 : 21;
+                const turnSpeed = 2.3;
+
+                let turnInput = 0;
+                if (keys['KeyA'] || keys['ArrowLeft']) turnInput += 1;
+                if (keys['KeyD'] || keys['ArrowRight']) turnInput -= 1;
+
+                if (turnInput !== 0) {
+                    gameState.yaw += turnInput * turnSpeed * dt;
+                }
+                gameState.camOrbitYaw = gameState.yaw;
+
+                let forwardInput = 0;
+                if (gameState.isPointerHolding || keys['KeyW'] || keys['ArrowUp']) forwardInput += 1;
+                if (keys['KeyS'] || keys['ArrowDown']) forwardInput -= 1;
+
+                if (forwardInput !== 0) {
+                    isMoving = true;
+                    const forwardDir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.yaw);
+                    player.position.addScaledVector(forwardDir, forwardInput * moveSpeed * dt);
+
+                    if (isSprinting) {
+                        gameState.stamina = Math.max(0, gameState.stamina - 16 * dt);
+                    } else {
+                        gameState.stamina = Math.min(100, gameState.stamina + 12 * dt);
+                    }
+                } else {
+                    gameState.stamina = Math.min(100, gameState.stamina + 14 * dt);
+                }
+
+                if (gameState.isFlying) {
+                    if (keys['KeyC']) {
+                        gameState.flyAltitudeOffset = Math.max(-4, gameState.flyAltitudeOffset - 14 * dt);
+                    } else {
+                        gameState.flyAltitudeOffset = Math.min(14, gameState.flyAltitudeOffset + 6 * dt);
+                    }
+                    const baseFlyY = (selectedHeroId === 'turtle' ? 19 : 10) + gameState.flyAltitudeOffset;
+                    player.position.y = baseFlyY + Math.sin(elapsed * 4) * 1.1;
+                } else {
+                    player.position.y = selectedHeroId === 'turtle' ? 15.4 : 0;
+                }
+
+                player.position.x = THREE.MathUtils.clamp(player.position.x, -135, 135);
+                player.position.z = THREE.MathUtils.clamp(player.position.z, -165, 85);
+
+                if (gameState.attackAnimType !== 'tail' || gameState.attackAnimTimer <= 0) {
+                    player.rotation.y = gameState.yaw;
+                }
+            }
+
+            animateDragonRig(player, elapsed, isMoving, gameState.isFlying, gameState.attackAnimType, gameState.attackAnimTimer);
+
+            // First-Person Dragon Perspective Camera (mounted just ahead of the dragon's head so turning right turns the view right)
+            const headEyeOffset = new THREE.Vector3(0, 4.35, -3.35).applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.yaw);
+            camera.position.copy(player.position).add(headEyeOffset);
+
+            const lookForward = new THREE.Vector3(0, 0, -25).applyAxisAngle(new THREE.Vector3(0, 1, 0), gameState.yaw);
+            const lookTarget = camera.position.clone()
+                .add(new THREE.Vector3(0, gameState.camLookPitch * 22.0, 0))
+                .add(lookForward);
+            camera.lookAt(lookTarget);
+
+            // Update Projectiles (Player & Boss)
+            const cpuSpeedScale = gameState.foresightTimer > 0 ? 0.35 : 1.0;
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+                const stepScale = p.userData.isEnemy ? cpuSpeedScale : 1.0;
+                p.position.addScaledVector(p.userData.vel, dt * stepScale);
+                if (p.userData.spin) {
+                    p.rotation.x += dt * 9;
+                    p.rotation.y += dt * 11;
+                }
+                p.userData.life -= dt;
+
+                // Moon's Foresight: Draw glowing trajectory prediction lines for incoming CPU attacks
+                if (p.userData.isEnemy && gameState.foresightTimer > 0) {
+                    const predictedEnd = p.position.clone().addScaledVector(p.userData.vel, 0.75);
+                    const lineGeo = new THREE.BufferGeometry().setFromPoints([p.position.clone(), predictedEnd]);
+                    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x34d399 }));
+                    scene.add(line);
+                    predictionLines.push(line);
+                }
+
+                if (p.userData.isEnemy) {
+                    if (p.position.distanceTo(player.position.clone().add(new THREE.Vector3(0, 2, 0))) < 3.6) {
+                        damagePlayer(p.userData.damage);
+                        p.userData.life = 0;
+                    }
+                } else {
+                    if (boss && p.position.distanceTo(boss.position.clone().add(new THREE.Vector3(0, 2.5, 0))) < 9.0) {
+                        SoundFX.enemyHit();
+                        gameState.bossHp -= p.userData.damage;
+                        p.userData.life = 0;
+                        updateHUD();
+                        if (gameState.bossHp <= 0) handleBossDefeated();
+                    }
+                    for (let j = entities.length - 1; j >= 0; j--) {
+                        const ent = entities[j];
+                        if (ent.type === 'collect') continue;
+                        if (p.position.distanceTo(ent.mesh.position.clone().add(new THREE.Vector3(0, 2, 0))) < 5.5) {
+                            SoundFX.enemyHit();
+                            ent.hp -= p.userData.damage;
+                            p.userData.life = 0;
+                            if (ent.hp <= 0) {
+                                scene.remove(ent.mesh);
+                                entities.splice(j, 1);
+                                gameState.progressCount++;
+                                updateHUD();
+                                checkLevelClear();
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (p.userData.life <= 0) {
+                    scene.remove(p);
+                    projectiles.splice(i, 1);
+                }
+            }
+
+            // Update Book Encounter Entities (Wildlife, Collectibles, Totems, Guards)
+            for (let i = entities.length - 1; i >= 0; i--) {
+                const ent = entities[i];
+                if (ent.type === 'collect') {
+                    ent.mesh.rotation.y += dt * 2.2;
+                    if (player.position.distanceTo(ent.mesh.position) < 6.0) {
+                        SoundFX.collect();
+                        gameState.hp = Math.min(gameState.maxHp, gameState.hp + 15);
+                        scene.remove(ent.mesh);
+                        entities.splice(i, 1);
+                        gameState.progressCount++;
+                        updateHUD();
+                        checkLevelClear();
+                    }
+                    continue;
+                }
+
+                if (gameState.isDialogueOpen) continue;
+
+                // Winter's Frost Freeze halts CPU enemies completely
+                if (gameState.freezeTimer > 0) continue;
+
+                if (ent.type === 'dragon') {
+                    animateDragonRig(ent.mesh, elapsed, true, false, 'none', 0);
+                }
+
+                if (ent.type === 'dragon' || ent.type === 'wildlife') {
+                    ent.mesh.lookAt(player.position.x, ent.mesh.position.y, player.position.z);
+                    const dist = ent.mesh.position.distanceTo(player.position);
+
+                    // Moon's Foresight: Draw red attack prediction line from charging CPU enemies
+                    if (gameState.foresightTimer > 0 && dist < 35) {
+                        const lineGeo = new THREE.BufferGeometry().setFromPoints([
+                            ent.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)),
+                            player.position.clone().add(new THREE.Vector3(0, 2, 0))
+                        ]);
+                        const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xf43f5e }));
+                        scene.add(line);
+                        predictionLines.push(line);
+                    }
+
+                    if (dist > 4.2) {
+                        const dir = player.position.clone().sub(ent.mesh.position).setY(0).normalize();
+                        ent.mesh.position.addScaledVector(dir, ent.speed * cpuSpeedScale * dt);
+                    } else {
+                        damagePlayer(ent.damage * cpuSpeedScale * dt);
+                    }
+                } else if (ent.type === 'hazard') {
+                    // Pulsing animus totem shoots periodic bolts
+                    ent.mesh.rotation.y += dt * 1.5;
+                    ent.attackTimer -= dt * cpuSpeedScale;
+                    if (ent.attackTimer <= 0) {
+                        ent.attackTimer = 2.8;
+                        spawnBossProjectile(ent.mesh.position.clone().add(new THREE.Vector3(0, 3, 0)), player.position, 28, 12, 0xa855f7);
+                    }
+                }
+            }
+
+            // Update Milestone Boss AI (Levels 10, 20, 30, 40, 50 with Escalating Attack Patterns!)
+            if (boss && !gameState.isDialogueOpen && gameState.freezeTimer <= 0) {
+                animateDragonRig(boss, elapsed, true, true, 'bite', boss.userData.roarTimer || 0);
+                if (boss.userData.roarTimer > 0) boss.userData.roarTimer -= dt;
+
+                boss.lookAt(player.position.x, boss.position.y, player.position.z);
+                const phase = gameState.bossPhase;
+                const moveAmp = 24 + phase * 4;
+                boss.position.x = Math.sin(elapsed * (0.9 + phase * 0.15) * cpuSpeedScale) * moveAmp;
+                boss.position.y = 7 + Math.cos(elapsed * 1.4) * 3.5;
+
+                // Moon's Foresight: Predict where the Boss is about to aim!
+                if (gameState.foresightTimer > 0) {
+                    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+                        boss.position.clone(),
+                        player.position.clone().add(new THREE.Vector3(0, 2, 0))
+                    ]);
+                    const line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xfacc15 }));
+                    scene.add(line);
+                    predictionLines.push(line);
+                }
+
+                if (boss.position.distanceTo(player.position) < 8.0) {
+                    damagePlayer((14 + phase * 4) * cpuSpeedScale * dt);
+                }
+
+                boss.userData.attackTimer = (boss.userData.attackTimer || 2.0) - dt * cpuSpeedScale;
+                if (boss.userData.attackTimer <= 0) {
+                    boss.userData.roarTimer = 0.5;
+                    boss.userData.attackTimer = Math.max(0.85, 2.3 - phase * 0.25);
+                    const bOrigin = boss.position.clone().add(new THREE.Vector3(0, 2.5, 0));
+                    const bColor = HEROES[selectedHeroId].colors.bossAccent;
+
+                    // Tier 1+: Direct Elemental Bolt
+                    spawnBossProjectile(bOrigin, player.position.clone().add(new THREE.Vector3(0, 2, 0)), 34 + phase * 3, 14 + phase * 3, bColor);
+
+                    // Tier 2+: Radial Shockwave Orbs
+                    if (phase >= 2) {
+                        for (let s = 0; s < 6; s++) {
+                            const ang = (s / 6) * Math.PI * 2;
+                            const ringTarget = bOrigin.clone().add(new THREE.Vector3(Math.cos(ang) * 20, -1, Math.sin(ang) * 20));
+                            spawnBossProjectile(bOrigin, ringTarget, 26 + phase * 2, 12 + phase * 2, 0xf43f5e);
+                        }
+                    }
+
+                    // Tier 3+: Triple Spread Homing Orbs
+                    if (phase >= 3) {
+                        [-0.28, 0.28].forEach(spread => {
+                            const offsetTarget = player.position.clone().add(new THREE.Vector3(Math.sin(spread) * 14, 2, 0));
+                            spawnBossProjectile(bOrigin, offsetTarget, 38 + phase * 2, 15 + phase * 2, 0xa855f7);
+                        });
+                    }
+                }
+            }
+
+            updateHUD();
+        }
+
+        function spawnBossProjectile(origin, target, speed, damage, colorHex) {
+            const p = new THREE.Mesh(
+                new THREE.SphereGeometry(1.45, 8, 8),
+                new THREE.MeshBasicMaterial({ color: colorHex })
+            );
+            p.position.copy(origin);
+            const dir = target.clone().sub(origin).normalize();
+            p.userData = { vel: dir.multiplyScalar(speed), life: 3.2, damage, isEnemy: true };
+            scene.add(p);
+            projectiles.push(p);
+        }
+
+        window.onload = function () {
+            populateLevelSelector();
+            renderDirectCards();
+            initThree();
+            animate();
+        };
+    </script>
+</body>
+</html>
